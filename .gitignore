@@ -1,0 +1,15 @@
+# Python
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+
+# Regenerable demo output
+figures_demo/
+
+# CST simulation result caches (large; share the .cst project, not results)
+*/Result/
+*/Model/3D/*.sat
+*.cst.lok
+
+.DS_Store
