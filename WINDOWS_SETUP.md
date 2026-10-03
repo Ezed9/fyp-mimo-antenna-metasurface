@@ -3,6 +3,13 @@
 Follow these steps on the **Windows PC that has CST Studio Suite installed**. At the end, Claude Code writes
 Python scripts that build every CST model automatically (see `CST_GUIDE.md` for what the models are).
 
+> **Written for CST Studio Suite 2019.** CST 2019 doesn't have the `cst.interface` Python library (it arrived in
+> CST 2020). So the scripts control CST in one of two ways, and Claude tests which one works on your PC:
+> 1. **Python → COM:** Python starts CST through Windows COM (`pywin32`) and sends it VBA commands. Fully automatic.
+> 2. **Python → `.bas` macro:** Python writes a VBA macro file and you run it in CST with one click.
+>
+> Both put every modelling step into CST's History List, so the models stay editable.
+
 Time needed: about 30 minutes of setup, then the Claude Code session itself.
 
 All commands below go in **PowerShell** (Start menu → type `PowerShell` → open it).
@@ -37,7 +44,7 @@ Close PowerShell and open it again. Then check it:
 uv --version
 ```
 
-You don't need to install Python yourself. uv downloads the version that CST needs.
+You don't need to install Python yourself. uv downloads it, and Claude adds `pywin32` (the COM library) to the project.
 
 ## Step 3: Install Claude Code
 
@@ -69,20 +76,20 @@ You should see `CST_GUIDE.md`, `analysis`, `exports` and this file.
 
 ## Step 5: Find your CST version and install folder
 
-1. Open CST Studio Suite and go to **Help → About**. Write down the version year (for example **2024**).
-2. Find the install folder. It's usually one of these:
-   - `C:\Program Files (x86)\CST Studio Suite 2024`
-   - `C:\Program Files\CST Studio Suite 2024`
-3. Check that the Python library folder exists (change the year/path to match yours):
+1. Open CST Studio Suite and go to **File → Help → About** (or the **?** icon at the top right).
+   Check that it says **2019** and note the service pack if one is shown (for example `SP 5`).
+2. Find the install folder. Right-click the CST desktop shortcut → **Open file location**. It's usually one of these:
+   - `C:\Program Files (x86)\CST STUDIO SUITE 2019`
+   - `C:\Program Files\CST STUDIO SUITE 2019`
+3. Check that CST's main program is in that folder (change the path to match yours):
 
    ```powershell
-   dir "C:\Program Files (x86)\CST Studio Suite 2024\AMD64\python_cst_libraries"
+   dir "C:\Program Files (x86)\CST STUDIO SUITE 2019\CST DESIGN ENVIRONMENT.exe"
    ```
 
-   You should see a folder called `cst`. If you get "cannot find path", try the other path from step 2,
-   or right-click the CST desktop shortcut → **Open file location** to find it.
+   If you get "cannot find path", try the other path from step 2.
 
-Write down the full install folder path. You'll need it in Step 7.
+Write down the full install folder path. You'll need it in Step 8.
 
 ## Step 6: Export the current single antenna's history
 
@@ -128,17 +135,19 @@ Keep CST **installed but closed** when you start. Claude opens it through Python
 
 ## Step 8: Paste the prompt
 
-Copy everything in the box below into Notepad first. Replace the **two placeholders** with what you wrote down in Step 5:
+Copy everything in the box below into Notepad first. Replace the **one placeholder** with what you wrote down in Step 5:
 
-- `<VERSION>` → for example `2024`
-- `<CST install dir>` → for example `C:\Program Files (x86)\CST Studio Suite 2024`
+- `<CST install dir>` → for example `C:\Program Files (x86)\CST STUDIO SUITE 2019`
 
 Then paste the whole thing into Claude Code and press Enter.
 
 ```text
-I'm doing a final-year project: a UWB 4-port MIMO antenna with an AMC metasurface, simulated in CST Studio Suite <VERSION> on this Windows machine. This repo is the project. Read CST_GUIDE.md first: it is the source of truth for every model, parameter, sweep, monitor and export filename. Also read analysis/make_figures.py to see the exact export formats it expects, and existing_single_history.txt (the CST History List of my current single antenna — use its dimensions as the nominal values).
+I'm doing a final-year project: a UWB 4-port MIMO antenna with an AMC metasurface, simulated in CST Studio Suite 2019 on this Windows machine, installed at "<CST install dir>". This repo is the project. Read CST_GUIDE.md first: it is the source of truth for every model, parameter, sweep, monitor and export filename (its menu names are from CST 2020–2024, so they can differ slightly in 2019). Also read analysis/make_figures.py to see the exact export formats it expects, and existing_single_history.txt (the CST History List of my current single antenna — use its dimensions as the nominal values).
 
-GOAL: build every CST model from Python scripts using the CST Python API (cst.interface / cst.results, from "<CST install dir>\AMD64\python_cst_libraries"), so nobody builds anything by hand. Generate geometry by sending VBA history blocks with model3d.add_to_history(), so every step appears in CST's History List and stays editable.
+GOAL: build every CST model from Python scripts, so nobody builds anything by hand. CST 2019 has NO cst.interface Python library (that started in CST 2020), so do not use it. Instead, Python generates the VBA for each modelling step and adds it to CST's History List with AddToHistory, so every step appears in the History List and stays editable. Two ways to deliver that VBA, sharing the same generator code:
+- Primary: Python drives CST over Windows COM with pywin32 (win32com.client.Dispatch("CSTStudio.Application"), NewMWS / OpenFile, AddToHistory, Solver, SaveAs). CST's COM objects have no type info, so methods may need _FlagAsMethod or late-bound Invoke.
+- Fallback: Python writes a plain .bas VBA macro that I run via Macros → Run Macro in CST.
+Before building anything, write a tiny COM smoke test (start CST, new project, add one brick via AddToHistory, save, close) and tell me whether COM works. If it doesn't, use the .bas route for everything.
 
 LOCKED DESIGN DECISIONS (do not change):
 - Band: UWB 3.1–10.6 GHz; simulate 2–12 GHz. Units mm/GHz/ns.
@@ -153,13 +162,12 @@ LOCKED DESIGN DECISIONS (do not change):
 - Monitors for final runs: farfield and surface current at 4, 7, 10 GHz, plus farfields every 0.5 GHz from 2 to 12 GHz for gain/efficiency vs frequency.
 
 WHAT TO BUILD (in a new cst/ folder):
-1. cst/common.py: connect/new project, set units, frequency, materials, background/boundaries, mesh presets, helpers for parameters, VBA history, ports and monitors.
-2. One script per model: build_single.py, build_unitcell.py, build_single_reflector.py (--variant none|pec|amc), build_mimo.py (--ms), each saving a .cst into cst/models/.
-3. cst/run_and_export.py: runs a model or a parameter sweep (Lg, R, h, wc, as in CST_GUIDE.md) and exports results into exports/ with EXACTLY the filenames and formats CST_GUIDE.md §9 and make_figures.py expect (ASCII with #Parameters headers for sweeps, mimo_*.s4p Touchstone, far-field ASCII with Theta/Phi/Abs/Phase columns at 5° steps into exports/ff/).
-4. A fallback: each build script can also write a plain .bas VBA macro (cst/macros/) that I can run via Macros → Run Macro if the Python API gives trouble.
+1. cst/common.py: VBA generators for units, frequency, materials, background/boundaries, mesh presets, parameters, ports and monitors, plus the COM connect/new/open/save helpers and a function that writes the same steps to a .bas file.
+2. One script per model: build_single.py, build_unitcell.py, build_single_reflector.py (--variant none|pec|amc), build_mimo.py (--ms). Each one builds over COM and saves a .cst into cst/models/, or with --macro writes cst/macros/<model>.bas instead.
+3. cst/run_and_export.py: runs a model or a parameter sweep (Lg, R, h, wc, as in CST_GUIDE.md) and exports results into exports/ with EXACTLY the filenames and formats CST_GUIDE.md §9 and make_figures.py expect (ASCII with #Parameters headers for sweeps, mimo_*.s4p Touchstone, far-field ASCII with Theta/Phi/Abs/Phase columns at 5° steps into exports/ff/). Use CST 2019 VBA for exports (e.g. SelectTreeItem + ASCIIExport, the TOUCHSTONE object, FarfieldPlot ASCII export). If COM doesn't work, write this as .bas macros too.
 
 HOW TO WORK:
-- First check the CST version, its bundled Python path, and which Python versions its API supports. Set up a uv environment that can import cst.
+- First confirm the CST 2019 install path and run the COM smoke test. Set up a uv environment in cst/ with pywin32 (any current Python works, since COM doesn't depend on CST's Python).
 - Build and verify ONE model at a time, in order: single → unit cell → single + reflector → MIMO → MIMO + AMC. After each, open it in CST and confirm the geometry has no overlapping or leftover solids, the ports are correct, and (single) the port line impedance is ~50 Ω. Run a short coarse simulation to confirm it solves.
 - Ask me before any run longer than ~15 minutes.
 - Keep the code simple: functions, type hints, no class hierarchies. Don't commit; I'll review first.
@@ -174,8 +182,12 @@ HOW TO WORK:
   look at it in CST (rotate the 3D view, look at the History List and the ports) and answer in the chat.
 - **Long runs:** Claude asks before starting any simulation longer than ~15 minutes. The sweeps and the final
   MIMO runs take hours on this PC, so start those in the evening and leave the PC on overnight.
-- **If the Python API won't work:** ask Claude to use the `.bas` fallback. In CST go to
-  **Home → Macros → Run Macro** (or search `Run Macro` in the ribbon) and pick the file from `cst\macros\`.
+- **If COM doesn't work (the `.bas` route):** Claude writes macro files into `cst\macros\`. To run one:
+  1. In CST, make a new empty project: **File → New and Recent → New Project** (any template; the macro sets everything).
+  2. Go to **Home → Macros → Run Macro…** (or type `Macro` in the ribbon search box).
+  3. Pick the `.bas` file from `C:\FYP\fyp-mimo-antenna-metasurface\cst\macros\` and click **Open**.
+  4. Check that the History List fills with steps and the model appears. Save with **File → Save As** into `cst\models\`.
+  5. If CST shows an error, copy its message (or take a screenshot) and paste it into the Claude chat.
 - **If the session gets long or confused:** start a new session and say
   *"Continue the CST automation. Read CST_GUIDE.md and the cst/ folder to see where we are."*
 
@@ -213,7 +225,8 @@ The first push asks you to sign in to GitHub in a browser window.
 |---|---|
 | `winget`, `uv` or `claude` "is not recognized" | Close and reopen PowerShell. If it still fails, restart the PC. |
 | "running scripts is disabled on this system" | Run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, answer `Y`, and try again. |
-| `No module named 'cst'` | The install path in the prompt is wrong. Repeat Step 5 and tell Claude the correct path. |
+| COM test fails ("Invalid class string" or CST never opens) | Run CST once normally so it registers itself, then retry. If it still fails, tell Claude to use the `.bas` route. |
+| A `.bas` macro stops with a VBA error | Copy the error text and the line number into the Claude chat. |
 | CST says the license is in use or not found | Close every other CST window and check that the license server or dongle is reachable, then try again. |
 | A simulation never finishes | In CST, click **Stop** on the solver. Tell Claude and ask for a coarser mesh or a shorter frequency range for the test run. |
 | `git push` is rejected | Run `git pull`, then `git push` again. |
