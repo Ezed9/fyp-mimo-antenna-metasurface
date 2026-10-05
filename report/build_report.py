@@ -16,6 +16,7 @@ team's CST screenshots (figures/cst_*.png), from report/literature.py, or is com
 """
 from __future__ import annotations
 
+import math
 import os
 import re
 import shutil
@@ -36,22 +37,38 @@ OUT = ROOT / "report" / "MidSem_Report.docx"
 
 # ============================================================================= design data
 # From the team's CST model. None = not received yet; shown as "pending" in the report.
+R_MM, N_SIDES, XC_MM, LG_MM = 15.0, 10, 8.0, -7.0   # decagonal patch: circumradius, sides, centre x, ground edge x
+APOTHEM = R_MM * math.cos(math.pi / N_SIDES)          # centre-to-flat-edge distance
+GAP_P = XC_MM - APOTHEM - LG_MM                       # patch-to-ground gap p (computed)
 DIMENSIONS: list[tuple[str, str, str | None]] = [
-    ("W_{s} × L_{s}", "Substrate (board) size", None),
-    ("h_{s}", "Substrate thickness", None),
-    ("R", "Radius of the radiating patch", "15"),
-    ("L_{g}", "y-coordinate of the top edge of the CPW ground planes", "−7"),
-    ("W_{f}", "Width of the CPW signal strip", None),
-    ("g", "Width of the CPW slots", None),
+    ("W_{s} × L_{s}", "Substrate (board) size", "50 × 50"),
+    ("h_{s}", "FR-4 substrate thickness", "1.6"),
+    ("R", "Circumradius of the decagonal (10-sided) patch", "15"),
+    ("x_{p}", "x-coordinate of the patch centre", "8"),
+    ("L_{g}", "x-coordinate of the top edge of the ground planes (they start at x = −25)", "−7"),
+    ("W_{g}", "Width of each ground plane (|y| from 2 to 25)", "23"),
+    ("W_{f}", "Width of the CPW signal strip", "3"),
+    ("g", "Width of each CPW slot", "0.5"),
+    ("p", "Gap between the ground edge and the patch (computed)", f"{GAP_P:.2f}"),
 ]
-SUBSTRATE: str | None = None        # e.g. "FR-4 (ε_{r} = 4.3, tan δ = 0.025), 1.6 mm"
-SRR: dict[str, str | None] = {"cell": None, "period": None, "array": None, "substrate": None}
+SUBSTRATE: str | None = "FR-4 (lossy), ε_{r} = 4.3, tan δ = 0.025, 1.6 mm thick, copper on the front only"
+SRR: dict[str, str | None] = {"cell": "two concentric split rings", "period": None, "array": "6 × 5",
+                              "substrate": "FR-4 (lossy), 1.6 mm, full copper ground on the back"}
+
+
+def monopole_fl_ghz(p_mm: float) -> float:
+    """Lower band edge of a planar monopole from its equivalent cylinder (Agrawall et al.); lengths in cm."""
+    area = 0.5 * N_SIDES * R_MM ** 2 * math.sin(2 * math.pi / N_SIDES)
+    height = 2 * APOTHEM
+    r = area / (2 * math.pi * height)
+    return 7.2 / ((height + r + p_mm) / 10)
 
 LG_VALUES = "ten values from −20 mm to −7 mm"        # legend of figures/cst_single_Lg_sweep.png
 R_VALUES = "4 mm to 15 mm (13 values)"                # legend of figures/cst_single_R_sweep.png
 
 # Result screenshots expected from the team (pending boxes until they exist).
 GEOMETRY = "cst_single_geometry.png"
+MS_ARRAY = "cst_ms_array.png"
 UNITCELL_FIGS = ["cst_srr_unitcell.png", "cst_srr_phase.png"]
 MS_FIGS = ["cst_single_ms_s11.png", "cst_single_ms_gain.png"]
 
@@ -125,14 +142,14 @@ def abstract(c: Ctx) -> None:
     c.p("Ultra-wideband (UWB) radios and multiple-input multiple-output (MIMO) antennas together support high data "
         "rates over short ranges, but the printed monopoles normally used for UWB radiate on both sides of the board "
         "and therefore have low gain. This project develops a wideband MIMO antenna with a metasurface. This "
-        "mid-semester report covers Phase I: a single coplanar-waveguide (CPW) fed planar monopole backed by a "
-        "split-ring-resonator (SRR) metasurface.")
+        "mid-semester report covers Phase I: a single coplanar-waveguide (CPW) fed decagonal monopole on FR-4, backed "
+        "by a copper-backed split-ring-resonator (SRR) metasurface.")
     c.p(f"The monopole was modelled in CST Studio Suite and optimised through two parametric sweeps: the position of "
         f"the CPW ground-plane edge (L_{{g}}) and the patch radius (R). The optimised antenna (L_{{g}} = −7 mm, "
         f"R = 15 mm) has |S_{{11}}| ≤ −10 dB from {lo:.2f} GHz to {hi:.2f} GHz, a fractional bandwidth of "
         f"{fbw:.1f} %, which covers the whole 3.1–10.6 GHz UWB band. Its simulated IEEE gain is about "
         f"{lit.THIS_WORK['gain_ieee_uwb'].strip('≈ ')} dBi across that band. To redirect the backward radiation, a "
-        f"single-SRR metasurface is placed {lit.GAP_MM} mm behind the antenna across an air gap. A reflection-phase "
+        f"6 × 5 SRR metasurface is placed {lit.GAP_MM} mm behind the antenna across an air gap. A reflection-phase "
         f"analysis shows that, at this small gap, a plain metal plate would work against the forward radiation over "
         f"most of the UWB band, which is why an in-phase metasurface is needed. {ms_status}")
     c.p("A review of ten recent papers on metasurface-loaded single and MIMO antennas places the work in context. "
@@ -220,21 +237,24 @@ def methodology(c: Ctx) -> None:
     c.fig(["fig_design_flow.png"], "Design flow of the project; steps 1–4 are complete.", width=5.4)
 
     c.h2("Antenna Design")
-    shape = "a planar patch"
-    c.p(f"The radiator is {shape} of radius R fed by a 50 Ω CPW line. The signal strip of width W_{{f}} is separated "
-        "from the two coplanar ground planes by slots of width g, and the top edge of the ground planes lies at "
-        "y = L_{g}, so L_{g} sets how close the ground comes to the patch. Two quantities dominate the matching of a "
-        "printed monopole: the ground geometry near the feed, which controls the coupling between patch and ground, "
-        "and the patch size, which sets the lowest resonance and how the higher-order resonances overlap [@ray]. "
-        "The lower band edge of a planar monopole can be estimated from an equivalent cylindrical monopole "
-        "[@agrawall, ray]:")
+    c.p("The radiator is a regular ten-sided (decagonal) patch of circumradius R = 15 mm, printed together with its "
+        "CPW feed on the front of a 50 × 50 × 1.6 mm FR-4 substrate; the back is bare. The 3 mm signal strip is "
+        "separated from the two coplanar ground planes by 0.5 mm slots. The ground planes run from the board edge "
+        f"(x = −25 mm) to x = L_{{g}}, so L_{{g}} sets the gap p between the ground and the patch ({GAP_P:.2f} mm in the "
+        "final design). Two quantities dominate the matching of a printed monopole: the ground geometry near the "
+        "feed, which controls the coupling between patch and ground, and the patch size, which sets the lowest "
+        "resonance and how the higher-order resonances overlap [@ray]. The lower band edge of a planar monopole can "
+        "be estimated from an equivalent cylindrical monopole [@agrawall, ray]:")
     e1 = c.eq([msub([mr("f")], [mr("L", False)]), mr("≈", False),
                mf([mr("7.2", False)], [mr("L"), mr("+", False), mr("r"), mr("+", False), mr("p")]),
                mr(" GHz", False)])
+    area = 0.5 * N_SIDES * R_MM ** 2 * math.sin(2 * math.pi / N_SIDES)
     c.p(f"where L is the height of the patch, r the radius of the equivalent cylinder (2πrL equals the patch area) and "
-        f"p the gap between the patch and the ground, all in centimetres. Equation ({e1}) ignores the substrate, which "
-        "lowers the frequency further, so it serves only as a starting point for the CST sweeps. The bandwidth is "
-        "reported as the fractional bandwidth")
+        f"p the gap between the patch and the ground, all in centimetres. For the decagon, L = 2R cos 18° = "
+        f"{2 * APOTHEM:.1f} mm and the area is {area:.0f} mm², so r = {area / (2 * math.pi * 2 * APOTHEM):.1f} mm; "
+        f"with p = {GAP_P:.2f} mm, ({e1}) gives f_{{L}} ≈ {monopole_fl_ghz(GAP_P):.2f} GHz (computed), close to the "
+        f"simulated {lit.THIS_WORK['band_ghz'][0]:.2f} GHz; the substrate lowers the frequency slightly. The bandwidth "
+        "is reported as the fractional bandwidth")
     e2 = c.eq([mr("FBW", False), mr("=", False),
                mf([mr("2", False), md([msub([mr("f")], [mr("H", False)]), mr("−", False),
                                        msub([mr("f")], [mr("L", False)])])],
@@ -251,11 +271,15 @@ def methodology(c: Ctx) -> None:
             [[s, d, mm(v)] for s, d, v in DIMENSIONS], [1.2, 3.6, 1.2], size=10)
 
     c.h2("Split-Ring-Resonator Metasurface")
-    c.p("Each metasurface cell is a single split-ring resonator: a metal ring interrupted by one split. The ring "
-        "behaves as an inductance L and the split as a capacitance C [@pendry], so the cell resonates at")
+    c.p("The metasurface is a 6 × 5 array of split-ring-resonator (SRR) cells printed on 1.6 mm FR-4 whose back is "
+        "fully covered by copper, so it is a ground-backed (AMC-type) reflector that returns essentially all the "
+        "incident power and is designed by its reflection phase. Each cell has two concentric metal rings, each "
+        "interrupted by a split, as in the original SRR of Pendry et al. [@pendry]. The rings behave as an "
+        "inductance L and the splits and the gap between the rings as a capacitance C, so the cell resonates at")
     e4 = c.eq([msub([mr("f")], [mr("0", False)]), mr("=", False),
                mf([mr("1", False)], [mr("2", False), mr("π"), mrad(mr("L"), mr("C"))])])
-    c.p(f"A larger ring raises L and a narrower split raises C, and both lower f_{{0}} in ({e4}). The cell is "
+    c.p(f"Larger rings raise L and narrower splits or a smaller ring spacing raise C, and both lower f_{{0}} in ({e4}); "
+        "two rings give two nearby resonances, which can widen the in-phase band. The cell is "
         "characterised on its own with unit-cell (periodic) boundaries and a Floquet port, which gives the reflection "
         "phase φ_{R} of an infinite array under normal incidence. Near resonance an in-phase reflector has φ_{R} close "
         "to 0°, and its useful band is usually taken as the range where φ_{R} stays within ±90° [@sievenpiper, yang].")
@@ -306,26 +330,32 @@ def methodology(c: Ctx) -> None:
 def work_done(c: Ctx) -> None:
     lo, hi = lit.THIS_WORK["band_ghz"]
     tw = lit.THIS_WORK
-    c.h2("Antenna Geometry")
-    n = c.next_fig()
-    c.p(f"Fig. {n} shows the CPW-fed antenna; its dimensions are listed in Table 3. "
-        f"Substrate: {SUBSTRATE or 'pending (from the CST parameter list)'}.")
-    c.fig([GEOMETRY], "Geometry of the CPW-fed antenna (CST model).", pending="CST screenshot of the antenna geometry")
+    c.h2("CST Models")
+    n, n_ms = c.next_fig(), c.next_fig() + 1
+    c.p(f"Fig. {n} shows the antenna modelled in CST with the dimensions of Table 3: the decagonal patch and the CPW "
+        f"feed on the front of the {SUBSTRATE} substrate, and a bare back. Fig. {n_ms} shows the metasurface: 6 × 5 "
+        "SRR cells on the front and a full copper ground on the back.")
+    c.fig([GEOMETRY], "CPW-fed decagonal monopole in CST.", pending="CST screenshot of the antenna geometry", width=5.0)
+    c.fig([MS_ARRAY], "SRR metasurface in CST.", pending="CST screenshot of the metasurface", width=5.0)
 
     c.h2("Parametric Study")
     n_lg, n_r = c.next_fig(), c.next_fig() + 1
+    p_far = XC_MM - APOTHEM + 20
     c.p(f"Fig. {n_lg} shows |S_{{11}}| for {LG_VALUES} of the ground-edge position L_{{g}} with R = 15 mm. As L_{{g}} "
-        "increases, the ground edge moves towards the patch: the first resonance moves up from about 1.6 GHz to "
-        "2.7 GHz and becomes much deeper, and the matching between 3 and 10 GHz improves. For most ground positions "
-        "|S_{11}| stays between about −3 dB and −10 dB over large parts of 3–10 GHz; only L_{g} = −7 mm keeps it below "
-        "−10 dB across the whole band, so this value was fixed.")
+        f"increases, the ground edge moves towards the patch and the gap p shrinks from {p_far:.1f} mm to "
+        f"{GAP_P:.2f} mm. The first resonance moves up from about 1.6 GHz to 2.7 GHz and becomes much deeper, and the "
+        "matching between 3 and 10 GHz improves. Equation (1) predicts the same trend: the lower band edge rises "
+        f"from {monopole_fl_ghz(p_far):.2f} GHz at L_{{g}} = −20 mm to {monopole_fl_ghz(GAP_P):.2f} GHz at "
+        "L_{g} = −7 mm (computed). For most ground positions |S_{11}| stays between about −3 dB and −10 dB over large "
+        "parts of 3–10 GHz; only L_{g} = −7 mm keeps it below −10 dB across the whole band, so this value was fixed.")
     c.fig(["cst_single_Lg_sweep.png"], "|S_{11}| for different ground-edge positions L_{g} (R = 15 mm); best: "
           "L_{g} = −7 mm.", width=5.2)
     c.p(f"Fig. {n_r} shows the radius sweep, {R_VALUES}, with L_{{g}} = −7 mm. Small patches resonate too high and "
         "leave much of the band poorly matched; enlarging the patch lowers the first resonance and brings the "
         "higher-order resonances together, and R = 15 mm gives the widest continuous −10 dB band of all radii "
-        "simulated. Both selected values lie at the upper end of their sweep ranges, which were limited by the board "
-        "size.")
+        "simulated. Both selected values lie at the upper end of their sweep ranges, which the 50 × 50 mm board "
+        f"limits: at R = 15 mm the patch top is {25 - XC_MM - APOTHEM:.1f} mm from the board edge, and at "
+        f"L_{{g}} = −7 mm the ground is only {GAP_P:.2f} mm below the patch.")
     c.fig(["cst_single_R_sweep.png"], "|S_{11}| for different patch radii R (L_{g} = −7 mm); best: R = 15 mm.",
           width=5.2)
     c.p("Some sweep curves show abrupt steps at about 4.0 GHz and 6.2 GHz, and one curve of the ground sweep rises "
@@ -363,9 +393,9 @@ def work_done(c: Ctx) -> None:
     ], [2.6, 3.4], size=10)
 
     c.h2("Metasurface Unit Cell")
-    c.p("The single-SRR unit cell is being simulated with unit-cell boundaries and a Floquet port to obtain its "
+    c.p("The SRR unit cell is being simulated with unit-cell boundaries and a Floquet port to obtain its "
         "reflection phase, which will be compared with the window of Fig. 3. "
-        f"Cell: {mm(SRR['cell'])}; period: {mm(SRR['period'])}; array: {mm(SRR['array'])}; "
+        f"Cell: {mm(SRR['cell'])}; period and ring dimensions: {mm(SRR['period'])}; array: {mm(SRR['array'])}; "
         f"substrate: {mm(SRR['substrate'])}.")
     c.fig(UNITCELL_FIGS, "SRR unit cell: geometry and simulated reflection phase.",
           pending="SRR unit cell geometry and reflection phase (Floquet port)")
@@ -382,7 +412,8 @@ def work_done(c: Ctx) -> None:
         "settings and the final design is re-run on its own.",
         "**Sweep artefacts.** Non-physical steps (and one curve above 0 dB) in the broadband frequency sweeps; the "
         "affected points will be re-run with denser frequency sampling.",
-        "**Sweep limits.** The selected L_{g} and R lie at the edge of their ranges, which the board size bounds.",
+        "**Sweep limits.** The selected L_{g} and R lie at the edge of their ranges: the patch is already "
+        f"{25 - XC_MM - APOTHEM:.1f} mm from the board edge and {GAP_P:.2f} mm from the ground.",
         "**Marginal matching.** |S_{11}| is only about 0.3–0.5 dB below the −10 dB line near 6.5 and 12.2 GHz; the "
         "metasurface may detune these points.",
         "**Metasurface bandwidth.** The antenna covers a 7:1 band, while a single SRR resonance is in phase over a "

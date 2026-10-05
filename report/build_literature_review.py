@@ -41,7 +41,7 @@ def single_rows(cite: dh.Citer | None) -> list[list[str]]:
              cell(p.band), cell(p.gain)] for p in lit.SINGLE]
     tw = lit.THIS_WORK
     lo, hi = tw["band_ghz"]
-    rows.append(["**This work**", "CPW-fed planar monopole", "see design", f"{tw['metasurface']} (design ongoing)",
+    rows.append(["**This work**", "CPW-fed decagonal monopole", "FR-4 (ε_{r} 4.3), 1.6 mm", tw["metasurface"],
                  f"{tw['gap_mm']} mm, air ({tw['gap_mm'] / lit.wavelength_mm(lo):.3f}λ_{{L}})",
                  f"{lo:.2f}–{hi:.2f} (no MS)", f"{tw['gain_ieee_uwb']} (IEEE, 3.1–10.6 GHz, no MS) → pending"])
     return rows

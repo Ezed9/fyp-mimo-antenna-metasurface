@@ -22,7 +22,7 @@ Two papers, by Al-Gburi et al. and Hussain et al., were read in full. For the ot
 | [3] | CPW-fed hexagonal patch with stubs | Rogers RT/Duroid 6002 (ε<sub>r</sub> 2.94), 1.52 mm | Ring joined to a square frame; 5 × 5 FSS | Behind, 9 mm foam spacer (0.09λ<sub>L</sub>) | 5–17 → 3–18 | 6.5 → 10.5 |
 | [4] | CPW-fed hexagonal UWB monopole | unverified | 8 × 8 mm cells, 7 × 7 FSS (stopband 3–11.5 GHz) | Behind, 20 mm (0.21λ at 3.1 GHz) | UWB (limits unverified) | 2.2 → 8.4 (realized) |
 | [5] | CPW-fed octagonal monopole with inverted U-slot | Rogers RT5880, 1.57 mm | 5 × 5 AMC, 0° reflection at 7.44 GHz, on RO4003C with full ground | Behind, air gap (5 mm, unconfirmed) | 3.5–6.3 → 3.5–6.5 | unverified → 9.9–11.5 (sources differ) |
-| **This work** | CPW-fed planar monopole | see design | Single split-ring resonator (SRR) array (design ongoing) | 3.9 mm, air (0.028λ<sub>L</sub>) | 2.16–15.73 (no MS) | ≈ 2.9–4.9 (IEEE, 3.1–10.6 GHz, no MS) → pending |
+| **This work** | CPW-fed decagonal monopole | FR-4 (ε<sub>r</sub> 4.3), 1.6 mm | 6 × 5 SRR cells (two concentric split rings), copper-backed | 3.9 mm, air (0.028λ<sub>L</sub>) | 2.16–15.73 (no MS) | ≈ 2.9–4.9 (IEEE, 3.1–10.6 GHz, no MS) → pending |
 
 ## Table B: MIMO antennas with metasurfaces (Phase II background)
 

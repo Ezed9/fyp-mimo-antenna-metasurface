@@ -42,16 +42,16 @@ PROJECT = {
 GAP_MM = 3.9  # air gap between the antenna substrate and the metasurface (team, 2026-10-05)
 
 THIS_WORK = {
-    "antenna": "CPW-fed planar monopole (R = 15 mm, ground edge L_{g} = −7 mm)",
+    "antenna": "CPW-fed decagonal monopole (R = 15 mm, ground edge L_{g} = −7 mm)",
     "band_ghz": (2.1615, 15.734),         # −10 dB markers, figures/cst_single_final_s11_bandwidth.png
     "resonances": [(2.7275, -32.65), (4.7824, -21.182), (9.2265, -22.556), (14.32, -27.068)],  # markers, cst_single_final_s11_markers.png
     # Read off figures/cst_single_final_gain_ieee.png (CST "Gain", i.e. IEEE gain); ±0.1 dB reading accuracy.
     "gain_ieee_uwb": "≈ 2.9–4.9",         # dBi over 3.1–10.6 GHz (min ≈ 2.9 near 6.3 GHz, max ≈ 4.9 near 8.5 GHz)
     "gain_ieee_peak": "≈ 5.1 dBi at ≈ 13.5 GHz",
     "weak_match": "S11 only ≈ −10.3 dB near 6.5 GHz and ≈ −10.5 dB near 12.2 GHz",
-    "metasurface": "Single split-ring resonator (SRR) array",
+    "metasurface": "6 × 5 SRR cells (two concentric split rings), copper-backed",
     "gap_mm": GAP_MM,
-    "ms_ground": None,                    # True / False once the metasurface board's back side is seen
+    "ms_ground": True,                    # full copper on the back of the metasurface board (team, 5 Oct)
 }
 
 
