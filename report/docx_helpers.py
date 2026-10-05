@@ -10,13 +10,14 @@ from __future__ import annotations
 
 import copy
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 from docx import Document
 from docx.document import Document as DocxDocument
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_TABLE_ALIGNMENT
-from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT, WD_TAB_LEADER
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Inches, Pt
@@ -121,6 +122,11 @@ def _mark_font(p: Paragraph, size: float = BODY) -> None:
 
 
 # ----------------------------------------------------------------------------- template title page
+def el_text(el) -> str:
+    """Visible text of a body element (lxml's itertext() repeats text on python-docx elements)."""
+    return "".join(t.text or "" for t in el.iter(qn("w:t")))
+
+
 def _find(doc: DocxDocument, startswith: str) -> Paragraph:
     return next(p for p in doc.paragraphs if p.text.strip().startswith(startswith))
 
@@ -150,27 +156,30 @@ def _drop_empty_after(p: Paragraph, n: int) -> None:
     el, removed = p._p.getnext(), 0
     while el is not None and removed < n:
         nxt = el.getnext()
-        if el.tag == qn("w:p") and not "".join(el.itertext()).strip():
+        if el.tag == qn("w:p") and not el_text(el).strip():
             el.getparent().remove(el)
             removed += 1
         el = nxt
 
 
 def start(first_line: str, title: str, subtitle: str | None, students: list[str],
-          supervisors: list[str]) -> DocxDocument:
-    """Open the template, fill its title page and remove the placeholder body (the caller adds the content).
+          supervisors: list[str], keep_body: bool = False) -> DocxDocument:
+    """Open the template and fill its title page.
 
+    keep_body=False removes the template's placeholder sections (the caller writes its own);
+    keep_body=True keeps them and only drops the blank lines that pushed "Abstract" to page 2.
     Each extra student/supervisor line replaces one of the template's blank lines, so the page layout is unchanged.
     """
     doc = Document(str(TEMPLATE))
     body = doc.element.body
     inst = _find(doc, "NATIONAL INSTITUTE OF TECHNOLOGY SILCHAR")
-    cut = False
-    for el in list(body):
-        if el is inst._p:
-            cut = True
-        elif cut and el.tag != qn("w:sectPr"):
-            body.remove(el)
+    el = inst._p.getnext()
+    while el is not None and el.tag != qn("w:sectPr"):
+        nxt = el.getnext()
+        if keep_body and el_text(el).strip():
+            break
+        body.remove(el)
+        el = nxt
 
     _set_text(doc.paragraphs[0], first_line)
     t = _find(doc, "TITLE OF PROJECT")
@@ -314,6 +323,20 @@ def mrad(*content):
     return _wrap("rad", pr, _m("deg"), _wrap("e", *content))
 
 
+def md(content: list, beg: str = "(", end: str = ")"):
+    """Delimiters that grow with their content: (…) by default, |…| for magnitudes."""
+    pr = _m("dPr")
+    for tag, ch in (("begChr", beg), ("endChr", end)):
+        e = _m(tag)
+        e.set(qn("m:val"), ch)
+        pr.append(e)
+    return _wrap("d", pr, _wrap("e", *content))
+
+
+def msup(base: list, sup: list):
+    return _wrap("sSup", _wrap("e", *base), _wrap("sup", *sup))
+
+
 def msub(base: list, sub: list):
     return _wrap("sSub", _wrap("e", *base), _wrap("sub", *sub))
 
@@ -342,3 +365,133 @@ def references(doc: DocxDocument, cite: Citer, size: float = BODY) -> None:
         pf.space_after = Pt(4)
         pf.line_spacing = 1.0
         add_runs(p, f"[{n}]\t{cite.lookup(key)}", size)
+
+
+# ----------------------------------------------------------------------------- fields, numbered captions, front matter
+def field(p: Paragraph, instr: str, cached: str = "", size: float = BODY, bold: bool | None = None) -> None:
+    """Complex field (begin, instruction, separate, cached result, end) inside one paragraph."""
+    for kind in ("begin", "instr", "separate", "text", "end"):
+        if kind == "text" and not cached:
+            continue
+        r = p.add_run(cached if kind == "text" else None)
+        style_run(r, size, bold)
+        if kind == "instr":
+            it = OxmlElement("w:instrText")
+            it.set(qn("xml:space"), "preserve")
+            it.text = f" {instr} "
+            r._r.append(it)
+        elif kind != "text":
+            fc = OxmlElement("w:fldChar")
+            fc.set(qn("w:fldCharType"), kind)
+            r._r.append(fc)
+
+
+def seq_caption(doc: DocxDocument, kind: str, n: int, text: str, cite: Citer | None = None,
+                above: bool = False) -> Paragraph:
+    """'Fig. 3. ...' or 'Table 2. ...' with a SEQ field, so Word can rebuild the lists of figures and tables."""
+    p = doc.add_paragraph()
+    p.alignment = CENTER
+    pf = p.paragraph_format
+    pf.space_after = Pt(4 if above else 10)
+    pf.keep_with_next = above
+    style_run(p.add_run(f"{kind} "), 10, True)
+    field(p, f"SEQ {'Figure' if kind.startswith('Fig') else 'Table'} \\* ARABIC", str(n), 10, True)
+    style_run(p.add_run(". "), 10, True)
+    add_runs(p, cite.render(text) if cite else text, 10)
+    return p
+
+
+def image(doc: DocxDocument, path: Path, width: float) -> Paragraph:
+    doc.add_picture(str(path), width=Inches(width))
+    pic = doc.paragraphs[-1]
+    pic.alignment = CENTER
+    pic.paragraph_format.keep_with_next = True
+    pic.paragraph_format.space_after = Pt(2)
+    return pic
+
+
+def pending_box(doc: DocxDocument, title: str, detail: str, height: float = 1.6) -> None:
+    """Dashed placeholder for a result that does not exist yet (never filled with invented data)."""
+    t = doc.add_table(rows=1, cols=1)
+    t.alignment = WD_TABLE_ALIGNMENT.CENTER
+    c = t.cell(0, 0)
+    c.width = Inches(TEXT_W * 0.8)
+    tcpr = c._tc.get_or_add_tcPr()
+    borders = OxmlElement("w:tcBorders")
+    for side in ("top", "left", "bottom", "right"):
+        b = OxmlElement(f"w:{side}")
+        for k, val in (("w:val", "dashed"), ("w:sz", "8"), ("w:color", "808080"), ("w:space", "0")):
+            b.set(qn(k), val)
+        borders.append(b)
+    tcpr.append(borders)
+    _shade(c, "F2F2F2")
+    tr = t.rows[0]._tr.get_or_add_trPr()
+    h = OxmlElement("w:trHeight")
+    h.set(qn("w:val"), str(int(height * 1440)))
+    h.set(qn("w:hRule"), "atLeast")
+    tr.append(h)
+    c.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+    p = c.paragraphs[0]
+    p.alignment = CENTER
+    add_runs(p, f"**{title}**", 11)
+    p2 = c.add_paragraph()
+    p2.alignment = CENTER
+    add_runs(p2, detail, 10, italic=True)
+    for q in (p, p2):
+        q.paragraph_format.keep_with_next = True
+
+
+def toc_field(doc: DocxDocument, instr: str, entries: list[tuple[int, str, int | None]]) -> None:
+    """A TOC field spanning one paragraph per entry, with a cached result (level, text, page).
+
+    The cached entries make the table correct as soon as the file opens; Word rebuilds it with Update Field.
+    """
+    entries = entries or [(1, "Right-click here and choose Update Field.", None)]
+    for k, (level, text, page) in enumerate(entries):
+        p = doc.add_paragraph()
+        pf = p.paragraph_format
+        pf.tab_stops.add_tab_stop(Inches(TEXT_W), WD_TAB_ALIGNMENT.RIGHT, WD_TAB_LEADER.DOTS)
+        pf.left_indent = Inches(0.3 * (level - 1))
+        pf.space_after = Pt(4)
+        if k == 0:
+            for kind in ("begin", "instr", "separate"):
+                r = p.add_run()
+                if kind == "instr":
+                    it = OxmlElement("w:instrText")
+                    it.set(qn("xml:space"), "preserve")
+                    it.text = f" {instr} "
+                    r._r.append(it)
+                else:
+                    fc = OxmlElement("w:fldChar")
+                    fc.set(qn("w:fldCharType"), kind)
+                    r._r.append(fc)
+        add_runs(p, text, BODY)
+        if page is not None:
+            style_run(p.add_run(f"\t{page}"))
+        if k == len(entries) - 1:
+            r = p.add_run()
+            fc = OxmlElement("w:fldChar")
+            fc.set(qn("w:fldCharType"), "end")
+            r._r.append(fc)
+
+
+def page_number_footer(doc: DocxDocument) -> None:
+    """Centred page number on every page except the title page."""
+    sec = doc.sections[0]
+    sec.different_first_page_header_footer = True
+    sec.footer.is_linked_to_previous = False
+    p = sec.footer.paragraphs[0]
+    p.alignment = CENTER
+    field(p, "PAGE", "1", 11)
+
+
+@contextmanager
+def placed_after(doc: DocxDocument, anchor) -> Iterator[list]:
+    """Content added inside the block is moved to just after `anchor`; the yielded list receives the moved elements."""
+    body = doc.element.body
+    n0 = len(body)  # the last child is w:sectPr; new content is added just before it
+    moved: list = []
+    yield moved
+    moved.extend(list(body)[n0 - 1:-1])
+    for el in reversed(moved):
+        anchor.addnext(el)

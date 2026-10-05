@@ -51,6 +51,7 @@ THIS_WORK = {
     "weak_match": "S11 only ≈ −10.3 dB near 6.5 GHz and ≈ −10.5 dB near 12.2 GHz",
     "metasurface": "Single split-ring resonator (SRR) array",
     "gap_mm": GAP_MM,
+    "ms_ground": None,                    # True / False once the metasurface board's back side is seen
 }
 
 
@@ -87,6 +88,11 @@ FOUNDATIONAL: dict[str, str] = {
             "doi: 10.1109/TAP.2003.817559.",
     "sharawi": "M. S. Sharawi, “Printed multi-band MIMO antenna systems and their performance metrics,” *IEEE Antennas "
                "Propag. Mag.*, vol. 55, no. 5, pp. 218–232, Oct. 2013, doi: 10.1109/MAP.2013.6735522.",
+    "foschini": "G. J. Foschini and M. J. Gans, “On limits of wireless communications in a fading environment when "
+                "using multiple antennas,” *Wireless Pers. Commun.*, vol. 6, no. 3, pp. 311–335, Mar. 1998, "
+                "doi: 10.1023/A:1008889222784.",
+    "telatar": "E. Telatar, “Capacity of multi-antenna Gaussian channels,” *Eur. Trans. Telecommun.*, vol. 10, no. 6, "
+               "pp. 585–595, Nov./Dec. 1999, doi: 10.1002/ett.4460100604.",
 }
 
 
@@ -115,6 +121,7 @@ class Paper:
     method: str | None = None
     results: str | None = None
     relevance: str | None = None    # limitation and what it means for this project
+    summary: str | None = None      # 2–3 sentences for the report's condensed review
     src: dict[str, str] = field(default_factory=dict)
 
 
