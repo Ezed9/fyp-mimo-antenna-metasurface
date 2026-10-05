@@ -6,7 +6,10 @@
 
 > **Source and rules.** The facts below come from the project brief, which summarises `MidSem_Report_DRAFT.pdf`
 > and `Literature_Review.pdf`. The PDFs themselves were not available when this pack was written.
-> Antenna = **circular disc, FR-4, 1.6 mm** (confirmed by the team).
+> Antenna and metasurface geometry are from the team's CST model (`presentation/STUDY_PROMPT.md` on `main`):
+> a **regular 10-sided (decagonal) patch**, R = 15 mm circumradius, on a 50 × 50 mm FR-4 board (εᵣ 4.3, tan δ 0.025, 1.6 mm).
+> The metasurface is a **ground-backed 6 × 5 array of double split-ring cells** on 1.6 mm FR-4.
+> A decagon is close to a disc, so "disc monopole" theory applies. The pack says "patch" or "decagon" for ours.
 > Everything not in the brief is marked **[fill in]**, and Appendix A says how to get each value from CST.
 > Numbers marked *(computed)* are hand or Python calculations, **not simulations**. Never present them as results.
 
@@ -27,7 +30,7 @@ is wrong, overstated or risky. Fix them in the slides **before** the evaluation.
    Near-field shorting makes the low band even worse."* That is still a damning case against the plate, and it is accurate.
 
 2. **"Every MIMO + metasurface paper reviewed is narrower-band than UWB" is true only of *your* five papers.**
-   This repository's own `LITERATURE.md` lists 4-port UWB MIMO antennas that already use reflectors or AMCs:
+   An earlier version of this repository's `LITERATURE.md` (commit 2cd3ca6, from automated web research) listed 4-port UWB MIMO antennas that already use reflectors or AMCs:
    - Mohanty & Sahu 2022: 2.08–10.4 GHz, metal reflector at ≈ 10 mm.
    - Alekya 2026: 2–12 GHz with a split-ring AMC.
    - Nirmala 2026: UWB with an FSS.
@@ -35,15 +38,16 @@ is wrong, overstated or risky. Fix them in the slides **before** the evaluation.
    It also lists two 2-port UWB designs: Azharuddin 2026 with an FSS, and Douhi 2026 with an AMC on a **5 mm** spacer.
    An examiner who knows any of these will puncture a claim like *"UWB MIMO with a metasurface has not been done."*
    **Never say "first".** Say *"among the papers we reviewed"*, and make the novelty the **combination** (§4.3).
-   Also, "far smaller than 9–20 mm" becomes "smaller than every design we reviewed, the closest being ≈ 5–10 mm".
+   Also, "far smaller than 9–20 mm" becomes "smaller than every design we reviewed". Douhi 2026 used a 5 mm spacer, and the current `LITERATURE.md` lists AboEl-Hassan 2025's air gap as 5 mm (unconfirmed).
 
-3. **Ground-backed or not is the single most important open decision.**
+3. **Why the metasurface must be ground-backed (it is, in our CST model). Know this argument.**
    - A *bare* (no copper behind) thin SRR sheet reflects with a phase between 90° and 270°. It is ≈ 180° (metal-like) at its own resonance.
    - It can sit inside the ±90° window at the low end of UWB only where its reflection is weak (|Γ| ≈ 0.3–0.5) *(computed, §3.4)*.
    - So **a bare SRR sheet cannot give strong in-phase reflection at 3.9 mm in the lower UWB band.**
    - A **ground-backed** SRR (SRR + substrate + copper = an AMC) can, over part of the band.
+   - Note: outside the cell's in-phase band, our AMC behaves like its copper ground, which sits 3.9 + 1.6 = 5.5 mm behind the antenna substrate. So the PEC argument applies there, almost as harshly as at 3.9 mm.
 
-   Decide this with your guide **before** the viva. My recommendation is ground-backed. If someone asks, answer with §6 Q-G9.
+   Our metasurface has a full copper ground on its back, so it is the AMC case. If someone asks why the ground is there, answer with §6 Q-G9.
 
 4. **Do not call it a "magnetic resonance" that gives "negative μ" in your set-up.**
    Your SRRs lie parallel to the antenna, and the wave arrives roughly at normal incidence. So the magnetic field is **in the ring's plane**
@@ -56,15 +60,17 @@ is wrong, overstated or risky. Fix them in the slides **before** the evaluation.
    **re-run that one Lg value** with tighter sweep settings, or with the time-domain solver, before Wednesday
    (Appendix A.4, about 20–40 min). Then you can say "we re-ran it and it is smooth", which is a far stronger answer.
 
-6. **Your two sweep parameters may be coupled.**
-   - If the disc is positioned by its **centre**, changing R also moves the disc's bottom edge. That changes the feed gap
-     p = (disc bottom y) − Lg. So the "R sweep" is partly also a "gap sweep".
-   - Check in CST how the disc is positioned. Be ready to state **p for the final design [fill in]**.
-   - Be ready for: *"What does Lg = −7 mm mean physically? Where is the origin?"*
+6. **Your two sweep parameters are coupled.**
+   - The patch is centred at x = 8 mm, so changing R also moves its lower flat edge (at 8 − R·cos 18°). That changes the feed gap:
+     p = (8 − R·cos 18°) − Lg, which is 15 − 0.951·R mm at Lg = −7 mm *(computed)*.
+   - So the R sweep was partly also a gap sweep: p ≈ 11.2 mm at R = 4 mm, and **p = 0.73 mm** at R = 15 mm.
+   - Be ready for: *"What does Lg = −7 mm mean physically?"* It is the ground's edge coordinate along the feed axis (x in the CST model).
+     The grounds run from x = −25 to −7 mm.
 
 7. **The f_L formula is a free-space estimate.**
    7.2/(L + r + p) is for a planar monopole over a large ground, in air. Printed versions often add a substrate correction factor,
-   which lowers f_L. Use it to show "the order of magnitude is right", not to claim precise agreement.
+   which lowers f_L. For our decagon it gives ≈ 2.18 GHz against 2.16 GHz simulated *(computed)*.
+   That is closer than such a rough formula deserves, so present it as a sanity check, not as precise agreement.
 
 8. **The "optimum" is the best within your sweep, not an optimum.**
    Both values sit at the edge of their range, so the true optimum may lie outside it, limited by the board.
@@ -200,7 +206,7 @@ Reference values: isotropic 0 dBi, short dipole 1.76 dBi, half-wave dipole 2.15 
 - **Elliptical:** the general case.
 - **Axial ratio** AR = major/minor axis. AR ≤ 3 dB is the usual criterion for "circularly polarized".
 - Polarization loss factor PLF = |ρ̂_w·ρ̂_a|². A linear antenna receiving CP loses 3 dB.
-- Our disc monopole is **linearly polarized**, along the feed axis. Check co- and cross-pol in CST (Appendix A.6).
+- Our decagonal monopole is **linearly polarized**, along the feed axis. Check co- and cross-pol in CST (Appendix A.6).
 
 **Front-to-back ratio.** F/B = 10·log₁₀(U_front/U_back) dB.
 A bare monopole radiates nearly equally to both sides, so F/B ≈ 0 dB. A good reflector should raise it a lot.
@@ -245,7 +251,7 @@ This is one of the cleanest ways to show the reflector works.
 - **Uniplanar**, so single-sided etching and no vias.
 - Easy series and shunt mounting.
 - Low dispersion and wideband.
-- Most importantly, **the CPW ground is in the same plane as the disc**, so the ground acts as the monopole's counterpoise.
+- Most importantly, **the CPW ground is in the same plane as the patch**, so the ground acts as the monopole's counterpoise.
   Its edge is a design parameter (Lg).
 - The back of the board is free, so a reflector can sit behind it without shorting a ground plane.
 
@@ -258,7 +264,9 @@ This is one of the cleanest ways to show the reflector works.
 - CST solves the 2D eigenmode of the line cross-section at the port plane. This gives an accurate Z₀ and a pure mode.
 - The port rectangle must cover the strip, both slots and enough of each ground, and extend above and below the substrate by several times h.
 - A port that is too small gives the wrong impedance. One that is too large can let **higher-order modes propagate** above some frequency.
-- Our values: W = [fill in], G = [fill in], port line impedance = [fill in] Ω (Appendix A.1).
+- Our values: W = 3 mm, G = 0.5 mm, port line impedance = [fill in] Ω (Appendix A.1).
+- **Check this one.** The textbook CPW formula for W = 3 mm and G = 0.5 mm on 1.6 mm FR-4 (εᵣ 4.3) gives ≈ 55–58 Ω, not 50 Ω *(computed)*.
+  A 58 Ω line on a 50 Ω system reflects only |Γ| ≈ 0.07 (VSWR ≈ 1.16), so the effect is minor. Read the real value from CST's port-mode line impedance and quote that.
 
 **Examiner may ask.**
 - *"Why CPW?"* Uniplanar, wideband, same-plane ground for the monopole, and a free back side.
@@ -303,25 +311,26 @@ A wide, smooth shape supports many closely spaced resonances. They overlap, so t
 *Equivalent cylinder (Kumar & Ray).*
 - A planar monopole of height L and area A behaves like a cylinder of the same height with radius r, where 2πrL = A.
 - For a disc of radius R: L = 2R and A = πR², so **r = R/4**.
-- **Lower band edge:** **f_L ≈ 7.2/(L + r + p) GHz**, with all lengths in cm and p = feed gap (ground edge to disc).
+- For our **regular decagon** (circumradius R, flat side facing the ground): L = 2R·cos 18° and A = 5R²·sin 36°, with r = A/(2πL).
+- **Lower band edge:** **f_L ≈ 7.2/(L + r + p) GHz**, with all lengths in cm and p = feed gap (ground edge to patch).
 - The 7.2 comes from λ/4 = 7.5/f (cm). An empirical factor (0.24 rather than 0.25) accounts for the fringing and thickness of the wide element.
 
-*Ours (R = 1.5 cm)* *(computed)*:
-- L = 3.0 cm and r = 0.375 cm, so f_L ≈ 7.2/(3.375 + p).
-- That gives ≈ **2.13 GHz at p = 0**, 2.07 GHz at p = 1 mm, and 1.86 GHz at p = 5 mm.
-- CST gives a lower edge of **2.16 GHz**, so the order of magnitude agrees.
-- Plug in your real p = [fill in]. Printed monopoles often need a substrate correction that lowers the estimate (§0 item 7).
+*Ours (decagon, R = 15 mm, p = 0.73 mm)* *(computed)*:
+- L = 28.5 mm, A = 661 mm², so r = 3.7 mm.
+- f_L ≈ 7.2/(2.853 + 0.369 + 0.073) = **≈ 2.18 GHz**. CST gives a lower edge of **2.16 GHz**.
+- The same formula explains the Lg sweep: at Lg = −20 mm, p = 13.7 mm, so f_L ≈ 1.57 GHz, which matches the ≈ 1.6 GHz first dip.
+- Printed monopoles often need a substrate correction that lowers the estimate (§0 item 7), so the close match is partly luck.
 
 *Overlapping resonances.*
 - Our S₁₁ dips are at 2.73, 4.78, 9.23 and 14.32 GHz.
 - Between the dips the match stays under −10 dB. The weakest points are ≈ 6.5 GHz and ≈ 12.2 GHz.
-- These are not simple harmonics. The disc and the ground edges both support current modes.
+- These are not simple harmonics. The patch and the ground edges both support current modes.
 
 *Role of the ground.*
 - In a printed monopole the CPW ground is **the other half of the antenna**: an asymmetric dipole.
   Strong currents flow along the ground's top edge.
 - Ground size sets the low-frequency match.
-- The **gap p** between the ground and the disc acts as a coupling capacitance. It controls the impedance transition and the match, especially in the mid and high band.
+- The **gap p** between the ground and the patch acts as a coupling capacitance. It controls the impedance transition and the match, especially in the mid and high band.
 - This is why Lg was the first thing we swept.
 - It is also why a **shared ground couples MIMO elements**: ground currents from one element reach the others.
 
@@ -330,7 +339,7 @@ A wide, smooth shape supports many closely spaced resonances. They overlap, so t
 - High frequency: higher-order currents give a distorted, tilted pattern and higher cross-polarization.
 
 **Examiner may ask.**
-- *"Why a disc and not a rectangle?"* Its smooth curvature gives gradual impedance transitions and more overlapping modes, so a wider band.
+- *"Why a decagon and not a rectangle?"* A 10-sided polygon is nearly a disc. Its smooth outline gives gradual impedance transitions and more overlapping modes, so a wider band. It is also easy to model in CST: a cylinder with 10 segments.
 - *"What sets the lowest frequency?"* The overall length L + r + p, which is roughly a quarter wavelength.
 - *"Why does the ground matter?"* It is part of the radiator.
 
@@ -410,7 +419,7 @@ MEGᵢ ≈ 0.5·(1 − Σⱼ|Sᵢⱼ|²) (≈ 0.5·η_rad,i for an isotropic env
 
 The Sievenpiper "mushroom" (patches on a grounded substrate with vias) is *both* an AMC and an EBG.
 A ground-backed FSS often behaves as an AMC.
-**Our SRR layer is a metasurface. If ground-backed it is an AMC. If not, it behaves like a resonant FSS.**
+**Our SRR layer is a metasurface. Because it is ground-backed, it is an AMC. Without the ground it would behave like a resonant FSS.**
 
 **Examiner may ask.**
 - *"Is your metasurface a metamaterial?"* It is a single-layer, sub-wavelength periodic surface, so a metasurface.
@@ -440,7 +449,7 @@ A ground-backed FSS often behaves as an AMC.
   - narrower split, or a second inner ring → more C → lower f₀ (the inner ring also adds a second resonance);
   - higher εᵣ → lower f₀ and a narrower band;
   - thicker grounded substrate → wider in-phase band (§1.11).
-- **Our SRR dimensions:** [fill in]. Unit-cell period: [fill in]. Ground-backed: [not decided].
+- **Our SRR:** two concentric split rings (Pendry type) per cell, 6 × 5 cells on 1.6 mm FR-4, full copper ground on the back. Ring dimensions: [fill in]. Unit-cell period: [fill in].
 
 **Examiner may ask.**
 - *"Derive f₀."* f₀ = 1/(2π√(LC)), as above.
@@ -536,9 +545,9 @@ If it arrives **out of step**, they cancel.
   - Adding MIMO raises capacity and reliability.
 - **Why a CPW feed.**
   - It is uniplanar, so one copper layer and cheap fabrication.
-  - The ground lies beside the disc in the same plane and is part of the radiator. Its edge (Lg) is a strong tuning knob.
+  - The ground lies beside the patch in the same plane and is part of the radiator. Its edge (Lg) is a strong tuning knob.
   - The back of the board has no copper, so a reflector can be placed behind it, which is the whole point of Phase I.
-- **Why a disc monopole.**
+- **Why a disc-like (decagonal) monopole.**
   - It is the textbook UWB radiator: many overlapping modes, a simple geometry, near-omnidirectional patterns and modest gain.
   - Its weakness is that it radiates **both ways**, giving low forward gain (a few dBi) and F/B ≈ 0 dB.
   - That weakness is exactly what the metasurface is meant to fix.
@@ -547,28 +556,30 @@ If it arrives **out of step**, they cancel.
 
 | Parameter | Meaning | Value |
 |---|---|---|
-| Substrate | FR-4 | εᵣ = [fill in, CST "FR-4 (lossy)" is 4.3], tan δ = [fill in, CST library 0.025], h = 1.6 mm |
-| Ws × Ls | Board size | [fill in] mm |
-| R | Disc radius | **15 mm** (optimised) |
-| Lg | y-coordinate of the CPW ground's top edge | **−7 mm** (optimised) |
-| W_f | Feed strip width | [fill in] |
-| G | CPW slot width | [fill in] |
-| Wg × Lg_len | Each ground plane's size | [fill in] |
-| p | Feed gap = disc bottom y − Lg | [fill in] (derive it from the disc's position) |
+| Substrate | FR-4 (lossy) | εᵣ = 4.3, tan δ = 0.025, h = 1.6 mm; copper on the front only, back bare |
+| Ws × Ls | Board size | 50 × 50 mm |
+| R | Circumradius of the regular decagon, centred at x = 8 mm | **15 mm** (optimised) |
+| Lg | Coordinate of the CPW grounds' edge along the feed axis (x) | **−7 mm** (optimised) |
+| W_f | Feed strip width | 3 mm |
+| G | CPW slot width | 0.5 mm |
+| Ground planes | Each ground plane's extent | x from −25 to −7 mm (18 mm); 23 mm wide (|y| from 2 to 25 mm) |
+| p | Feed gap = patch's lower edge − Lg | **0.73 mm** *(computed)* |
 | Copper | Thickness t | [fill in, typically 0.035 mm] |
 | h (gap) | Antenna-to-metasurface air gap | **3.9 mm** |
-| SRR cell | Period, ring radii, strip width, split | [fill in] |
-| Metasurface | N × N cells, substrate, ground-backed? | [fill in] / [not decided] |
+| SRR cell | Two concentric split rings; period, ring radii, strip width, split | [fill in] |
+| Metasurface | Cells, substrate, back | 6 × 5 cells, 1.6 mm FR-4, full copper ground |
+| Board margin | Patch top to board edge | 2.7 mm (limits R) |
+| Total profile | 1.6 + 3.9 + 1.6 mm | ≈ 7.1 mm plus copper *(computed)* |
 
 How to fill this in: Appendix A.1.
 
 ### 2.3 What Lg does physically, and how to read the Lg sweep
 
-- **Physics.** Lg is the y-coordinate of the CPW ground's top edge. Moving it from −20 mm towards −7 mm moves the ground edge **closer to the disc**.
-  1. The length of exposed feed line between the ground and the disc **shrinks**. A long exposed feed radiates as an extension of the monopole,
+- **Physics.** Lg is the coordinate of the CPW grounds' edge along the feed axis. Moving it from −20 mm towards −7 mm moves the ground edge **closer to the patch**, shrinking the gap from p ≈ 13.7 mm to 0.73 mm.
+  1. The length of exposed feed line between the ground and the patch **shrinks**. A long exposed feed radiates as an extension of the monopole,
      so the effective radiator is long and the first resonance is low (≈ 1.6 GHz). A shorter exposed feed raises it towards ≈ 2.7 GHz.
      This matches the f_L formula: smaller p gives a higher f_L.
-  2. The **ground–disc gap p** sets the coupling capacitance at the feed transition. A smaller gap gives a smoother impedance transition from 50 Ω to the radiator,
+  2. The **ground–patch gap p** sets the coupling capacitance at the feed transition. A smaller gap gives a smoother impedance transition from 50 Ω to the radiator,
      so the dips get deeper and the match improves across the band.
 - **Reading the plot.**
   - The x-axis is frequency (0–18 GHz) and the y-axis is |S₁₁| in dB, with one curve per Lg value. Draw the −10 dB line.
@@ -580,11 +591,11 @@ How to fill this in: Appendix A.1.
 ### 2.4 What R does physically, and how to read the R sweep
 
 - **Physics.**
-  - The disc radius sets the radiator size, so it sets the **lowest frequency** (L = 2R in the f_L formula).
-  - A bigger disc also supports more, closer-spaced modes, so it gives a **wider continuous band**.
-  - Small discs (4 mm) are too short to resonate low and give narrow, high-frequency matches.
+  - The patch radius sets the radiator size, so it sets the **lowest frequency** (L = 2R·cos 18° in the f_L formula).
+  - A bigger patch also supports more, closer-spaced modes, so it gives a **wider continuous band**.
+  - Small patches (4 mm) are too short to resonate low and give narrow, high-frequency matches.
   - As R grows towards 15 mm the band extends downwards and fills in.
-- **Coupling caveat.** If the disc is placed by its centre, changing R also changes the feed gap p (§0 item 6). Say so if asked.
+- **Coupling caveat.** The patch is placed by its centre (x = 8 mm), so changing R also changed the feed gap p, from ≈ 11.2 mm at R = 4 mm to 0.73 mm at R = 15 mm (§0 item 6). Say so if asked.
 - **Reading the plot.** The axes are the same as for Lg. Follow the **lower −10 dB edge moving left** as R increases, and the gaps between dips filling in.
 - **Best: R = 15 mm**, the widest continuous −10 dB band.
 
@@ -606,7 +617,7 @@ How to fill this in: Appendix A.1.
   - They are only 0.3–0.5 dB inside the limit, so **little margin**. Fabrication tolerance or the metasurface could push them above −10 dB.
   - Say this yourself before the examiner does.
   - Possible fixes if they break: re-tune Lg or p, change the feed gap shape (taper or bevel), or add a ground slot.
-- **Why the band extends far beyond 10.6 GHz.** A disc monopole is naturally very wideband.
+- **Why the band extends far beyond 10.6 GHz.** A disc-like monopole is naturally very wideband.
   The extra band is margin. We do not claim operation there, because the pattern degrades at high frequency.
 
 ### 2.6 How to read the gain plot
@@ -632,8 +643,8 @@ How to fill this in: Appendix A.1.
 
   State this criterion explicitly. Examiners dislike a "best" with no definition.
 - **Edge optimum.**
-  - Lg = −7 mm is the closest the ground can come to the disc in our layout before p becomes too small or the parts overlap: [fill in the actual limit].
-  - R = 15 mm is the largest disc that fits on the board: [fill in the board width].
+  - Lg = −7 mm leaves a gap of only p = 0.73 mm. Moving further would shrink the gap towards zero and then make the parts overlap.
+  - R = 15 mm puts the patch top 2.7 mm from the edge of the 50 mm board. A bigger patch would not fit.
   - So "best" means **best within the constraint**, and the true unconstrained optimum may lie beyond it.
   - That is normal when the board size is fixed. Mention that a joint optimisation (CST optimiser, Trust Region) is possible.
 
@@ -653,15 +664,15 @@ How to fill this in: Appendix A.1.
 ### 2.9 The SRR unit cell, the antenna + metasurface step, and why the PEC baseline matters
 
 **Unit cell (status: pending).**
-1. Draw one SRR cell on its substrate, with or without a ground plane.
-2. Set **unit-cell boundaries** in x and y and **Floquet ports** on z (Zmax, and Zmin if not ground-backed).
+1. Draw one double-split-ring cell on 1.6 mm FR-4 with its copper ground.
+2. Set **unit-cell boundaries** in x and y and a **Floquet port** on Zmax. Our cell is ground-backed, so Zmin can be an electric wall.
 3. Read the reflection **phase and magnitude** of S(Zmax,Zmax), de-embedded to the cell surface.
 4. Compare it with the required curve φ_R = 2k₀h ± 90° (§3.4).
 
 Appendix A.5 gives the steps.
 
 **Antenna + metasurface (status: pending).**
-- Place an N × N array at h = 3.9 mm behind the board.
+- Place the 6 × 5 array at h = 3.9 mm behind the board.
 - Re-run S₁₁ (near-field loading will detune it, so expect to re-tune Lg) and the gain, F/B and patterns.
 
 **Why the PEC baseline matters.**
@@ -677,12 +688,11 @@ Appendix A.5 gives the steps.
 ### 3.1 Lower band-edge estimate
 
 - **Formula:** f_L ≈ 7.2/(L + r + p) GHz, with lengths in cm.
-  - For a disc: L = 2R and r = R/4 (equivalent-cylinder radius from 2πrL = πR²). p is the feed gap.
-- **Our numbers** *(computed)*, with R = 1.5 cm:
-  - L + r = 3.375 cm.
-  - f_L = 2.13 GHz (p = 0), 2.07 GHz (p = 1 mm), 1.86 GHz (p = 5 mm).
-  - CST gives 2.16 GHz.
-- **Intuition.** L + r + p is roughly the quarter-wave "electrical height" of the monopole. A bigger disc means a longer quarter-wave, so a lower f_L.
+  - For a disc: L = 2R and r = R/4. For our decagon: L = 2R·cos 18° = 28.5 mm and r = A/(2πL) = 3.7 mm (A = 661 mm²). p is the feed gap.
+- **Our numbers** *(computed)*:
+  - L + r + p = 2.853 + 0.369 + 0.073 = 3.295 cm, so f_L ≈ **2.18 GHz**. CST gives 2.16 GHz.
+  - At Lg = −20 mm (p = 13.7 mm), f_L ≈ 1.57 GHz, which matches the ≈ 1.6 GHz first dip in the Lg sweep.
+- **Intuition.** L + r + p is roughly the quarter-wave "electrical height" of the monopole. A bigger patch means a longer quarter-wave, so a lower f_L.
 - **Caveats.**
   - The formula is empirical and assumes free space over a large ground.
   - Printed monopoles add a substrate correction that lowers f_L.
@@ -783,13 +793,13 @@ The ray factor is |1 + e^{jΔ}| = 2|cos(Δ/2)|, where Δ is the phase error.
 
 - **Sen 2017.**
   - Split-ring metasurface reflector behind a UWB circular monopole, with ≈ +5.5 dB gain.
-  - **Relevance:** closest to our Phase I idea (SRR behind a UWB disc).
+  - **Relevance:** closest to our Phase I idea (SRR behind a UWB disc-like monopole).
   - Its trick of **varying split angles** to broaden the response is one of our widening options.
 - **Al-Gburi 2022.**
-  - CPW-fed ring monopole on 1.6 mm FR-4, grown from a 15 mm-radius disc, so the same starting disc size as our R = 15 mm.
+  - CPW-fed ring monopole on 1.6 mm FR-4, grown from a 15 mm-radius disc, so the same size as our R = 15 mm patch.
   - A 19 × 19 ground-backed FSS gives a 10 mm total profile.
   - Gain 6.7 → 11.5 dB; measured band 2.2–11.9 GHz.
-  - **Relevance:** same feed, substrate and disc size. It shows that a large ground-backed FSS can nearly double the gain in dB terms.
+  - **Relevance:** same feed, substrate and patch size. It shows that a large ground-backed FSS can nearly double the gain in dB terms.
 - **Hussain 2023.**
   - CPW hexagonal patch on Rogers 6002 with a 5 × 5 FSS at 9 mm.
   - The band widened from 5–17 to 3–18 GHz and the gain rose from 6.5 to 10.5 dBi. Measured.
@@ -913,11 +923,11 @@ Each script below is roughly what to say, not something to read out. **Bold** ma
 
 **Slide 3: Objectives (Chanswarang, 0:45)**
 - *Points:*
-  1. A CPW-fed disc monopole covering all of UWB (|S₁₁| ≤ −10 dB).
+  1. A CPW-fed decagonal monopole covering all of UWB (|S₁₁| ≤ −10 dB).
   2. Optimise it by parametric study (Lg, R).
   3. Design an SRR metasurface and place it 3.9 mm behind; compare with no reflector and a metal plate.
   4. Phase II: 2- or 4-port MIMO with the metasurface, then fabrication and measurement.
-- *Script:* "We have four objectives. First, a single CPW-fed disc monopole covering the full UWB band. Second, optimise it with a parametric study.
+- *Script:* "We have four objectives. First, a single CPW-fed decagonal monopole covering the full UWB band. Second, optimise it with a parametric study.
   Third, design a split-ring-resonator metasurface and test it 3.9 millimetres behind the antenna, **compared fairly against both no reflector and a metal plate at the same gap**.
   Fourth, after mid-sem, extend it to a multi-port MIMO antenna and fabricate it. Today we report objectives one and two complete, and three in progress.
   I'll hand over to Anushka for the literature."
@@ -926,7 +936,7 @@ Each script below is roughly what to say, not something to read out. **Bold** ma
 - *Points:* Sen 2017, Al-Gburi 2022, Hussain 2023, Hammache 2024, AboEl-Hassan 2025 (one line each). Gains of +4 to +6 dB, but at gaps of 9–20 mm.
 - *Script:* "We reviewed ten papers in two groups. Single antennas first.
   Sen 2017 put a split-ring metasurface behind a UWB circular monopole and gained about 5.5 dB.
-  Al-Gburi 2022 used a CPW ring monopole on FR-4, grown from the same 15 mm disc we use, with a ground-backed FSS: gain from 6.7 to 11.5 dB, with a 10 mm profile.
+  Al-Gburi 2022 used a CPW ring monopole on FR-4, grown from a 15 mm disc, the same size as our patch, with a ground-backed FSS: gain from 6.7 to 11.5 dB, with a 10 mm profile.
   Hussain 2023 placed an FSS at 9 mm, and Hammache 2024 at 20 mm, raising realized gain from 2.2 to 8.4 dBi.
   AboEl-Hassan 2025 reached about 10 dBi with an AMC, but only from 3.5 to 6.5 GHz.
   **The pattern: big gains, but at gaps of 9 to 20 millimetres, or over a narrower band.**"
@@ -941,7 +951,7 @@ Each script below is roughly what to say, not something to read out. **Bold** ma
 
 **Slide 6: Proposed methodology (Anushka, 0:45)**
 - *Points:* a flow chart:
-  1. disc monopole;
+  1. decagonal monopole;
   2. Lg sweep;
   3. R sweep;
   4. optimised antenna;
@@ -971,23 +981,23 @@ Each script below is roughly what to say, not something to read out. **Bold** ma
   One caveat: 3.9 mm is only 0.04 wavelengths, deep in the near field, so this ray picture is a guide and we must re-check the matching in simulation."
 
 **Slide 8: Antenna design (Nishit, 0:45)**
-- *Points:* geometry figure; dimension table (FR-4 1.6 mm, R = 15 mm, Lg = −7 mm, W_f, G, board size [fill in]); waveguide port; open boundaries.
-- *Script:* "This is our antenna: a circular disc fed by a coplanar waveguide on 1.6 mm FR-4. The two CPW grounds sit beside the feed on the same side, and act as the other half of the antenna.
-  The final dimensions are in the table: radius 15 mm and ground edge at minus 7 mm. We excite it with a waveguide port, and the boundaries are open."
+- *Points:* geometry figure (`figures/cst_single_geometry.png`); dimension table (50 × 50 mm FR-4, εᵣ 4.3, 1.6 mm; decagon R = 15 mm; Lg = −7 mm; feed 3 mm, slots 0.5 mm; gap p = 0.73 mm); waveguide port; open boundaries.
+- *Script:* "This is our antenna: a ten-sided patch, almost a disc, fed by a coplanar waveguide on a 50 by 50 millimetre FR-4 board. The two CPW grounds sit beside the feed on the same side, and act as the other half of the antenna.
+  The final dimensions are in the table: radius 15 mm, ground edge at minus 7 mm, which leaves a 0.73 mm gap to the patch. We excite it with a waveguide port, and the boundaries are open."
 
 **Slide 9: Parametric study, Lg (Nishit, 1:00)**
 - *Points:* ten values from −20 to −7 mm at R = 15 mm. The first resonance moves from ≈ 1.6 to ≈ 2.7 GHz and the matching improves. Best Lg = −7 mm.
 - *Script:* "First we swept the ground edge position Lg over ten values from minus 20 to minus 7 mm.
-  Moving the ground towards the disc shortens the exposed feed and tightens the coupling gap, so the first resonance moves up from about 1.6 to 2.7 GHz,
+  Moving the ground towards the patch shortens the exposed feed and tightens the coupling gap, so the first resonance moves up from about 1.6 to 2.7 GHz,
   and the matching across the band improves. **Lg = −7 mm gave the best match.**
   [Point at the curve.] You'll notice some curves jump near 4 and 6.2 GHz, and one goes above 0 dB. That is physically impossible for a passive antenna.
   It's a numerical artefact of the broadband frequency sweep, which we explain on a backup slide. The final optimised run is smooth."
 
 **Slide 10: Parametric study, R (Nishit, 1:00)**
-- *Points:* 13 values from 4 to 15 mm at Lg = −7 mm. A bigger disc gives a lower band edge and more overlapping modes. Best R = 15 mm. Both optima sit at the edge, set by the board.
-- *Script:* "Then, with Lg fixed, we swept the disc radius from 4 to 15 mm. A bigger disc is a longer radiator, so the band starts lower,
+- *Points:* 13 values from 4 to 15 mm at Lg = −7 mm. A bigger patch gives a lower band edge and more overlapping modes. Best R = 15 mm. Both optima sit at the edge, set by the board.
+- *Script:* "Then, with Lg fixed, we swept the patch radius from 4 to 15 mm. A bigger patch is a longer radiator, so the band starts lower,
   and it supports more overlapping resonances, so the band fills in. **R = 15 mm gave the widest continuous band.**
-  Both optimum values sit at the edge of their sweep range. That's because the board size limits how big the disc can be and how close the ground can come.
+  Both optimum values sit at the edge of their sweep range. That's because the board size limits how big the patch can be, with only 2.7 mm left to the board edge, and how close the ground can come, with only a 0.73 mm gap left.
   So these are the best values within the board constraint. Sanjana will now show the optimised result."
 
 **Slide 11: Optimised antenna, S₁₁ and gain (Sanjana, 1:15)**
@@ -1021,7 +1031,7 @@ Each script below is roughly what to say, not something to read out. **Bold** ma
 **Slide 13: Work done and challenges (Sanjana, 0:45)**
 - *Points:*
   - *Done:* literature review, antenna design, Lg and R sweeps, optimised antenna (S₁₁ and gain), gap theory.
-  - *Challenges:* sweep artefacts (we use only the final smooth run), 3.9 mm is in the near field, one resonance cannot cover UWB, decision on a ground-backed metasurface, simulation time.
+  - *Challenges:* sweep artefacts (we use only the final smooth run), 3.9 mm is in the near field, one resonance cannot cover UWB, simulation time.
 - *Script:* "So far we've completed the review, the antenna design and optimisation, and the theory for the gap.
   Our challenges are the sweep artefacts we showed, the near-field coupling at such a small gap, and the bandwidth limit of a single SRR resonance."
 
@@ -1038,7 +1048,7 @@ Each script below is roughly what to say, not something to read out. **Bold** ma
 
 **Slide 15: Conclusion and references (Chanswarang, 0:30)**
 - *Points:* three take-aways plus a references list.
-- *Script:* "To conclude: one, our CPW disc monopole covers 2.16 to 15.73 GHz with 3 to 5 dBi gain. Two, theory shows a metal plate cannot work 3.9 mm behind it, but a metasurface with the right reflection phase can. Three, the metasurface and MIMO stages are next.
+- *Script:* "To conclude: one, our CPW-fed decagonal monopole covers 2.16 to 15.73 GHz with 3 to 5 dBi gain. Two, theory shows a metal plate cannot work 3.9 mm behind it, but a metasurface with the right reflection phase can. Three, the metasurface and MIMO stages are next.
   Thank you. We're happy to take questions."
 
 **Transitions (memorise these):**
@@ -1125,7 +1135,7 @@ The network is reciprocal, which holds for any antenna without ferrites or activ
 With a VNA (vector network analyser) calibrated with SOLT (short-open-load-thru) standards at the cable end. Connect the antenna via its SMA connector and read S₁₁ in dB over the band.
 
 **B9. What is impedance matching, and how is it achieved in your antenna?**
-Making the antenna's input impedance close to 50 Ω over the band. In our antenna it is achieved by the CPW feed width and slot width (a 50 Ω line), the ground-to-disc gap (Lg/p), and the disc size (R).
+Making the antenna's input impedance close to 50 Ω over the band. In our antenna it is achieved by the CPW feed width and slot width (a 50 Ω line), the ground-to-patch gap (Lg, giving p = 0.73 mm), and the disc size (R).
 
 **B10. What is a Smith chart used for here?**
 It plots the complex Γ (or impedance) against frequency. A wideband antenna's locus circles tightly inside the VSWR = 2 circle. It shows *why* a frequency is mismatched (too capacitive or too inductive), which tells you which dimension to change.
@@ -1148,7 +1158,7 @@ e_rad = P_rad/P_accepted. Losses in copper and FR-4 reduce it. Total efficiency 
 The angular distribution of radiated power in the far field. The E-plane contains the E-vector and the direction of maximum radiation; the H-plane contains the H-vector and the direction of maximum radiation. For a monopole at low frequency the H-plane is near-omnidirectional and the E-plane is a figure-8.
 
 **C6. What polarization is your antenna?**
-Linear, along the feed/disc axis, because the dominant currents flow along that axis. At higher frequencies the cross-polarization rises as current paths diversify.
+Linear, along the feed axis, because the dominant currents flow along that axis. At higher frequencies the cross-polarization rises as current paths diversify.
 
 **C7. What is axial ratio?**
 The ratio of the major to the minor axis of the polarization ellipse. AR = 0 dB is perfect CP. AR ≤ 3 dB counts as circular. A linear antenna has a very large AR.
@@ -1184,7 +1194,7 @@ The electrical size grows with frequency, so the pattern becomes more directive 
 CPW is uniplanar: signal and grounds on one side, a single etching step, no vias. The coplanar ground acts as part of the monopole and is easy to tune (Lg). The back side is free for a reflector.
 
 **D2. How is the 50 Ω CPW designed?**
-Z₀ = (30π/√εeff)·K(k′)/K(k) with k = W/(W + 2G) and εeff ≈ (εᵣ + 1)/2. We choose W and G, then confirm in CST from the port's line impedance. Our values: W = [fill in], G = [fill in].
+Z₀ = (30π/√εeff)·K(k′)/K(k) with k = W/(W + 2G) and εeff ≈ (εᵣ + 1)/2. We chose W = 3 mm and G = 0.5 mm, then confirm the value in CST from the port's line impedance. The textbook formula gives ≈ 55–58 Ω for these values *(computed)*, so quote CST's number, not "exactly 50".
 
 **D3. What is the odd (slotline) mode in CPW?**
 A mode where the two grounds are at different potentials. It is excited by asymmetry. It is suppressed by keeping the structure symmetric, or with air bridges or vias in circuits.
@@ -1208,10 +1218,10 @@ The wide, smooth element supports many closely spaced current modes, so the reso
 f_L ≈ 7.2/(L + r + p) GHz with L = 2R = 3 cm and r = R/4 = 0.375 cm. That gives ≈ 2.1 GHz for a small gap p, and CST gives 2.16 GHz. The formula is an empirical free-space estimate, so it confirms the order of magnitude, not a precise value.
 
 **D10. What is the role of the ground plane?**
-It is the other arm of the antenna (an asymmetric dipole). Its edge currents radiate, and the ground-to-disc gap controls the match. Changing Lg moved our first resonance from ≈ 1.6 to ≈ 2.7 GHz.
+It is the other arm of the antenna (an asymmetric dipole). Its edge currents radiate, and the ground-to-patch gap controls the match. Changing Lg moved our first resonance from ≈ 1.6 to ≈ 2.7 GHz.
 
-**D11. Why a circular disc rather than a rectangle?**
-Curvature gives a gradually varying gap to the ground, so the impedance changes smoothly with frequency and more modes overlap. The result is a wider band than a sharp-cornered rectangle.
+**D11. Why a decagon (nearly a disc) rather than a rectangle?**
+A 10-sided patch behaves almost like a disc. Its curvature gives a gradually varying gap to the ground, so the impedance changes smoothly with frequency and more modes overlap. The result is a wider band than a sharp-cornered rectangle.
 
 **D12. What is pulse fidelity / group delay?**
 How well the received pulse keeps the shape of the transmitted one. A flat group delay (variation under ≈ 1 ns) means little distortion. We have not evaluated it yet; it can be done in CST with probes.
@@ -1219,10 +1229,10 @@ How well the received pulse keeps the shape of the transmitted one. A flat group
 ### E. Our design and results
 
 **E1★. Describe your antenna in 30 seconds.**
-A circular disc of radius 15 mm, fed by a coplanar waveguide on 1.6 mm FR-4, with the CPW grounds on the same side and their top edge at Lg = −7 mm. It is matched from 2.16 to 15.73 GHz (151.7 % FBW) with 2.9–4.9 dBi IEEE gain over UWB. An SRR metasurface 3.9 mm behind it is the next step.
+A regular decagonal patch of circumradius 15 mm, fed by a coplanar waveguide (3 mm strip, 0.5 mm slots) on a 50 × 50 mm, 1.6 mm FR-4 board, with the CPW grounds on the same side and their edge at Lg = −7 mm, a 0.73 mm gap from the patch. It is matched from 2.16 to 15.73 GHz (151.7 % FBW) with 2.9–4.9 dBi IEEE gain over UWB. An SRR metasurface 3.9 mm behind it is the next step.
 
 **E2★. What is Lg, physically?**
-The y-coordinate of the top edge of the CPW ground planes. It sets how close the ground comes to the disc, which sets the exposed feed length and the coupling gap p = [fill in] mm.
+The coordinate of the CPW grounds' edge along the feed axis (x in the CST model). It sets how close the ground comes to the patch, which sets the exposed feed length and the coupling gap: p = 0.73 mm at Lg = −7 mm.
 
 **E3★. Why did moving the ground edge up raise the first resonance?**
 A long exposed feed radiates as part of the monopole and makes it electrically longer, so the resonance is lower (≈ 1.6 GHz). Moving the ground up shortens it, which raises the resonance (≈ 2.7 GHz). The smaller gap also smooths the impedance transition, so the match improves.
@@ -1243,7 +1253,7 @@ The curve whose −10 dB region covers all of 3.1–10.6 GHz as one continuous b
 Near 6.5 GHz (≈ −10.3 dB) and 12.2 GHz (≈ −10.5 dB), the valleys between resonances. They are within spec but with only ≈ 0.3–0.5 dB of margin, so fabrication tolerance or the metasurface could push them over. We will watch them after adding the metasurface.
 
 **E9. Why does the band extend to 15.7 GHz if you only need 10.6?**
-A disc monopole is naturally very wideband. The extra range is margin and is not a design goal. We do not claim operation above 10.6 GHz, because the pattern degrades there.
+A disc-like monopole is naturally very wideband. The extra range is margin and is not a design goal. We do not claim operation above 10.6 GHz, because the pattern degrades there.
 
 **E10. How does your FBW compare to UWB's requirement?**
 UWB needs 109.5 % (3.1–10.6 GHz). We have 151.7 %, with ≈ 0.94 GHz of margin below 3.1 GHz and ≈ 5.1 GHz above 10.6 GHz.
@@ -1255,13 +1265,13 @@ For a bidirectional planar monopole, yes: 2–5 dBi is typical. It is low compar
 That is where one current mode hands over to the next, coinciding with the weak match at 6.5 GHz. The pattern likely changes shape there. We would confirm by plotting the pattern and surface current at 6.3 GHz.
 
 **E13. What substrate did you use and why?**
-FR-4, 1.6 mm, with εᵣ = [fill in] and tan δ = [fill in]. It is cheap, available in the institute lab, and standard in the literature, so comparisons are fair. Its loss (tan δ ≈ 0.02) reduces efficiency at higher frequencies.
+FR-4 (lossy), 1.6 mm, with εᵣ = 4.3 and tan δ = 0.025 (CST library). It is cheap, available in the institute lab, and standard in the literature, so comparisons are fair. Its loss (tan δ ≈ 0.02) reduces efficiency at higher frequencies.
 
 **E14. Board size?**
-[fill in] mm × [fill in] mm. It limited R to 15 mm and the ground position, which is why the optima sit at the sweep edges.
+50 × 50 mm. With R = 15 mm the patch top is only 2.7 mm from the board edge, and the gap to the ground is 0.73 mm. That is why the optima sit at the sweep edges.
 
 **E15. What is the overall profile with the metasurface?**
-1.6 mm antenna substrate + 3.9 mm air gap + the metasurface substrate [fill in] mm, giving [fill in] mm in total. That is 0.04 λ for the gap alone at 3.1 GHz.
+1.6 mm antenna substrate + 3.9 mm air gap + 1.6 mm metasurface substrate, giving ≈ 7.1 mm in total, plus copper. That is 0.04 λ for the gap alone at 3.1 GHz.
 
 **E16★. Why 3.9 mm specifically?**
 Answer honestly: [fill in the real reason: guide's suggestion, available spacer, or a target profile]. Theory: at 3.9 mm the required reflection phase is small and positive (29° at 3.1 GHz to 99° at 10.6 GHz), which a metasurface can plausibly provide and a metal plate cannot. It keeps the profile low. A sweep of h is planned to see the trade-off.
@@ -1342,8 +1352,8 @@ A PEC reflects with 180°. The extra 180° from a λ/2 round trip (2 × λ/4) br
 **G8★. What happens with a metal plate at 3.9 mm?**
 It is 151° out of phase at 3.1 GHz, so in the ray model it cancels about half the forward field (−6 dB). It breaks even only near 6.4 GHz and is within ±90° only above 9.6 GHz. In the near field its opposite image current also shorts out the antenna's radiation resistance.
 
-**G9★. Ground-backed or not? What is the difference?**
-A ground-backed SRR (an AMC) reflects almost totally, with a phase sweeping +180° → 0° → −180°, so it can give the small positive phase we need over part of the band. A bare SRR sheet reflects partially, with a phase between 90° and 270° (≈ 180° at resonance, like metal), so in the low band it can be in the window only where its reflection is weak. Our decision: [fill in; recommended ground-backed].
+**G9★. Why is your metasurface ground-backed?**
+A ground-backed SRR (an AMC) reflects almost totally, with a phase sweeping +180° → 0° → −180°, so it can give the small positive phase we need over part of the band. A bare SRR sheet reflects partially, with a phase between 90° and 270° (≈ 180° at resonance, like metal), so in the low band it can be in the window only where its reflection is weak. That is why ours has a full copper ground on the back.
 
 **G10. What is the ±90° bandwidth?**
 The frequency range where the reflection phase lies within ±90° of the target, so the reflected wave adds at least +3 dB to the direct wave (equal amplitudes). For a classical AMC the target is 0°; for us it is 2k₀h.
@@ -1355,7 +1365,7 @@ Foster's theorem: a passive lossless surface's reflection phase *falls* with fre
 Dual-resonant cells (two rings, or ring + patch) that create a phase plateau; varying split angles across the array (Sen 2017); multiple layers; a thicker or lower-loss spacer substrate. Or accept a sub-band, or increase h.
 
 **G13. How many cells do you need?**
-Enough to cover at least the antenna footprint, and ideally to extend past it, because edge cells behave differently from an infinite array. Ours: [fill in] × [fill in]. Hasan used 10 × 10, Al-Gburi 19 × 19, Hussain 5 × 5.
+Enough to cover at least the antenna footprint, and ideally to extend past it, because edge cells behave differently from an infinite array. Ours is 6 × 5 cells. Hasan used 10 × 10, Al-Gburi 19 × 19, Hussain 5 × 5.
 
 **G14. Does a finite array behave like the unit-cell simulation?**
 Only approximately. The unit cell assumes an infinite array and plane-wave incidence, but the antenna's near field is not a plane wave and the edges diffract. That is why the full antenna + metasurface simulation is the real test.
@@ -1456,11 +1466,11 @@ From measured S-parameters (with the lossless caveat), or better from measured c
 - *Fallback:* "That point is non-physical, so we've excluded it. We are re-running that case with more frequency samples and the time-domain solver to confirm, and it does not affect our chosen design."
 
 **K2★. Why is your optimum at the edge of the sweep?**
-- *Answer:* "Both parameters are constrained by the board: R = 15 mm is the largest disc that fits, and Lg = −7 mm is as close as the ground can come to the disc. So these are the best values within the constraint, not unconstrained optima. Going further would mean a bigger board."
+- *Answer:* "Both parameters are constrained by the board: R = 15 mm leaves only 2.7 mm to the board edge, and Lg = −7 mm leaves only a 0.73 mm gap to the patch. So these are the best values within the constraint, not unconstrained optima. Going further would mean a bigger board."
 - *Fallback:* "You're right that the true optimum may lie beyond. We chose to keep the board size fixed. A joint optimisation over Lg and R, and a sweep slightly past the edge if the geometry allows, is on our list."
 
 **K3★. Why the frequency-domain solver for UWB? Would time-domain be better?**
-- *Answer:* "Time-domain is usually the default for broadband antennas, because one pulse gives the whole band, and it would be a valid choice here. We used the frequency-domain solver because it meshes the curved disc well with tetrahedra, it has adaptive mesh refinement, and our metasurface unit-cell simulation with Floquet ports also uses it, so the whole project stays on one solver. The downside is the broadband-sweep artefacts you've seen."
+- *Answer:* "Time-domain is usually the default for broadband antennas, because one pulse gives the whole band, and it would be a valid choice here. We used the frequency-domain solver because it meshes the many-sided curved patch well with tetrahedra, it has adaptive mesh refinement, and our metasurface unit-cell simulation with Floquet ports also uses it, so the whole project stays on one solver. The downside is the broadband-sweep artefacts you've seen."
 - *Fallback:* "Cross-validating the final design with the time-domain solver is the right check, and we'll include it. If the two agree, the solver choice doesn't matter."
 
 **K4★. Did you check mesh convergence?**
@@ -1506,11 +1516,11 @@ From measured S-parameters (with the lossless caveat), or better from measured c
 - *Answer:* "Then we'll report that, with the reason. Our phase analysis and the metal-plate baseline will tell us whether the phase was wrong, the near-field loading dominated, or the band was too wide for one resonance. Then we fix it: a dual-resonant or graded cell, a thicker spacer, or a larger gap, and we report gain against gap. A justified negative result with a fair baseline is still a valid result."
 - *Fallback:* "Theory already predicts the improvement will be partial over UWB, not uniform. So our success criterion is a clear gain increase over part of the band without losing the match, compared with both no reflector and a metal plate."
 
-**K13. Your f_L formula gives 2.13 GHz with p = 0. Isn't the agreement suspicious?**
+**K13. Your f_L formula gives 2.18 GHz against 2.16 GHz simulated. Isn't the agreement suspicious?**
 "It's an empirical estimate for a monopole over a large ground in air. Printed versions often need a substrate correction, which would lower it. The agreement within a few percent is partly luck. We use it only to show the order of magnitude is right."
 
 **K14. Doesn't the R sweep also change the feed gap?**
-"If the disc is positioned by its centre, yes: increasing R moves the disc's bottom edge towards the ground, so p changes as well. [Check how it is modelled and state it.] That coupling is one reason a joint optimisation would be better."
+"Yes. The patch is centred at x = 8 mm, so increasing R moves its lower edge towards the ground. The gap went from about 11.2 mm at R = 4 mm to 0.73 mm at R = 15 mm. So the R sweep is partly a gap sweep, and that coupling is one reason a joint optimisation would be better."
 
 **K15. Is 0.04 λ in the far field of the metasurface? Can you use reflection phase at all?**
 "No. It's in the reactive near field, because λ/2π > 3.9 mm below ≈ 12.2 GHz. The plane-wave reflection phase is a design guide, which is standard practice in AMC papers. The full-wave simulation of the antenna and metasurface is the real answer."
@@ -1548,7 +1558,8 @@ Never apologise twice, never guess a number, and never let an examiner discover 
 
 | Item | Value |
 |---|---|
-| Antenna | CPW-fed circular disc on FR-4, 1.6 mm |
+| Antenna | CPW-fed regular decagon, R = 15 mm, on 50 × 50 mm FR-4 (εᵣ 4.3, tan δ 0.025, 1.6 mm); feed 3 mm, slots 0.5 mm; p = 0.73 mm |
+| Metasurface | 6 × 5 double-split-ring cells on 1.6 mm FR-4, full copper ground, 3.9 mm air gap; total profile ≈ 7.1 mm |
 | Optimised parameters | R = 15 mm, Lg = −7 mm |
 | Lg sweep | 10 values from −20 to −7 mm (R = 15); first resonance ≈ 1.6 → 2.7 GHz |
 | R sweep | 13 values from 4 to 15 mm (Lg = −7) |
@@ -1562,7 +1573,7 @@ Never apologise twice, never guess a number, and never let an examiner discover 
 | PEC | λ/4 = 24.2 mm at 3.1 GHz; at 3.9 mm, 151° off at 3.1 GHz; ±90° only above 9.6 GHz; break-even ≈ 6.4 GHz |
 | Required metasurface phase | ≈ +9° … +119° across 3.1–10.6 GHz *(computed)* |
 | Near field | λ/2π > 3.9 mm below ≈ 12.2 GHz |
-| Pending | Substrate εᵣ/tan δ, dimension table, SRR cell, ground-backed?, antenna + MS, PEC baseline, realized gain, patterns |
+| Pending | SRR period and ring sizes, unit-cell phase, antenna + MS, PEC baseline, realized gain, patterns, CST port impedance |
 
 **Formulas**
 - λ₀ (mm) = 299.8/f (GHz); k₀ = 2π/λ₀; η₀ ≈ 377 Ω
@@ -1570,7 +1581,7 @@ Never apologise twice, never guess a number, and never let an examiner discover 
 - −10 dB: |Γ| = 0.316, 10 % reflected, VSWR 1.92, mismatch 0.46 dB
 - D = 4πU_max/P_rad; G = e_rad·D; G_R = (1 − |Γ|²)·G; e_tot = e_rad(1 − |Γ|²)
 - FBW = 2(f_H − f_L)/(f_H + f_L)
-- f_L ≈ 7.2/(L + r + p) GHz (cm); disc: L = 2R, r = R/4
+- f_L ≈ 7.2/(L + r + p) GHz (cm); disc: L = 2R, r = R/4; our decagon: L = 28.5 mm, r = 3.7 mm, p = 0.73 mm, so ≈ 2.18 GHz
 - CPW: Z₀ = (30π/√εeff)·K(k′)/K(k), k = W/(W + 2G), εeff ≈ (εᵣ + 1)/2
 - SRR / AMC: f₀ = 1/(2π√LC); HIS: Z_s = jωL/(1 − ω²LC), L = μ₀t, ±90° BW ≈ k₀t
 - Reflector: in phase when φ_R − 2k₀h = 2nπ; 2k₀h (deg) = 720·h/λ₀; PEC needs λ/4
@@ -1642,7 +1653,7 @@ Speakers as in §5 (swap if your split differs). Times are approximate.
 | Time | Chanswarang (slides 1–3, 15) | Anushka (4–6) | Nishit (7–10) | Sanjana (11–14) |
 |---|---|---|---|---|
 | 2 h | §1.1–1.4, §1.6 (basics, UWB) | §1.9–1.12 (metasurfaces, SRR, HIS, reflectors) + §4 | §1.5, 1.7, 1.13 (CPW, monopoles, CST) + §3 | §1.8 (MIMO) + §2.5–2.9 |
-| 1.5 h | **Together:** fix the slides with §0 items 1–3, 6 and 9. Agree the "3.9 mm reason" (E16). Decide ground-backed or not with the guide. | | | |
+| 1.5 h | **Together:** fix the slides with §0 items 1–3, 6 and 9. Agree the "3.9 mm reason" (E16). Get the SRR period and ring sizes from CST. | | | |
 | 2 h | **CST tasks** (whoever has the CST PC, Appendix A): read the parameter list and fill the dimension table (A.1); find mesh-convergence info in the log (A.3); re-run the > 0 dB Lg case (A.4). If time allows, start the PEC-plate run (A.7) overnight. | | | |
 | 1 h | Each person writes their own slide notes from §5 in their own words, and rehearses alone twice. | | | |
 
@@ -1673,9 +1684,8 @@ Anyone can add a sentence after the lead answers.
 
 **A.1 Substrate and dimension table**
 - **Parameter List:** View → Parameter List (usually docked at the bottom). Copy all names and values (R, Lg, W_f, G, board size, …).
-- **Material:** Navigation Tree → Materials → right-click the substrate → Properties. Note εᵣ, tan δ and its frequency.
-  CST's library "FR-4 (lossy)" is εᵣ = 4.3, tan δ = 0.025.
-- **Feed gap p:** the disc's lowest y-coordinate minus Lg. Check how the disc is positioned: Navigation Tree → Components → the disc → History List (Modeling → History List) shows its centre coordinates.
+- **Material:** FR-4 (lossy), εᵣ = 4.3, tan δ = 0.025 (already known). Navigation Tree → Materials → right-click the substrate → Properties to confirm.
+- **Feed gap p:** already computed as 0.73 mm (patch centre x = 8 mm, lower flat edge at 8 − 15·cos 18° = −6.27 mm, ground edge at −7 mm). Confirm it in the History List (Modeling → History List).
 - **Port line impedance:** after a run, 2D/3D Results → Port Modes → Port 1 → e1 → check "Line impedance" (should be ≈ 50 Ω). Also note the cut-off frequencies of any higher-order modes listed.
 
 **A.2 Board size and profile**
@@ -1695,8 +1705,8 @@ Read Ws and Ls from the Parameter List, or from the substrate brick's dimensions
 
 **A.5 SRR unit cell: reflection phase**
 1. File → New → template **Microwaves & RF/Optical → Periodic Structures → FSS, Metamaterial – Unit Cell** (frequency domain).
-2. Draw one cell: substrate (and copper ground on the back if ground-backed) and the SRR on top. Set the period p_c.
-3. Boundaries: x and y = **unit cell**. Zmax = Floquet port (open/add space). Zmin = electric if ground-backed, otherwise a second Floquet port.
+2. Draw one cell: 1.6 mm FR-4 with a full copper ground on the back, and the two concentric split rings on top. Set the period p_c.
+3. Boundaries: x and y = **unit cell**. Zmax = Floquet port (open/add space). Zmin = electric (the copper ground blocks transmission).
 4. De-embed Zmax to the SRR's top surface (Floquet port → distance to reference plane), so the phase refers to the surface.
 5. Run the sweep from 2–16 GHz, then plot **arg S(Zmax(1),Zmax(1))** and the magnitude. Check both polarizations, Zmax(1) and Zmax(2) (TE/TM).
 6. **Sanity check:** with the SRR deleted and the ground present, the phase should be ≈ 180° at low frequency.
@@ -1718,7 +1728,7 @@ Read Ws and Ls from the Parameter List, or from the substrate brick's dimensions
 4. Export S₁₁, realized gain and F/B for three cases: antenna alone, PEC and metasurface.
 
 **A.8 Antenna + metasurface**
-1. Build N × N cells, centred under the antenna, 3.9 mm behind.
+1. Build the 6 × 5 cells, centred under the antenna, 3.9 mm behind.
 2. Make sure the waveguide port does not cut into the metasurface (limit its downward extension), and re-check its line impedance.
 3. Run the model. If S₁₁ breaks near 6.5 or 12.2 GHz or the band edge, re-sweep Lg with the metasurface in place.
 
