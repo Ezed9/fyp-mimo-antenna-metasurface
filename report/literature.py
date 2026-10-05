@@ -102,7 +102,8 @@ class Paper:
     group: str                      # "single" (single antenna + metasurface) or "mimo" (MIMO + metasurface)
     short: str                      # e.g. "Sen et al. (2017)"
     ref: str                        # IEEE reference; completed from the PDF's first page
-    ref_checked: bool = False       # True once authors/volume/pages/DOI are checked against the PDF
+    ref_checked: bool = False       # True once authors/volume/pages/DOI are checked (PDF or publisher page)
+    source: str = "abstract"        # "full text" (PDF read) or "abstract" (abstract and publisher pages only)
     antenna: str | None = None      # radiator and feed
     substrate: str | None = None    # material, εr, thickness
     size: str | None = None         # antenna (or MIMO board) size, mm
@@ -128,47 +129,37 @@ class Paper:
 PAPERS: list[Paper] = [
     # ---------------------------------------------------------------- (i) single antenna + metasurface reflector
     Paper("sen2017", "single", "Sen et al. (2017)",
-          "Sen, Banerjee, Kumar, and Das, “An ultra-wideband monopole antenna with a gain enhanced performance using "
-          "a novel split-ring meta-surface reflector,” *Microw. Opt. Technol. Lett.*, vol. 59, pp. 1296–1300, 2017, "
-          "doi: 10.1002/mop.30527."),
-    Paper("aboelhassan2025", "single", "AboEl-Hassan et al. (2025)",
-          "M. AboEl-Hassan, A. E. Farahat, and K. F. A. Hussein, “Gain enhancement wideband CPW antenna based on "
-          "artificial magnetic conductor,” *Sci. Rep.*, 2025, doi: 10.1038/s41598-025-89622-9."),
-    Paper("hussain2023", "single", "Hussain et al. (2023)",
-          "M. Hussain, M. A. Sufian, M. S. Alzaidi, S. I. Naqvi, N. Hussain, D. H. Elkamchouchi, M. F. A. Sree, and "
-          "S. Y. A. Fatah, “Bandwidth and gain enhancement of a CPW antenna using frequency selective surface for UWB "
-          "applications,” *Micromachines*, vol. 14, no. 3, Art. no. 591, Feb. 2023, doi: 10.3390/mi14030591.",
+          "G. Sen, A. Banerjee, M. Kumar, and S. Das, “An ultra-wideband monopole antenna with a gain enhanced "
+          "performance using a novel split-ring meta-surface reflector,” *Microw. Opt. Technol. Lett.*, vol. 59, "
+          "no. 6, pp. 1296–1300, 2017, doi: 10.1002/mop.30527.",
           ref_checked=True,
-          antenna="CPW-fed hexagonal patch with stubs",
-          substrate="Rogers RT/Duroid 6002 (ε_{r} 2.94), 1.52 mm",
-          size="32 × 25 antenna; FSS 50 × 50",
-          ms="Ring joined to a square frame; 5 × 5 FSS",
-          placement="Behind, 9 mm foam spacer (0.09λ_{L})",
-          band="5–17 → 3–18",
-          gain="6.5 → 10.5",
-          eff="Radiation > 75 % → > 78 % (simulated)",
+          antenna="Circular-patch UWB monopole",
+          substrate=UNVER,
+          size=UNVER,
+          ms="Double split rings, split angle varied column by column",
+          placement="Behind, low-profile gap (value unverified)",
+          band="UWB (limits unverified)",
+          gain="≈ +5.5 dB increase",
+          eff=UNVER,
           measured="Fabricated and measured",
-          problem="Compact printed UWB antennas have modest gain, and the multi-layer reflectors used to raise it make "
-                  "the structure large and complex.",
-          method="A CPW-fed hexagonal patch with stub loading (32 × 25 × 1.52 mm, Rogers RT/Duroid 6002) is backed by "
-                 "a single-layer 5 × 5 frequency selective surface of rings joined to a square frame (50 × 50 mm), "
-                 "placed 9 mm behind the antenna on a foam spacer. The gap is chosen from the in-phase condition "
-                 "φ − 2βG = 2nπ, the same relation used in this project.",
-          results="The reflector widens the band from 5–17 GHz to 3–18 GHz and raises the peak gain from 6.5 dBi to "
-                  "10.5 dBi (the text also quotes 10.75 dBi and 11 dBi at 8 GHz and 13.5 GHz), with more than 10 dBi "
-                  "across the band and radiation efficiency above 78 %. Measured and simulated results agree.",
-          relevance="One reflector layer adds about 4–6 dB over a UWB band, but at a 9 mm gap (0.09λ at 3 GHz), more "
-                    "than twice the 3.9 mm gap of this project, and with a low-loss Rogers substrate.",
-          summary="A CPW-fed stub-loaded hexagonal patch backed by a single-layer 5 × 5 FSS 9 mm below it; the band "
-                  "grows from 5–17 to 3–18 GHz and the peak gain from 6.5 to 10.5 dBi, confirmed by measurement.",
-          src={"substrate/size": "p. 3", "FSS": "pp. 6, 11", "gap": "abstract; p. 7 (eq. 1, 9 mm Styrofoam)",
-               "band/gain": "abstract; Table 1 p. 11; p. 9 text gives 10.75/11 dBi peaks",
-               "efficiency": "p. 9 (Fig. 11, simulated)", "measured": "pp. 7–9"}),
+          problem="A UWB printed monopole radiates on both sides of the board and its gain is low.",
+          method="A circular-patch UWB monopole is backed by a metasurface of double split-ring patches whose split "
+                 "angle changes from column to column, so that the surface reflects in phase over a broad band "
+                 "without disturbing the antenna’s impedance bandwidth.",
+          results="The gain rises by nearly 5.5 dB across the UWB range with a low-profile antenna-to-reflector gap, "
+                  "and measurements agree with simulation.",
+          relevance="The only reviewed design with split-ring cells behind a UWB monopole, the cell type chosen in "
+                    "this project. Varying the split angle across the array is one way to widen the in-phase band "
+                    "that a single SRR resonance cannot cover.",
+          summary="A circular-patch UWB monopole backed by double split-ring cells whose split angle varies across "
+                  "the array, so the reflection stays in phase over a broad band; the gain rises by nearly 5.5 dB "
+                  "over UWB, confirmed by measurement.",
+          src={"all": "abstract and publisher page (Wiley); full text not obtained"}),
     Paper("algburi2022", "single", "Al-Gburi et al. (2022)",
           "A. J. A. Al-Gburi, I. B. M. Ibrahim, Z. Zakaria, B. H. Ahmad, N. A. B. Shairi, and M. Y. Zeain, “High gain "
           "of UWB planar antenna utilising FSS reflector for UWB applications,” *Comput. Mater. Contin.*, vol. 70, "
           "no. 1, pp. 1425–1436, 2022, doi: 10.32604/cmc.2022.019741.",
-          ref_checked=True,
+          ref_checked=True, source="full text",
           antenna="CPW-fed ring monopole with three legs",
           substrate="FR-4 (ε_{r} 4.5), 1.6 mm",
           size="50 × 50 antenna; reflector 100 × 100",
@@ -195,26 +186,252 @@ PAPERS: list[Paper] = [
           src={"reference": "p. 1 (DOI); volume/pages from the publisher listing",
                "substrate/size": "p. 3, Table 1 p. 4", "FSS": "pp. 1, 6–7, 10", "profile": "p. 11",
                "band/gain/eff": "pp. 1, 3, 5, 10–11, 14", "note": "image-only PDF, read by OCR; paper writes gain in dB"}),
+    Paper("hussain2023", "single", "Hussain et al. (2023)",
+          "M. Hussain, M. A. Sufian, M. S. Alzaidi, S. I. Naqvi, N. Hussain, D. H. Elkamchouchi, M. F. A. Sree, and "
+          "S. Y. A. Fatah, “Bandwidth and gain enhancement of a CPW antenna using frequency selective surface for UWB "
+          "applications,” *Micromachines*, vol. 14, no. 3, Art. no. 591, Feb. 2023, doi: 10.3390/mi14030591.",
+          ref_checked=True, source="full text",
+          antenna="CPW-fed hexagonal patch with stubs",
+          substrate="Rogers RT/Duroid 6002 (ε_{r} 2.94), 1.52 mm",
+          size="32 × 25 antenna; FSS 50 × 50",
+          ms="Ring joined to a square frame; 5 × 5 FSS",
+          placement="Behind, 9 mm foam spacer (0.09λ_{L})",
+          band="5–17 → 3–18",
+          gain="6.5 → 10.5",
+          eff="Radiation > 75 % → > 78 % (simulated)",
+          measured="Fabricated and measured",
+          problem="Compact printed UWB antennas have modest gain, and the multi-layer reflectors used to raise it make "
+                  "the structure large and complex.",
+          method="A CPW-fed hexagonal patch with stub loading (32 × 25 × 1.52 mm, Rogers RT/Duroid 6002) is backed by "
+                 "a single-layer 5 × 5 frequency selective surface of rings joined to a square frame (50 × 50 mm), "
+                 "placed 9 mm behind the antenna on a foam spacer. The gap is chosen from the in-phase condition "
+                 "φ − 2βG = 2nπ, the same relation used in this project.",
+          results="The reflector widens the band from 5–17 GHz to 3–18 GHz and raises the peak gain from 6.5 dBi to "
+                  "10.5 dBi (the text also quotes 10.75 dBi and 11 dBi at 8 GHz and 13.5 GHz), with more than 10 dBi "
+                  "across the band and radiation efficiency above 78 %. Measured and simulated results agree.",
+          relevance="One reflector layer adds about 4–6 dB over a UWB band, but at a 9 mm gap (0.09λ at 3 GHz), more "
+                    "than twice the 3.9 mm gap of this project, and with a low-loss Rogers substrate.",
+          summary="A CPW-fed stub-loaded hexagonal patch backed by a single-layer 5 × 5 FSS 9 mm below it; the band "
+                  "grows from 5–17 to 3–18 GHz and the peak gain from 6.5 to 10.5 dBi, confirmed by measurement.",
+          src={"substrate/size": "p. 3", "FSS": "pp. 6, 11", "gap": "abstract; p. 7 (eq. 1, 9 mm Styrofoam)",
+               "band/gain": "abstract; Table 1 p. 11; p. 9 text gives 10.75/11 dBi peaks",
+               "efficiency": "p. 9 (Fig. 11, simulated)", "measured": "pp. 7–9"}),
     Paper("hammache2024", "single", "Hammache et al. (2024)",
-          "Hammache *et al.*, “Gain enhancement of compact CPW-fed ultra-wideband antenna using an FSS reflector,” "
-          "*Microw. Opt. Technol. Lett.*, 2024, doi: 10.1002/mop.34344."),
+          "B. Hammache, I. Messaoudene, M. Belazzoug, S. Titouni, A. Messai, and T. A. Denidni, “Gain enhancement of "
+          "compact CPW-fed ultra-wideband antenna using an FSS reflector,” *Microw. Opt. Technol. Lett.*, vol. 66, "
+          "no. 10, Art. no. e34344, 2024, doi: 10.1002/mop.34344.",
+          ref_checked=True,
+          antenna="CPW-fed hexagonal UWB monopole",
+          substrate=UNVER,
+          size="30 × 30 antenna; FSS 56 × 56",
+          ms="8 × 8 mm cells, 7 × 7 FSS (stopband 3–11.5 GHz)",
+          placement="Behind, 20 mm (0.21λ at 3.1 GHz)",
+          band="UWB (limits unverified)",
+          gain="2.2 → 8.4 (realized)",
+          eff=UNVER,
+          measured="Fabricated and measured",
+          problem="A compact UWB antenna has low gain and a near-omnidirectional pattern.",
+          method="A 30 × 30 mm hexagonal CPW-fed UWB antenna is placed 20 mm above a single-layer FSS of 7 × 7 small "
+                 "(8 × 8 mm) cells that stops 3–11.5 GHz.",
+          results="Realized gain rises from 2.2 dBi to 8.4 dBi and the radiation becomes directional; measurements "
+                  "agree with simulation.",
+          relevance="A recent example of the usual price of a reflector: a 20 mm gap, about five times the 3.9 mm "
+                    "gap of this project.",
+          summary="A compact hexagonal CPW-fed UWB antenna 20 mm above a 7 × 7 single-layer FSS; realized gain rises "
+                  "from 2.2 to 8.4 dBi with a directional pattern, confirmed by measurement.",
+          src={"all": "abstract and publisher page (Wiley); full text not obtained"}),
+    Paper("aboelhassan2025", "single", "AboEl-Hassan et al. (2025)",
+          "M. AboEl-Hassan, A. E. Farahat, and K. F. A. Hussein, “Gain enhancement wideband CPW antenna based on "
+          "artificial magnetic conductor,” *Sci. Rep.*, vol. 15, Art. no. 7108, 2025, "
+          "doi: 10.1038/s41598-025-89622-9.",
+          ref_checked=True,
+          antenna="CPW-fed octagonal monopole with inverted U-slot",
+          substrate="Rogers RT5880, 1.57 mm",
+          size="27 × 37 antenna; AMC 70 × 70",
+          ms="5 × 5 AMC, 0° reflection at 7.44 GHz, on RO4003C with full ground",
+          placement="Behind, air gap (5 mm, unconfirmed)",
+          band="3.5–6.3 → 3.5–6.5",
+          gain="unverified → 9.9–11.5 (sources differ)",
+          eff="Total > 80 %",
+          measured="Fabricated and measured",
+          problem="A printed monopole radiates almost omnidirectionally with low gain, and a metal reflector must sit "
+                  "a quarter wavelength away to avoid cancelling the forward wave.",
+          method="A CPW-fed octagonal monopole with an inverted U-slot (27 × 37 mm, Rogers RT5880) is placed over an "
+                 "artificial magnetic conductor surface of 5 × 5 cells (70 × 70 mm, on RO4003C with a full ground "
+                 "plane) designed for 0° reflection at 7.44 GHz, with an air gap between them.",
+          results="Over 3.5–6.5 GHz the antenna with the AMC reaches a realized gain of up to 11.5 dBi (the abstract "
+                  "also quotes a maximum gain of 9.9 dBi), total efficiency above 80 % and cross-polarization below "
+                  "−30 dB; prototypes were fabricated and measured.",
+          relevance="The same configuration as this project (CPW-fed octagonal monopole, ground-backed metasurface, "
+                    "air gap), but over a much narrower 3.5–6.5 GHz band, which shows how hard it is to keep in-phase "
+                    "reflection across all of UWB.",
+          summary="A CPW-fed octagonal monopole over a ground-backed 5 × 5 AMC with an air gap; over 3.5–6.5 GHz the "
+                  "realized gain reaches up to 11.5 dBi (9.9 dBi is also quoted) with total efficiency above 80 %.",
+          src={"all": "abstract and publisher page (Nature/PMC); gap 5 mm in two search summaries only; gain values "
+                      "conflict between summaries"}),
     # ---------------------------------------------------------------- (ii) MIMO + metasurface (team's papers)
     Paper("sufian2021", "mimo", "Sufian et al. (2021)",
           "M. A. Sufian, N. Hussain, H. Askari, S. G. Park, K. S. Shin, and N. Kim, “Isolation enhancement of a "
           "metasurface-based MIMO antenna using slots and shorting pins,” *IEEE Access*, vol. 9, pp. 73533–73543, "
-          "2021."),
+          "2021, doi: 10.1109/ACCESS.2021.3079965.",
+          ref_checked=True,
+          antenna="Patch between a metasurface and the ground",
+          substrate=UNVER,
+          ports="4 (2 × 2, orthogonal)",
+          size="≈ 1.75λ_{0} square",
+          ms="4 × 4 square-patch metasurface above each patch",
+          ms_role="gain; strips pinned to ground decouple",
+          placement="Integrated (upper substrate)",
+          band="3.3–3.87",
+          isolation="> 32",
+          ecc="< 0.001",
+          dg="9.99",
+          gain="6.3 → 8.1 (element); 8.72 (array)",
+          eff="Radiation < 83 % → > 92 % (element)",
+          measured="Fabricated (extent of measurement unverified)",
+          problem="Closely spaced MIMO elements couple strongly, which degrades isolation and diversity.",
+          method="Each element is a patch sandwiched between a 4 × 4 square-patch metasurface and the ground; four "
+                 "elements are rotated orthogonally in a 2 × 2 layout for the 5G n78 band. Slots in the ground and "
+                 "metal strips on the metasurface layer, shorted to the ground with pins, suppress the coupling.",
+          results="The 4-port antenna covers 3.3–3.87 GHz with isolation above 32 dB, ECC below 0.001 and diversity "
+                  "gain of 9.99 dB. The metasurface raises the element gain from 6.3 dBi to 8.1 dBi (8.72 dBi for the "
+                  "array) and the radiation efficiency from below 83 % to above 92 %.",
+          relevance="Shows that the metasurface layer can also carry the decoupling structure; its band (about 16 %) "
+                    "is far narrower than UWB.",
+          summary="Four orthogonal patch elements, each under a 4 × 4 square-patch metasurface, for 3.3–3.87 GHz; "
+                  "ground slots plus pinned metasurface strips give isolation above 32 dB and ECC below 0.001, and the "
+                  "metasurface lifts the element gain from 6.3 to 8.1 dBi.",
+          src={"all": "abstract and publisher/repository pages; full text not obtained"}),
+    Paper("sehrai2021", "mimo", "Sehrai et al. (2021)",
+          "D. A. Sehrai, M. Asif, W. A. Shah, J. Khan, I. Ullah, M. Ibrar, S. Jan, M. Alibakhshikenari, F. Falcone, "
+          "and E. Limiti, “Metasurface-based wideband MIMO antenna for 5G millimeter-wave systems,” *IEEE Access*, "
+          "vol. 9, pp. 125348–125357, 2021, doi: 10.1109/ACCESS.2021.3110905.",
+          ref_checked=True,
+          antenna="Four elements rotated in 90° steps",
+          substrate=UNVER,
+          ports="4 (rotated 90°)",
+          size="24 × 24",
+          ms="2 × 2 non-uniform metasurface",
+          ms_role="behind the array: gain",
+          placement="Behind the MIMO antenna",
+          band="23.5–29.4",
+          isolation=UNVER,
+          ecc=UNVER,
+          dg=UNVER,
+          gain="≈ 7 → 10.44",
+          eff="Total > 80 %",
+          measured="Fabricated and measured",
+          problem="Millimetre-wave 5G antennas must be compact, wideband and high-gain to overcome path loss.",
+          method="Four antenna elements are rotated in 90° steps to form a compact 24 × 24 mm MIMO antenna, and a "
+                 "2 × 2 non-uniform metasurface placed at the back improves its radiation.",
+          results="The antenna covers 23.5–29.4 GHz; the metasurface raises the peak gain from about 7 dB to 10.44 dB "
+                  "with total efficiency above 80 %, ECC, diversity gain and channel capacity loss are reported as "
+                  "good, and measurements agree with simulation.",
+          relevance="Uses the two ideas planned for Phase II, 90° rotation of the elements and a metasurface behind the "
+                    "array, at 28 GHz instead of UWB.",
+          summary="Four elements rotated in 90° steps (24 × 24 mm) with a 2 × 2 non-uniform metasurface behind them "
+                  "for 23.5–29.4 GHz; the peak gain rises from about 7 to 10.44 dB with efficiency above 80 %.",
+          src={"all": "abstract and repository records; often confused with Tariq et al., IEEE Access 9, 51805 (a "
+                      "different paper)"}),
     Paper("hasan2022", "mimo", "Hasan et al. (2022)",
           "M. M. Hasan, M. T. Islam, M. Samsuzzaman, M. H. Baharuddin, M. S. Soliman, A. Alzamil, I. I. M. Abu "
           "Sulayman, and M. S. Islam, “Gain and isolation enhancement of a wideband MIMO antenna using metasurface "
-          "for 5G sub-6 GHz communication systems,” *Sci. Rep.*, vol. 12, 2022, doi: 10.1038/s41598-022-13522-5."),
+          "for 5G sub-6 GHz communication systems,” *Sci. Rep.*, vol. 12, Art. no. 9433, 2022, "
+          "doi: 10.1038/s41598-022-13522-5.",
+          ref_checked=True,
+          antenna="Microstrip-fed truncated-corner square patch",
+          substrate="Rogers RT5880 (ε_{r} 2.2), 1.575 mm",
+          ports="4 (orthogonal)",
+          size="1.05λ × 1.05λ",
+          ms="10 × 10 square-enclosed circular SRRs, copper-backed, 12 mm air gap below",
+          ms_role="reflector: gain and isolation",
+          placement="Behind, 12 mm air gap (single-antenna study)",
+          band="3.08–7.75 (3.2–7.6 also quoted)",
+          isolation="> 15.5",
+          ecc="< 0.004",
+          dg="> 9.98",
+          gain="5.4 → 8.3 (realized)",
+          eff="Average total 82 %",
+          measured="Fabricated and measured",
+          problem="Compact sub-6 GHz MIMO antennas need more gain and isolation without a larger element spacing.",
+          method="Four orthogonally rotated, microstrip-fed truncated-corner patches on 1.575 mm Rogers RT5880 sit "
+                 "above a 10 × 10 metasurface of square-enclosed circular split-ring resonators with a copper "
+                 "backplane, which reflects the back radiation (a 12 mm air gap is used in the single-antenna study).",
+          results="The fabricated 4-port antenna covers about 3.1–7.7 GHz with isolation above 15.5 dB, ECC below "
+                  "0.004 and diversity gain above 9.98 dB; the metasurface raises the realized gain from 5.4 dBi to "
+                  "8.3 dBi with 82 % average total efficiency. The two published author corrections change "
+                  "affiliations only.",
+          relevance="The closest MIMO counterpart of this project: a copper-backed split-ring metasurface behind the "
+                    "antennas across an air gap, which is the configuration planned for Phase II, here over a 2.5:1 "
+                    "band rather than UWB.",
+          summary="Four orthogonal truncated-corner patches above a copper-backed 10 × 10 array of square-enclosed "
+                  "circular split-ring resonators; about 3.1–7.7 GHz, isolation above 15.5 dB, ECC below 0.004, and "
+                  "realized gain raised from 5.4 to 8.3 dBi.",
+          src={"all": "abstract and publisher page (Nature/PMC); band quoted two ways; corrections checked"}),
     Paper("althuwayb2023", "mimo", "Althuwayb et al. (2023)",
-          "A. A. Althuwayb *et al.*, “Metasurface-inspired flexible wearable MIMO antenna array for wireless body "
-          "area network applications and biomedical telemetry devices,” *IEEE Access*, 2023."),
+          "A. A. Althuwayb, M. Alibakhshikenari, B. S. Virdee, N. Rashid, K. Kaaniche, A. Ben Atitallah, A. Armghan, "
+          "O. I. Elhamrawy, C. H. See, and F. Falcone, “Metasurface-inspired flexible wearable MIMO antenna array for "
+          "wireless body area network applications and biomedical telemetry devices,” *IEEE Access*, vol. 11, "
+          "pp. 1039–1056, 2023, doi: 10.1109/ACCESS.2022.3233388.",
+          ref_checked=True,
+          antenna="Triangular radiators, 2 × 2 array",
+          substrate="Rogers RT/duroid 5880, 0.8 mm (flexible)",
+          ports="4 (2 × 2)",
+          size=UNVER,
+          ms="Sub-wavelength slots etched in the radiators",
+          ms_role="bandwidth and gain; EBG between elements decouples",
+          placement="Integrated in the radiators",
+          band="5.0–6.6",
+          isolation="> 34.8",
+          ecc=UNVER,
+          dg=UNVER,
+          gain="10 (avg.); 8.65–10.5 when bent",
+          eff="83 % average (77–83 % when bent)",
+          measured="Fabricated (measured/simulated split unverified)",
+          problem="Wearable body-area and biomedical-telemetry devices need compact, flexible MIMO arrays whose "
+                  "closely spaced elements stay isolated.",
+          method="A flexible 2 × 2 array of triangular radiators on 0.8 mm Rogers RT/duroid 5880 is turned into a "
+                 "metasurface by etching sub-wavelength slots into the radiators, and an electromagnetic-bandgap (EBG) "
+                 "structure between the elements blocks the surface currents that couple them.",
+          results="Over 5.0–6.6 GHz the array gives isolation above 34.8 dB, an average gain of 10 dBi and 83 % "
+                  "efficiency, and keeps 8.65–10.5 dBi and 77–83 % when bent.",
+          relevance="Combines metasurface-inspired radiators with an EBG decoupler; the EBG idea is a candidate for "
+                    "Phase II if orthogonal placement alone does not give enough isolation.",
+          summary="A flexible 2 × 2 array of slotted (metasurface-inspired) triangular radiators with an EBG decoupler "
+                  "for 5.0–6.6 GHz; isolation above 34.8 dB, average gain 10 dBi and efficiency 83 %.",
+          src={"all": "abstract and repository records; full text not obtained"}),
     Paper("wu2023", "mimo", "Wu et al. (2023)",
           "R. Wu, J. Dong, and M. Wang, “Wearable polarization conversion metasurface MIMO antenna for biomedical "
-          "applications in 5 GHz WBAN,” *Biosensors*, vol. 13, no. 1, Art. no. 73, 2023, doi: 10.3390/bios13010073."),
-    Paper("mmwave2021", "mimo", "Metasurface mmWave MIMO (2021)",
-          "“Metasurface-based wideband MIMO antenna for 5G millimeter-wave systems,” *IEEE Access*, 2021."),
+          "applications in 5 GHz WBAN,” *Biosensors*, vol. 13, no. 1, Art. no. 73, 2023, doi: 10.3390/bios13010073.",
+          ref_checked=True,
+          antenna=UNVER,
+          substrate=UNVER,
+          ports="2",
+          size="1.67λ_{0} × 0.81λ_{0} (5.6 GHz)",
+          ms="Polarization-conversion metasurface",
+          ms_role="circular polarization and gain",
+          placement=UNVER,
+          band="4.76–6.77 (meas.)",
+          isolation="> 19.85 (strip)",
+          ecc="< 0.007",
+          dg="> 9.98",
+          gain="7.95 dBic",
+          eff=UNVER,
+          measured="Fabricated and measured; SAR simulated",
+          problem="Wearable 5 GHz body-area links need broadband, circularly polarized, high-gain antennas that are "
+                  "safe for the body.",
+          method="A two-element wearable MIMO antenna uses a polarization-conversion metasurface to obtain circular "
+                 "polarization and higher gain, and an isolation strip between the elements to reduce coupling; the "
+                 "specific absorption rate is checked with a human-tissue model.",
+          results="Measured −10 dB band 4.76–6.77 GHz and 3 dB axial-ratio band 4.9–6.17 GHz, isolation above "
+                  "19.85 dB, peak gain 7.95 dBic, ECC below 0.007, diversity gain above 9.98 dB and channel capacity "
+                  "loss below 0.29 bit/s/Hz.",
+          relevance="Uses the metasurface to change the polarization rather than only to reflect, which matters if "
+                    "Phase II needs polarization diversity.",
+          summary="A two-element wearable antenna with a polarization-conversion metasurface for 5 GHz body-area "
+                  "networks: 4.76–6.77 GHz, circular polarization over 4.9–6.17 GHz, isolation above 19.85 dB with an "
+                  "isolation strip, 7.95 dBic.",
+          src={"all": "abstract (MDPI/PMC); full text not obtained"}),
 ]
 
 BY_KEY = {p.key: p for p in PAPERS}
@@ -240,7 +457,7 @@ SCOPE = [
     "“FSS”, “gain enhancement” and “MIMO isolation”, together with papers already identified by the team. Group (i) "
     "required a printed wideband or UWB antenna, a periodic reflector behind it, and gain reported with and without "
     "the reflector.",
-    "Two papers [@hussain2023, algburi2022] were read in full. For the others the full text could not be obtained in "
+    "Two papers, by Al-Gburi et al. and Hussain et al., were read in full. For the others the full text could not be obtained in "
     "time, so their values come from the abstracts and the publishers’ public pages. Every value in the tables was "
     "checked against at least one of these sources; a value that could not be confirmed is marked “unverified” "
     "rather than estimated.",
@@ -297,5 +514,25 @@ def gap_paragraph() -> str:
     )
 
 
-# Written after the full texts are read (Step 1): research gap, slide cards, report-chapter summary.
-GAP_POINTS: list[str] = []
+# Research gap, from the comparison in Tables A and B.
+GAP_POINTS: list[str] = [
+    "**Reflector distance.** The single-antenna reflectors reviewed sit 9 mm [@hussain2023], 10 mm (total profile) "
+    "[@algburi2022] and 20 mm [@hammache2024] behind the antenna, about 0.07–0.21 of a wavelength at the lowest "
+    "operating frequency. The ground-backed AMC of [@aboelhassan2025] sits closer across a small air gap, but its "
+    "band (3.5–6.5 GHz) is far narrower than UWB. Phase I places the metasurface only 3.9 mm (0.04λ at 3.1 GHz) "
+    "behind an antenna that covers 2.16–15.73 GHz: a lower profile, but a harder in-phase condition and stronger "
+    "near-field loading.",
+    "**Cell type.** Only [@sen2017] uses split-ring cells behind a UWB monopole, varying the split angle across the "
+    "array to widen the in-phase band; the others use ring, loop and patch FSS or AMC cells [@algburi2022, hussain2023, "
+    "hammache2024, aboelhassan2025]. A split-ring metasurface also appears in the MIMO design of [@hasan2022], but "
+    "over 3.1–7.7 GHz. A single-SRR metasurface behind a CPW-fed antenna covering the whole UWB band is not reported "
+    "in the papers reviewed.",
+    "**Baselines and reporting.** Neither of the two papers read in full compares its reflector with a plain metal "
+    "plate at the same gap, and gain is usually quoted as a single peak value, often without saying whether it is "
+    "realized gain. This project compares the antenna alone, a metal plate and the SRR metasurface at the same "
+    "3.9 mm gap, reports gain across the band and states which gain is shown.",
+    "**MIMO.** The MIMO papers use metasurfaces for gain [@sehrai2021, hasan2022], for decoupling together with other "
+    "structures [@sufian2021, althuwayb2023] and for polarization conversion [@wu2023], but all in bands far narrower "
+    "than UWB (3.3–3.87, 3.1–7.7, 5.0–6.6, 4.76–6.77 and 23.5–29.4 GHz). A UWB MIMO antenna with an SRR "
+    "metasurface reflector is the open target of Phase II.",
+]

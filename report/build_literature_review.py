@@ -43,7 +43,7 @@ def single_rows(cite: dh.Citer | None) -> list[list[str]]:
     lo, hi = tw["band_ghz"]
     rows.append(["**This work**", "CPW-fed planar monopole", "see design", f"{tw['metasurface']} (design ongoing)",
                  f"{tw['gap_mm']} mm, air ({tw['gap_mm'] / lit.wavelength_mm(lo):.3f}λ_{{L}})",
-                 f"{lo:.2f}–{hi:.2f} (no MS)", "≈ 1.3–5.1 (IEEE gain, no MS) → pending"])
+                 f"{lo:.2f}–{hi:.2f} (no MS)", f"{tw['gain_ieee_uwb']} (IEEE, 3.1–10.6 GHz, no MS) → pending"])
     return rows
 
 
@@ -53,7 +53,7 @@ SINGLE_W = [0.55, 0.9, 0.75, 1.1, 0.85, 0.85, 1.0]
 
 MIMO_HEAD = ["Ref.", "Ports, size (mm)", "Band (GHz)", "Metasurface and its role", "Isolation (dB)", "ECC",
              "Peak gain (dBi)"]
-MIMO_W = [0.55, 0.95, 0.8, 1.55, 0.7, 0.6, 0.85]
+MIMO_W = [0.55, 0.95, 0.8, 1.4, 0.7, 0.75, 0.85]
 
 
 def mimo_rows(cite: dh.Citer | None) -> list[list[str]]:
