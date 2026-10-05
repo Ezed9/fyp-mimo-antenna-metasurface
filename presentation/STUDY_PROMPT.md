@@ -21,8 +21,22 @@ Project and team
 - Guide: Dr. Ujjal Chakraborty (Associate Professor, ECE). Co-guide: Mr. Sovan Bhattacharya (PhD scholar).
 
 Scope
-- Phase I (mid-sem): a single CPW-fed planar monopole for UWB, with a single split-ring-resonator (SRR)
+- Phase I (mid-sem): a single CPW-fed planar monopole for UWB, with a split-ring-resonator (SRR)
   metasurface placed 3.9 mm behind it, with only an air gap between them.
+
+Antenna geometry (from our CST model)
+- Board: 50 × 50 mm FR-4 (lossy), εr 4.3, tanδ 0.025, 1.6 mm thick. Copper on the front only; the back is bare.
+- Patch: a regular 10-sided (decagonal) patch, circumradius R = 15 mm, centred at x = 8 mm.
+- CPW feed: signal strip 3 mm wide, slots 0.5 mm.
+- Ground planes: x from −25 to −7 mm (18 mm long); each 23 mm wide (|y| from 2 to 25 mm).
+- Patch-to-ground gap: p = 0.73 mm (computed).
+- Board limits: the patch top is 2.7 mm from the board edge.
+
+Metasurface (from our CST model)
+- 6 × 5 cells on 1.6 mm FR-4 with a FULL COPPER GROUND on the back, i.e. a ground-backed (AMC-type) reflector.
+- Each cell: two concentric split rings (Pendry-type SRR).
+- Cell period and ring dimensions: [fill in].
+- Placed 3.9 mm behind the antenna substrate, air in between.
 - Phase II (after mid-sem): a 2-/4-port MIMO version with the metasurface, then fabrication and measurement.
 
 Simulation set-up
@@ -70,10 +84,16 @@ Gap analysis (computed, not simulated), h = 3.9 mm
 - This ray picture ignores near-field coupling, which is strong at 0.04λ, so the matching must be re-checked with the metasurface in place.
 - Realized gain: GR = (1 − |S11|²)·G. Inside the −10 dB band, GR is at most 0.46 dB below G.
 
+Band-edge check (computed)
+- Planar-monopole formula f_L ≈ 7.2/(L + r + p) GHz, lengths in cm.
+- For the decagon: L = 2R·cos18° = 28.5 mm; area 661 mm², so r = 3.7 mm; p = 0.73 mm.
+- Result: f_L ≈ 2.18 GHz, versus 2.16 GHz simulated.
+- The same formula explains the Lg sweep: as p grows to 13.7 mm (Lg = −20 mm), f_L falls to 1.57 GHz,
+  which matches the ≈1.6 GHz first dip.
+
 Still pending (help me answer honestly about these)
-- Substrate and full dimension table [fill in from the CST Parameter List].
-- SRR unit-cell dimensions and its reflection-phase simulation (unit-cell boundaries + Floquet port).
-- Whether the metasurface board has a copper ground plane on its back.
+- SRR cell period and ring dimensions [fill in].
+- The SRR unit cell's reflection-phase simulation (unit-cell boundaries + Floquet port).
 - Antenna + metasurface S11 and gain.
 - Metal-plate (PEC) baseline at the same 3.9 mm gap.
 - Realized gain and radiation patterns.
@@ -220,5 +240,5 @@ Literature, part 3: research gap
 - Explain each concept in simple English first, then go deep with equations and units.
 - Check the physics carefully. If any fact I gave you looks wrong, say so plainly.
 - First ask me at most 5 short questions if something important is unclear
-  (talk length, who presents which slides, the substrate), then produce everything.
+  (talk length, who presents which slides), then produce everything.
 ```
