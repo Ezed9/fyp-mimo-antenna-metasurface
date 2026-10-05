@@ -135,12 +135,66 @@ PAPERS: list[Paper] = [
           "M. AboEl-Hassan, A. E. Farahat, and K. F. A. Hussein, “Gain enhancement wideband CPW antenna based on "
           "artificial magnetic conductor,” *Sci. Rep.*, 2025, doi: 10.1038/s41598-025-89622-9."),
     Paper("hussain2023", "single", "Hussain et al. (2023)",
-          "M. Hussain *et al.*, “Bandwidth and gain enhancement of a CPW antenna using frequency selective surface for "
-          "UWB applications,” *Micromachines*, vol. 14, no. 3, Art. no. 591, 2023, doi: 10.3390/mi14030591."),
+          "M. Hussain, M. A. Sufian, M. S. Alzaidi, S. I. Naqvi, N. Hussain, D. H. Elkamchouchi, M. F. A. Sree, and "
+          "S. Y. A. Fatah, “Bandwidth and gain enhancement of a CPW antenna using frequency selective surface for UWB "
+          "applications,” *Micromachines*, vol. 14, no. 3, Art. no. 591, Feb. 2023, doi: 10.3390/mi14030591.",
+          ref_checked=True,
+          antenna="CPW-fed hexagonal patch with stubs",
+          substrate="Rogers RT/Duroid 6002 (ε_{r} 2.94), 1.52 mm",
+          size="32 × 25 antenna; FSS 50 × 50",
+          ms="Ring joined to a square frame; 5 × 5 FSS",
+          placement="Behind, 9 mm foam spacer (0.09λ_{L})",
+          band="5–17 → 3–18",
+          gain="6.5 → 10.5",
+          eff="Radiation > 75 % → > 78 % (simulated)",
+          measured="Fabricated and measured",
+          problem="Compact printed UWB antennas have modest gain, and the multi-layer reflectors used to raise it make "
+                  "the structure large and complex.",
+          method="A CPW-fed hexagonal patch with stub loading (32 × 25 × 1.52 mm, Rogers RT/Duroid 6002) is backed by "
+                 "a single-layer 5 × 5 frequency selective surface of rings joined to a square frame (50 × 50 mm), "
+                 "placed 9 mm behind the antenna on a foam spacer. The gap is chosen from the in-phase condition "
+                 "φ − 2βG = 2nπ, the same relation used in this project.",
+          results="The reflector widens the band from 5–17 GHz to 3–18 GHz and raises the peak gain from 6.5 dBi to "
+                  "10.5 dBi (the text also quotes 10.75 dBi and 11 dBi at 8 GHz and 13.5 GHz), with more than 10 dBi "
+                  "across the band and radiation efficiency above 78 %. Measured and simulated results agree.",
+          relevance="One reflector layer adds about 4–6 dB over a UWB band, but at a 9 mm gap (0.09λ at 3 GHz), more "
+                    "than twice the 3.9 mm gap of this project, and with a low-loss Rogers substrate.",
+          summary="A CPW-fed stub-loaded hexagonal patch backed by a single-layer 5 × 5 FSS 9 mm below it; the band "
+                  "grows from 5–17 to 3–18 GHz and the peak gain from 6.5 to 10.5 dBi, confirmed by measurement.",
+          src={"substrate/size": "p. 3", "FSS": "pp. 6, 11", "gap": "abstract; p. 7 (eq. 1, 9 mm Styrofoam)",
+               "band/gain": "abstract; Table 1 p. 11; p. 9 text gives 10.75/11 dBi peaks",
+               "efficiency": "p. 9 (Fig. 11, simulated)", "measured": "pp. 7–9"}),
     Paper("algburi2022", "single", "Al-Gburi et al. (2022)",
-          "A. J. A. Al-Gburi, I. Ibrahim, Z. Zakaria, B. H. Ahmad, N. A. Shairi, and M. Y. Zeain, “High gain of UWB "
-          "planar antenna utilising FSS reflector for UWB applications,” *Comput. Mater. Contin.*, vol. 70, no. 1, "
-          "pp. 1425–1436, 2022."),
+          "A. J. A. Al-Gburi, I. B. M. Ibrahim, Z. Zakaria, B. H. Ahmad, N. A. B. Shairi, and M. Y. Zeain, “High gain "
+          "of UWB planar antenna utilising FSS reflector for UWB applications,” *Comput. Mater. Contin.*, vol. 70, "
+          "no. 1, pp. 1425–1436, 2022, doi: 10.32604/cmc.2022.019741.",
+          ref_checked=True,
+          antenna="CPW-fed ring monopole with three legs",
+          substrate="FR-4 (ε_{r} 4.5), 1.6 mm",
+          size="50 × 50 antenna; reflector 100 × 100",
+          ms="Two patches + circular loop, 5 × 5 mm cells; 19 × 19 FSS on FR-4, ground plane behind",
+          placement="Behind; total profile 10 mm (≈ λ/4 at 7.1 GHz)",
+          band="2.1–12.6 → 2.2–11.9 (meas.)",
+          gain="6.7 → 11.5 (11.3 meas.)",
+          eff="Radiation 97 % → 89 % at 9.8 GHz",
+          measured="Fabricated and measured",
+          problem="A planar UWB antenna radiates on both sides, so its gain is low and changes across the band.",
+          method="A CPW-fed “Mercedes”-shaped ring monopole (50 × 50 × 1.6 mm, FR-4, grown from a 15 mm-radius disc) "
+                 "is mounted above a single-layer 19 × 19 FSS of 5 mm cells (two metal patches joined by a circular "
+                 "loop) with a ground plane behind it; the FSS has a stopband from 2.2 to 12.7 GHz and a reflection "
+                 "phase that falls linearly with frequency.",
+          results="The antenna alone covers 2.1–12.6 GHz with a 6.7 dB peak gain. With the reflector the measured band "
+                  "is 2.2–11.9 GHz and the gain stays between 8.3 and 11.5 dB (11.3 dB measured at 8.5 GHz), while "
+                  "radiation efficiency falls from 97 % to 89 % at 9.8 GHz; the total profile is 10 mm.",
+          relevance="Closest in geometry to this project (CPW-fed monopole grown from a 15 mm-radius disc on 1.6 mm "
+                    "FR-4). It shows that a reflection phase falling with frequency keeps the gain stable over UWB, "
+                    "but it needs about 10 mm of profile, versus 3.9 mm here.",
+          summary="A CPW-fed ring monopole (15 mm-radius disc origin, FR-4) above a 19 × 19 single-layer FSS with a "
+                  "ground plane; measured gain 8.3–11.5 dB over 2.2–11.9 GHz at a 10 mm profile, with efficiency "
+                  "falling from 97 % to 89 %.",
+          src={"reference": "p. 1 (DOI); volume/pages from the publisher listing",
+               "substrate/size": "p. 3, Table 1 p. 4", "FSS": "pp. 1, 6–7, 10", "profile": "p. 11",
+               "band/gain/eff": "pp. 1, 3, 5, 10–11, 14", "note": "image-only PDF, read by OCR; paper writes gain in dB"}),
     Paper("hammache2024", "single", "Hammache et al. (2024)",
           "Hammache *et al.*, “Gain enhancement of compact CPW-fed ultra-wideband antenna using an FSS reflector,” "
           "*Microw. Opt. Technol. Lett.*, 2024, doi: 10.1002/mop.34344."),
@@ -185,8 +239,11 @@ SCOPE = [
     "and MDPI sites) combining “CPW-fed”, “UWB monopole”, “metasurface reflector”, “split-ring resonator”, “AMC”, "
     "“FSS”, “gain enhancement” and “MIMO isolation”, together with papers already identified by the team. Group (i) "
     "required a printed wideband or UWB antenna, a periodic reflector behind it, and gain reported with and without "
-    "the reflector. Only papers whose full text could be read were included, and every value in the comparison "
-    "tables was checked against the paper itself.",
+    "the reflector.",
+    "Two papers [@hussain2023, algburi2022] were read in full. For the others the full text could not be obtained in "
+    "time, so their values come from the abstracts and the publishers’ public pages. Every value in the tables was "
+    "checked against at least one of these sources; a value that could not be confirmed is marked “unverified” "
+    "rather than estimated.",
 ]
 
 BACKGROUND_UWB = (

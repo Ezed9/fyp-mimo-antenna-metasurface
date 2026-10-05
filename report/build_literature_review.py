@@ -99,7 +99,7 @@ def build_docx() -> Path:
     dh.caption(doc, "Table 1.", "Single wideband antennas with a metasurface, AMC or FSS reflector.", above=True)
     dh.table(doc, SINGLE_HEAD, single_rows(cite), SINGLE_W, size=8.5, cite=cite, highlight_last=True)
     dh.para(doc, "λ_{L}: free-space wavelength at the lowest operating frequency. “No MS → MS”: without → with the "
-                 "reflector. Values are taken from each paper’s full text; “n/r” = not reported.", size=9)
+                 "reflector. “n/r”: not reported; “unverified”: not confirmed in the accessible text.", size=9)
     dh.caption(doc, "Table 2.", "MIMO antennas that use a metasurface (background for Phase II).", above=True)
     dh.table(doc, MIMO_HEAD, mimo_rows(cite), MIMO_W, size=8.5, cite=cite)
 

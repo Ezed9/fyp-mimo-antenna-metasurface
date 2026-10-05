@@ -191,7 +191,8 @@ def literature_review(c: Ctx) -> None:
     c.p("The review covers two groups of papers, selected as described in the separate literature-review document: "
         "(i) single wideband antennas whose gain is raised by a metasurface, artificial magnetic conductor (AMC) or "
         "frequency selective surface (FSS) reflector, which bear directly on Phase I, and (ii) MIMO antennas that use "
-        "metasurfaces, which inform Phase II. Every value below was checked against the full text of each paper.")
+        "metasurfaces, which inform Phase II. Two papers were read in full and the rest through their abstracts and "
+        "publisher pages; values that could not be confirmed are marked “unverified”.")
     c.h2("Single Antennas with a Metasurface Reflector")
     for p in lit.SINGLE:
         c.p(f"**{p.short}** [@{p.key}]: {p.summary or '[to be completed from the full text]'}")
