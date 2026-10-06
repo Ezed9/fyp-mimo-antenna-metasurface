@@ -18,15 +18,15 @@
 ## 0. Read this first: corrections, risks and things I disagree with
 
 Most of the brief is correct. I checked every number: the FBW 151.7 %, the 2k₀h table, λ/4 = 24.2 mm,
-the 9.6 GHz crossover and the 0.46 dB mismatch bound are all right. The points below are where the brief
+the ≈ 18.7 GHz crossover and the 0.46 dB mismatch bound are all right. The points below are where the brief
 is wrong, overstated or risky. Fix them in the slides **before** the evaluation.
 
-1. **"A PEC plate at 3.9 mm would reduce the forward gain over most of UWB" is overstated.**
+1. **"A PEC plate at 2 mm would reduce the forward gain over all of UWB" holds, but know the exact criterion.**
    In the ray model, two equal waves add to *more* than one wave alone whenever their phase difference is within **±120°**, not ±90°.
    ±90° is the conventional "at least +3 dB over the direct wave" criterion.
-   For a PEC at 3.9 mm the phase error is 180° − 2k₀h. That is below 120° above **≈ 6.4 GHz** *(computed)*.
-   Correct statement: *"In the ray picture, a PEC plate at 3.9 mm cancels the forward wave below ≈ 6.4 GHz
-   (about −6 dB at 3.1 GHz relative to the direct ray), adds less than 3 dB between 6.4 and 9.6 GHz, and helps only above ≈ 9.6 GHz.
+   For a PEC at 2 mm the phase error is 180° − 2k₀h. That is below 120° only above **≈ 12.5 GHz** *(computed)*.
+   Correct statement: *"In the ray picture, a PEC plate at 2 mm cancels the forward wave below ≈ 12.5 GHz
+   (about −11.7 dB at 3.1 GHz relative to the direct ray), adds less than 3 dB between 12.5 and 18 GHz, and never reaches the ±90° window in our simulated band (only above ≈ 18.7 GHz).
    Near-field shorting makes the low band even worse."* That is still a damning case against the plate, and it is accurate.
 
 2. **"Every MIMO + metasurface paper reviewed is narrower-band than UWB" is true only of *your* five papers.**
@@ -42,10 +42,10 @@ is wrong, overstated or risky. Fix them in the slides **before** the evaluation.
 
 3. **Why the metasurface must be ground-backed (it is, in our CST model). Know this argument.**
    - A *bare* (no copper behind) thin SRR sheet reflects with a phase between 90° and 270°. It is ≈ 180° (metal-like) at its own resonance.
-   - It can sit inside the ±90° window at the low end of UWB only where its reflection is weak (|Γ| ≈ 0.3–0.5) *(computed, §3.4)*.
-   - So **a bare SRR sheet cannot give strong in-phase reflection at 3.9 mm in the lower UWB band.**
+   - It can sit inside the ±90° window at the low end of UWB only where its reflection is weak (|Γ| ≈ 0.2–0.3) *(computed, §3.4)*.
+   - So **a bare SRR sheet cannot give strong in-phase reflection at 2 mm in the lower UWB band.**
    - A **ground-backed** SRR (SRR + substrate + copper = an AMC) can, over part of the band.
-   - Note: outside the cell's in-phase band, our AMC behaves like its copper ground, which sits 3.9 + 1.6 = 5.5 mm behind the antenna substrate. So the PEC argument applies there, almost as harshly as at 3.9 mm.
+   - Note: outside the cell's in-phase band, our AMC behaves like its copper ground, which sits 2 + 1.6 = 3.6 mm behind the antenna substrate. So the PEC argument applies there, almost as harshly as at 2 mm.
 
    Our metasurface has a full copper ground on its back, so it is the AMC case. If someone asks why the ground is there, answer with §6 Q-G9.
 
@@ -219,7 +219,7 @@ This is one of the cleanest ways to show the reflector works.
 - **Far field (Fraunhofer):** r > 2D²/λ, with r ≫ D and r ≫ λ. The pattern no longer changes with distance.
   Gain and patterns are defined here.
 - **Key fact for us:** λ/2π = 15.4 mm at 3.1 GHz and 4.5 mm at 10.6 GHz.
-  It equals 3.9 mm at ≈ 12.2 GHz *(computed)*. So the metasurface at 3.9 mm is **inside the reactive near field across all of UWB**.
+  It equals 2 mm at ≈ 23.9 GHz *(computed)*. So the metasurface at 2 mm is **inside the reactive near field across all of UWB**.
   That is why the ray picture is only a guide, and why S₁₁ must be re-checked with the metasurface in place.
 
 **Examiner may ask.**
@@ -503,8 +503,8 @@ If it arrives **out of step**, they cancel.
   - This is why papers using a plain reflector sit at 10–20 mm. **The metasurface's real job is a lower profile.**
 
 **Examiner may ask.**
-- *"Why not just use a metal plate?"* At 3.9 mm a plate is ≈ 151° out of phase at 3.1 GHz.
-  It would need ≈ 12 mm to cover most of UWB. We want the profile three times smaller.
+- *"Why not just use a metal plate?"* At 2 mm a plate is ≈ 165° out of phase at 3.1 GHz.
+  It would need ≈ 12 mm to cover most of UWB. We want the profile six times smaller.
 
 ### 1.13 CST basics
 
@@ -565,11 +565,11 @@ If it arrives **out of step**, they cancel.
 | Ground planes | Each ground plane's extent | x from −25 to −7 mm (18 mm); 23 mm wide (|y| from 2 to 25 mm) |
 | p | Feed gap = patch's lower edge − Lg | **0.73 mm** (optimised) / **13.73 mm** (initial baseline) |
 | Copper | Thickness t | 0.035 mm (standard 1 oz copper) |
-| h (gap) | Antenna-to-metasurface air gap | **3.9 mm** |
+| h (gap) | Antenna-to-metasurface air gap | **2 mm** |
 | SRR cell | Two concentric split rings; period, ring radii, strip width, split | [fill in] |
 | Metasurface | Cells, substrate, back | 6 × 5 cells, 1.6 mm FR-4, full copper ground |
 | Board margin | Patch top to board edge | 2.7 mm (limits R) |
-| Total profile | 1.6 + 3.9 + 1.6 mm | ≈ 7.1 mm plus copper *(computed)* |
+| Total profile | 1.6 + 2 + 1.6 mm | ≈ 5.2 mm plus copper *(computed)* |
 
 ### 2.2b Initial Antenna Baseline and Baseline S₁₁ (Lg = −20 mm)
 
@@ -684,12 +684,12 @@ If it arrives **out of step**, they cancel.
 Appendix A.5 gives the steps.
 
 **Antenna + metasurface (status: pending).**
-- Place the 6 × 5 array at h = 3.9 mm behind the board.
+- Place the 6 × 5 array at h = 2 mm behind the board.
 - Re-run S₁₁ (near-field loading will detune it, so expect to re-tune Lg) and the gain, F/B and patterns.
 
 **Why the PEC baseline matters.**
 - Without it, any gain increase could be credited to "having a reflector" rather than to the metasurface's phase engineering.
-- A **metal plate of the same size at the same 3.9 mm** is the fair control. Theory predicts it fails in the low band (§3.4).
+- A **metal plate of the same size at the same 2 mm** is the fair control. Theory predicts it fails across UWB (§3.4).
 - If the SRR beats the plate, that is direct evidence that the reflection phase is doing the work.
 - Very few papers show this comparison, so it is a strength of our plan.
 
@@ -732,7 +732,7 @@ Appendix A.5 gives the steps.
 
 **Set-up.**
 - The antenna radiates forwards (+z) and backwards (−z).
-- The backward wave travels h = 3.9 mm, reflects with coefficient |Γ|e^{jφ_R}, and travels 3.9 mm back.
+- The backward wave travels h = 2 mm, reflects with coefficient |Γ|e^{jφ_R}, and travels 2 mm back.
 - Relative to the forward wave it carries the phase **φ_R − 2k₀h**.
 - **In-phase condition:** φ_R − 2k₀h = 2nπ, which gives the **required reflection phase φ_R = 2k₀h** (n = 0).
 - Here 2k₀h in degrees = 720°·h/λ₀.
@@ -741,30 +741,30 @@ Appendix A.5 gives the steps.
 
 | f (GHz) | λ₀ (mm) | h/λ₀ | 2k₀h = required φ_R | ±90° window for φ_R | PEC phase error 180° − 2k₀h | PEC ray factor vs direct ray alone |
 |---|---|---|---|---|---|---|
-| 2.16 | 138.7 | 0.028 | 20° | −70° … 110° | 160° | 0.35 (−9.1 dB) |
-| 3.1 | 96.7 | **0.040** | **29°** | −61° … 119° | **151°** | 0.50 (**−6.0 dB**) |
-| 4.78 | 62.7 | 0.062 | 45° | −45° … 135° | 135° | 0.76 (−2.4 dB) |
-| 6.4 | 46.8 | 0.083 | 60° | −30° … 150° | 120° | 1.00 (0 dB, break-even) |
-| 6.85 | 43.8 | 0.089 | 64° | −26° … 154° | 116° | 1.06 (+0.5 dB) |
-| 9.6 | 31.2 | 0.125 | 90° | 0° … 180° | 90° | 1.41 (+3.0 dB) |
-| 10.6 | 28.3 | 0.138 | 99° | 9° … 189° | 81° | 1.52 (+3.7 dB) |
-| 15.73 | 19.1 | 0.205 | 147° | 57° … 237° | 33° | 1.92 (+5.7 dB) |
+| 2.16 | 138.7 | 0.014 | 10° | −80° … 100° | 170° | 0.18 (−14.9 dB) |
+| 3.1 | 96.7 | **0.021** | **15°** | −75° … 105° | **165°** | 0.26 (**−11.7 dB**) |
+| 4.78 | 62.7 | 0.032 | 23° | −67° … 113° | 157° | 0.40 (−8.0 dB) |
+| 6.85 | 43.8 | 0.046 | 33° | −57° … 123° | 147° | 0.57 (−4.9 dB) |
+| 10.6 | 28.3 | 0.071 | 51° | −39° … 141° | 129° | 0.86 (−1.3 dB) |
+| 12.5 | 24.0 | 0.083 | 60° | −30° … 150° | 120° | 1.00 (0 dB, break-even) |
+| 15.73 | 19.1 | 0.105 | 76° | −14° … 166° | 104° | 1.23 (+1.8 dB) |
+| 18 | 16.7 | 0.120 | 86° | −4° … 176° | 94° | 1.37 (+2.7 dB) |
 
 The ray factor is |1 + e^{jΔ}| = 2|cos(Δ/2)|, where Δ is the phase error.
 
-**(a) Why a metal plate fails at 3.9 mm.**
+**(a) Why a metal plate fails at 2 mm.**
 - A PEC has φ_R = 180°. It would need 2k₀h = 180°, that is **h = λ/4 = 24.2 mm at 3.1 GHz**.
-- At 3.9 mm it is 151° out of phase at 3.1 GHz, so the ray model gives about −6 dB relative to the direct ray.
-- It is within ±90° only above ≈ 9.6 GHz and breaks even at ≈ 6.4 GHz.
-- **In the near field** it is worse. The image current is opposite and only 2 × 3.9 mm away, so it largely **cancels the antenna's own current**.
+- At 2 mm it is 165° out of phase at 3.1 GHz, so the ray model gives about −11.7 dB relative to the direct ray.
+- It never enters the ±90° window in our simulated band (only above ≈ 18.7 GHz) and breaks even only at ≈ 12.5 GHz.
+- **In the near field** it is worse. The image current is opposite and only 2 × 2 mm away, so it largely **cancels the antenna's own current**.
   Radiation resistance collapses and the match is destroyed, especially at low frequency.
-- **Conclusion:** a plate at 3.9 mm hurts the lower half of UWB and helps only near the top.
+- **Conclusion:** a plate at 2 mm hurts all of UWB and helps only slightly (under +3 dB) above ≈ 12.5 GHz.
 
 **(b) The reflection-phase curve our SRR must have.**
-- Over 3.1–10.6 GHz, the windows intersect at **φ_R ∈ [9°, 119°]**.
-- In words: the surface must reflect with a phase **between about +10° and +120° across the whole band**.
-  A positive, slowly varying phase, centred near ≈ +64°, would satisfy every frequency.
-- Over the full simulated band (2.16–15.73 GHz) the strip narrows to [57°, 110°].
+- Over 3.1–10.6 GHz, the windows intersect at **φ_R ∈ [−39°, 105°]**.
+- In words: the surface must reflect with a phase **between about −40° and +105° across the whole band**.
+  A small, slowly varying phase, centred near ≈ +33°, would satisfy every frequency.
+- Over the full simulated band (2.16–15.73 GHz) the strip narrows to [−14°, 100°].
 
 **(c) Why one SRR resonance cannot cover a 7 : 1 band (or even 3.4 : 1).**
 1. **Foster's reactance theorem.** For a lossless passive surface, the reflection phase **decreases** monotonically with frequency.
@@ -772,11 +772,11 @@ The ray factor is |1 + e^{jΔ}| = 2|cos(Δ/2)|, where Δ is the phase error.
 2. **Bandwidth.**
    - A single-resonance ground-backed cell sweeps from +180° through 0° to −180°.
    - Its ±90° bandwidth is only ≈ k₀·t, about **20 %** for 1.6 mm FR-4 at 6 GHz *(computed)*.
-   - Staying inside a 110°-wide strip over a 109 % band would need a phase curve many times flatter than that.
+   - Staying inside a 144°-wide strip over a 109 % band would need a phase curve many times flatter than that.
 3. **Bare (no-ground) sheet.**
    - Γ = −1/(1 + 2Z_s/η₀) gives a phase between 90° and 270°, and ≈ 180° at the SRR's own resonance.
-   - It can be inside the window at 3.1 GHz (≤ 119°) only where |Γ| ≤ ≈ 0.48. At 110° |Γ| ≈ 0.34 *(computed)*.
-   - So it reflects weakly exactly where we need help. It can help only in the upper band, where the window includes ≈ 180°.
+   - It can be inside the window at 3.1 GHz (≤ 105°) only where |Γ| ≤ ≈ 0.26. At 100° |Γ| ≈ 0.17 *(computed)*.
+   - So it reflects weakly exactly where we need help. It can help only near the top of the band, where the window approaches 180° (166° at 15.73 GHz).
 4. **Honest expectation.** The metasurface will improve the gain over **part** of UWB, probably a sub-band of a few GHz, unless the cell is broadened.
 
 **(d) Ways to widen the in-phase band.**
@@ -785,10 +785,10 @@ The ray factor is |1 + e^{jΔ}| = 2|cos(Δ/2)|, where Δ is the phase error.
 - **Multi-layer stacks:** two SRR layers at different heights or sizes.
 - **Thicker substrate:** the ±90° band scales roughly as k₀·t, so 3.2 mm stacked FR-4 roughly doubles it. A lower-εᵣ (or foam) spacer also helps in practice, and has lower loss.
 - **Accept a sub-band** and say so: "gain improvement over X–Y GHz, no degradation elsewhere".
-- **Trade the gap:** a sweep of h (for example 3.9 to 10 mm) gives a gain-versus-profile curve. That is a useful result in itself.
+- **Trade the gap:** a sweep of h (for example 2 to 10 mm) gives a gain-versus-profile curve. That is a useful result in itself.
 
 **(e) Near-field loading and re-tuning Lg.**
-- At 0.04λ the metasurface sits inside the reactive near field (λ/2π > 3.9 mm below ≈ 12.2 GHz).
+- At 0.021λ the metasurface sits inside the reactive near field (λ/2π > 2 mm below ≈ 23.9 GHz).
 - It adds capacitance and inductance to the antenna's input impedance. This typically **shifts the resonances and the weak points** (6.5 and 12.2 GHz have only ≈ 0.3–0.5 dB margin).
 - Plan: simulate antenna + metasurface, then **re-sweep Lg (and p) with the metasurface in place**, then report S₁₁ and gain, both IEEE and realized.
 - Watch for the band edges and the two weak valleys.
@@ -819,7 +819,7 @@ The ray factor is |1 + e^{jΔ}| = 2|cos(Δ/2)|, where Δ is the phase error.
 - **Hammache 2024.**
   - A 30 × 30 mm CPW hexagon with a 7 × 7 FSS at **20 mm**.
   - **Realized** gain 2.2 → 8.4 dBi.
-  - **Relevance:** a large improvement, but at a profile five times ours.
+  - **Relevance:** a large improvement, but at a profile ten times ours.
 - **AboEl-Hassan 2025.**
   - CPW octagonal monopole over a 5 × 5 ground-backed AMC across an air gap.
   - Band 3.5–6.5 GHz (not full UWB). Gain up to 9.9–11.5 dBi (the sources differ).
@@ -866,10 +866,10 @@ Columns: Ports | Band (GHz) | Feed | Reflector type | Gap (mm / λ) | Gain witho
 | **Hasan 2022** | 4 | ≈ 3.1–7.7 | 10×10 SRR, copper-backed | 12 mm | 5.4 → 8.3 dBi (realized) |
 | Althuwayb 2023 | 2×2 | 5.0–6.6 | EBG | [check] | ≈ 10 dBi |
 | Wu 2023 | 2 | 4.76–6.77 | polarization-conversion metasurface | [check] | 7.95 dBic |
-| **This work** | 1 → 4 (Phase II) | 2.16–15.73 (antenna alone, sim.) | SRR metasurface | **3.9 mm (0.040λ at 3.1 GHz)** | 2.9–4.9 dBi (IEEE, alone) → [pending] |
+| **This work** | 1 → 4 (Phase II) | 2.16–15.73 (antenna alone, sim.) | SRR metasurface | **2 mm (0.021λ at 3.1 GHz)** | 2.9–4.9 dBi (IEEE, alone) → [pending] |
 
 How to talk through it:
-1. Read the table **by column, not by row**: "Look at the gap column: 9, 10, 12, 20 mm. Ours is 3.9."
+1. Read the table **by column, not by row**: "Look at the gap column: 9, 10, 12, 20 mm. Ours is 2."
 2. "Look at the band column for the MIMO papers: none of the five we reviewed covers full UWB."
 3. "Every paper shows gain with and without the reflector, but few compare against a metal plate at the same gap."
 
@@ -879,20 +879,20 @@ How to talk through it:
 > "Among the papers we reviewed, reflectors behind UWB monopoles use gaps of about 9 to 20 mm, which is roughly 0.1 to 0.2 λ at 3.1 GHz.
 > Split-ring cells behind a full-UWB CPW antenna are rare. Papers rarely compare their metasurface against a plain metal plate at the same gap.
 > The MIMO-plus-metasurface designs we reviewed are all narrower than UWB, such as Hasan 2022 at 3.1–7.7 GHz.
-> We are aiming at the intersection: a full-UWB CPW antenna, an SRR reflector at only 3.9 mm (0.04 λ), a fair metal-plate baseline, and then a 4-port MIMO."
+> We are aiming at the intersection: a full-UWB CPW antenna, an SRR reflector at only 2 mm (0.021 λ), a fair metal-plate baseline, and then a 4-port MIMO."
 
 **Novelty versus Hasan 2022:**
 - Their band is ≈ 3.1–7.7 GHz. We target the full 3.1–10.6 GHz.
-- Their gap is 12 mm. Ours is 3.9 mm, about three times thinner.
+- Their gap is 12 mm. Ours is 2 mm, six times thinner.
 - We plan an explicit PEC baseline at the same gap.
 
 **Novelty versus Al-Gburi 2022:**
 - Theirs is a single antenna. Ours goes on to MIMO.
-- Their profile is 10 mm with a 19×19 FSS. Ours has a 3.9 mm gap.
+- Their profile is 10 mm with a 19×19 FSS. Ours has a 2 mm gap.
 - We use SRR cells rather than their FSS cell.
 
 **Honest caveat to keep in mind:** UWB MIMO antennas with reflectors or AMCs *do* exist outside our review (§0 item 2).
-So the novelty is the **combination** (SRR + 0.04 λ gap + PEC baseline + full UWB + MIMO), not any single element.
+So the novelty is the **combination** (SRR + 0.021 λ gap + PEC baseline + full UWB + MIMO), not any single element.
 And until the metasurface results are in, the novelty is a **hypothesis we are testing**, not a result.
 
 ---
@@ -918,7 +918,7 @@ Each script below is roughly what to say, not something to read out. **Bold** ma
 - *Points:* title, team, guide and co-guide, date.
 - *Script:* "Good morning. We are presenting our final-year project, *Wideband MIMO Antenna with Metasurface*,
   under the guidance of Dr. Ujjal Chakraborty, with Mr. Sovan Bhattacharya as co-guide. I'm Chanswarang, and with me are Nishit, Anushka and Sanjana.
-  In one line: **we are building an ultra-wideband antenna and placing a thin metasurface just 3.9 mm behind it to push its radiation forward.**
+  In one line: **we are building an ultra-wideband antenna and placing a thin metasurface just 2 mm behind it to push its radiation forward.**
   Later it becomes a MIMO antenna."
 
 **Slide 2: Introduction and problem statement (Chanswarang, 1:15)**
@@ -937,10 +937,10 @@ Each script below is roughly what to say, not something to read out. **Bold** ma
 - *Points:*
   1. A CPW-fed decagonal monopole covering all of UWB (|S₁₁| ≤ −10 dB).
   2. Optimise it by parametric study (Lg, R).
-  3. Design an SRR metasurface and place it 3.9 mm behind; compare with no reflector and a metal plate.
+  3. Design an SRR metasurface and place it 2 mm behind; compare with no reflector and a metal plate.
   4. Phase II: 2- or 4-port MIMO with the metasurface, then fabrication and measurement.
 - *Script:* "We have four objectives. First, a single CPW-fed decagonal monopole covering the full UWB band. Second, optimise it with a parametric study.
-  Third, design a split-ring-resonator metasurface and test it 3.9 millimetres behind the antenna, **compared fairly against both no reflector and a metal plate at the same gap**.
+  Third, design a split-ring-resonator metasurface and test it 2 millimetres behind the antenna, **compared fairly against both no reflector and a metal plate at the same gap**.
   Fourth, after mid-sem, extend it to a multi-port MIMO antenna and fabricate it. Today we report objectives one and two complete, and three in progress.
   I'll hand over to Anushka for the literature."
 
@@ -976,21 +976,21 @@ Each script below is roughly what to say, not something to read out. **Bold** ma
 - *Script:* "Our method is step by step: design the element, sweep the ground edge, then the radius, and fix the optimum.
   Separately, design the SRR unit cell with periodic boundaries to get its reflection phase. Then put the metasurface behind the antenna and compare it with a metal plate.
   Phase II builds the MIMO version. Everything is simulated in CST 2019 with the frequency-domain solver from 0 to 18 GHz.
-  Nishit will now explain why 3.9 millimetres is hard."
+  Nishit will now explain why 2 millimetres is hard."
 
-**Slide 7: Theory: why a metasurface at 3.9 mm (Nishit, 1:15)**
+**Slide 7: Theory: why a metasurface at 2 mm (Nishit, 1:15)**
 - *Points:*
   - In-phase condition φ_R − 2k₀h = 2nπ.
-  - Table: 2k₀h = 29° at 3.1 GHz, 99° at 10.6 GHz.
-  - A metal plate (180°) is 151° off at 3.1 GHz and within ±90° only above 9.6 GHz.
-  - The required metasurface phase is ≈ +10° to +120°.
-  - Caveat: the near field at 0.04 λ.
-- *Script:* "The backward wave travels to the reflector and back, which is 7.8 millimetres in total. It comes back with an extra phase of 2k-naught-h plus whatever phase the reflector adds.
-  For it to add to the forward wave, the reflector phase must equal 2k-naught-h. At 3.9 mm that is only 29 degrees at 3.1 GHz and 99 degrees at 10.6 GHz.
-  A metal plate reflects with 180 degrees, so at 3.1 GHz it is 151 degrees out of phase. It cancels rather than adds.
-  It only gets within 90 degrees above 9.6 GHz.
+  - Table: 2k₀h = 15° at 3.1 GHz, 51° at 10.6 GHz.
+  - A metal plate (180°) is 165° off at 3.1 GHz and never within ±90° in our band (only above ≈ 18.7 GHz).
+  - The required metasurface phase is ≈ −40° to +105°.
+  - Caveat: the near field at 0.021 λ.
+- *Script:* "The backward wave travels to the reflector and back, which is 4 millimetres in total. It comes back with an extra phase of 2k-naught-h plus whatever phase the reflector adds.
+  For it to add to the forward wave, the reflector phase must equal 2k-naught-h. At 2 mm that is only 15 degrees at 3.1 GHz and 51 degrees at 10.6 GHz.
+  A metal plate reflects with 180 degrees, so at 3.1 GHz it is 165 degrees out of phase. It cancels rather than adds.
+  It never gets within 90 degrees anywhere in our band; that would take about 18.7 GHz.
   **So a metal plate cannot work at this gap. We need a surface with a small positive reflection phase, which is what a metasurface can engineer.**
-  One caveat: 3.9 mm is only 0.04 wavelengths, deep in the near field, so this ray picture is a guide and we must re-check the matching in simulation."
+  One caveat: 2 mm is only 0.021 wavelengths, deep in the near field, so this ray picture is a guide and we must re-check the matching in simulation."
 
 **Slide 8: Antenna design (Nishit, 0:45)**
 - *Points:* geometry figure (`figures/cst_single_geometry.png`); dimension table (50 × 50 mm FR-4, εᵣ 4.3, 1.6 mm; decagon R = 15 mm; Lg = −7 mm; feed 3 mm, slots 0.5 mm; gap p = 0.73 mm); waveguide port; open boundaries.
@@ -1029,13 +1029,13 @@ Each script below is roughly what to say, not something to read out. **Bold** ma
 - *Points:*
   - SRR as an LC resonator: f₀ = 1/(2π√LC).
   - Unit cell with unit-cell boundaries and a Floquet port gives the reflection phase.
-  - Target phase ≈ +10° to +120° over UWB.
-  - Plan: antenna + metasurface versus PEC at 3.9 mm.
+  - Target phase ≈ −40° to +105° over UWB.
+  - Plan: antenna + metasurface versus PEC at 2 mm.
   - Status: [results pending / fill in].
 - *Script (if no results):* "The metasurface is built from split-ring resonators. Each ring is a tiny LC circuit, and its resonance sets where the surface reflects in phase.
   We are characterising the unit cell with periodic boundaries and a Floquet port to get its reflection phase,
-  and we will compare it with the target curve from slide 7, roughly plus 10 to plus 120 degrees.
-  Then we will simulate the antenna with the metasurface, the antenna with a metal plate at the same 3.9 mm, and the antenna alone, with the same mesh and settings.
+  and we will compare it with the target curve from slide 7, roughly minus 40 to plus 105 degrees.
+  Then we will simulate the antenna with the metasurface, the antenna with a metal plate at the same 2 mm, and the antenna alone, with the same mesh and settings.
   **These metasurface results are still running, and we will present them at the end-semester evaluation.** One thing we already expect from theory:
   a single resonance cannot stay in phase over the whole 3.4-to-1 band, so we are also preparing a dual-resonance cell."
 - *If results arrive:* replace the script with the real phase curve and the S₁₁ and gain comparison. Never estimate.
@@ -1043,7 +1043,7 @@ Each script below is roughly what to say, not something to read out. **Bold** ma
 **Slide 13: Work done and challenges (Sanjana, 0:45)**
 - *Points:*
   - *Done:* literature review, antenna design, Lg and R sweeps, optimised antenna (S₁₁ and gain), gap theory.
-  - *Challenges:* sweep artefacts (we use only the final smooth run), 3.9 mm is in the near field, one resonance cannot cover UWB, simulation time.
+  - *Challenges:* sweep artefacts (we use only the final smooth run), 2 mm is in the near field, one resonance cannot cover UWB, simulation time.
 - *Script:* "So far we've completed the review, the antenna design and optimisation, and the theory for the gap.
   Our challenges are the sweep artefacts we showed, the near-field coupling at such a small gap, and the bandwidth limit of a single SRR resonance."
 
@@ -1060,12 +1060,12 @@ Each script below is roughly what to say, not something to read out. **Bold** ma
 
 **Slide 15: Conclusion and references (Chanswarang, 0:30)**
 - *Points:* three take-aways plus a references list.
-- *Script:* "To conclude: one, our CPW-fed decagonal monopole covers 2.16 to 15.73 GHz with 3 to 5 dBi gain. Two, theory shows a metal plate cannot work 3.9 mm behind it, but a metasurface with the right reflection phase can. Three, the metasurface and MIMO stages are next.
+- *Script:* "To conclude: one, our CPW-fed decagonal monopole covers 2.16 to 15.73 GHz with 3 to 5 dBi gain. Two, theory shows a metal plate cannot work 2 mm behind it, but a metasurface with the right reflection phase can. Three, the metasurface and MIMO stages are next.
   Thank you. We're happy to take questions."
 
 **Transitions (memorise these):**
 - Chanswarang → Anushka: "I'll hand over to Anushka for the literature."
-- Anushka → Nishit: "Nishit will now explain why 3.9 millimetres is hard."
+- Anushka → Nishit: "Nishit will now explain why 2 millimetres is hard."
 - Nishit → Sanjana: "Sanjana will now show the optimised result."
 - Sanjana → Chanswarang: "Back to Chanswarang."
 
@@ -1183,7 +1183,7 @@ F/B = U_front/U_back in dB. A bare monopole has F/B ≈ 0 dB. A good reflector s
 - Radiating near field: out to 2D²/λ.
 - Far field: beyond 2D²/λ, where the pattern no longer depends on distance.
 
-Our metasurface at 3.9 mm is inside λ/2π for all frequencies below ≈ 12.2 GHz.
+Our metasurface at 2 mm is inside λ/2π for all frequencies below ≈ 23.9 GHz.
 
 **C10. What is bandwidth? Fractional bandwidth?**
 The frequency range over which a specification holds (here |S₁₁| ≤ −10 dB). FBW = 2(f_H − f_L)/(f_H + f_L). Ours is 151.7 % (2.1615–15.734 GHz). UWB itself is 109.5 %.
@@ -1241,7 +1241,7 @@ How well the received pulse keeps the shape of the transmitted one. A flat group
 ### E. Our design and results
 
 **E1★. Describe your antenna in 30 seconds.**
-A regular decagonal patch of circumradius 15 mm, fed by a coplanar waveguide (3 mm strip, 0.5 mm slots) on a 50 × 50 mm, 1.6 mm FR-4 board, with the CPW grounds on the same side and their edge at Lg = −7 mm, a 0.73 mm gap from the patch. It is matched from 2.16 to 15.73 GHz (151.7 % FBW) with 2.9–4.9 dBi IEEE gain over UWB. An SRR metasurface 3.9 mm behind it is the next step.
+A regular decagonal patch of circumradius 15 mm, fed by a coplanar waveguide (3 mm strip, 0.5 mm slots) on a 50 × 50 mm, 1.6 mm FR-4 board, with the CPW grounds on the same side and their edge at Lg = −7 mm, a 0.73 mm gap from the patch. It is matched from 2.16 to 15.73 GHz (151.7 % FBW) with 2.9–4.9 dBi IEEE gain over UWB. An SRR metasurface 2 mm behind it is the next step.
 
 **E2★. What is Lg, physically?**
 The coordinate of the CPW grounds' edge along the feed axis (x in the CST model). It sets how close the ground comes to the patch, which sets the exposed feed length and the coupling gap: p = 0.73 mm at Lg = −7 mm.
@@ -1283,16 +1283,16 @@ FR-4 (lossy), 1.6 mm, with εᵣ = 4.3 and tan δ = 0.025 (CST library). It is c
 50 × 50 mm. With R = 15 mm the patch top is only 2.7 mm from the board edge, and the gap to the ground is 0.73 mm. That is why the optima sit at the sweep edges.
 
 **E15. What is the overall profile with the metasurface?**
-1.6 mm antenna substrate + 3.9 mm air gap + 1.6 mm metasurface substrate, giving ≈ 7.1 mm in total, plus copper. That is 0.04 λ for the gap alone at 3.1 GHz.
+1.6 mm antenna substrate + 2 mm air gap + 1.6 mm metasurface substrate, giving ≈ 5.2 mm in total, plus copper. That is 0.021 λ for the gap alone at 3.1 GHz.
 
-**E16★. Why 3.9 mm specifically?**
-Answer honestly: [fill in the real reason: guide's suggestion, available spacer, or a target profile]. Theory: at 3.9 mm the required reflection phase is small and positive (29° at 3.1 GHz to 99° at 10.6 GHz), which a metasurface can plausibly provide and a metal plate cannot. It keeps the profile low. A sweep of h is planned to see the trade-off.
+**E16★. Why 2 mm specifically?**
+Answer honestly: [fill in the real reason: guide's suggestion, available spacer, or a target profile]. Theory: at 2 mm the required reflection phase is small and positive (15° at 3.1 GHz to 51° at 10.6 GHz), which a metasurface can plausibly provide and a metal plate cannot. It keeps the profile low. A sweep of h is planned to see the trade-off.
 
 **E17. Did you look at surface currents?**
 [fill in]. If not: "Not yet. We plan to plot them at the resonances to confirm the mode picture, for example strong ground-edge current at the first resonance."
 
 **E18. What changes will the metasurface cause to S₁₁?**
-At 0.04 λ it will load the antenna in the near field and shift the resonances, so the weak points may break. We will re-tune Lg (and p) with the metasurface in place.
+At 0.021 λ it will load the antenna in the near field and shift the resonances, so the weak points may break. We will re-tune Lg (and p) with the metasurface in place.
 
 ### F. CST and simulation
 
@@ -1356,13 +1356,13 @@ When H passes through the ring, it induces a circulating current, which creates 
 The phase of the reflected wave relative to the incident wave at the surface. It decides whether the wave reflected backwards adds to or cancels the forward wave. We need φ_R ≈ 2k₀h.
 
 **G6★. What is the in-phase condition?**
-φ_R − 2k₀h = 2nπ: the reflector phase minus the round-trip phase must be a multiple of 360°. At h = 3.9 mm, 2k₀h = 29° at 3.1 GHz and 99° at 10.6 GHz.
+φ_R − 2k₀h = 2nπ: the reflector phase minus the round-trip phase must be a multiple of 360°. At h = 2 mm, 2k₀h = 15° at 3.1 GHz and 51° at 10.6 GHz.
 
 **G7★. Why does a metal plate need λ/4?**
 A PEC reflects with 180°. The extra 180° from a λ/2 round trip (2 × λ/4) brings the wave back in phase. At 3.1 GHz that is 24.2 mm.
 
-**G8★. What happens with a metal plate at 3.9 mm?**
-It is 151° out of phase at 3.1 GHz, so in the ray model it cancels about half the forward field (−6 dB). It breaks even only near 6.4 GHz and is within ±90° only above 9.6 GHz. In the near field its opposite image current also shorts out the antenna's radiation resistance.
+**G8★. What happens with a metal plate at 2 mm?**
+It is 165° out of phase at 3.1 GHz, so in the ray model it cancels about three-quarters of the forward field (−11.7 dB). It breaks even only near 12.5 GHz and never gets within ±90° in our simulated band (only above ≈ 18.7 GHz). In the near field its opposite image current also shorts out the antenna's radiation resistance.
 
 **G9★. Why is your metasurface ground-backed?**
 A ground-backed SRR (an AMC) reflects almost totally, with a phase sweeping +180° → 0° → −180°, so it can give the small positive phase we need over part of the band. A bare SRR sheet reflects partially, with a phase between 90° and 270° (≈ 180° at resonance, like metal), so in the low band it can be in the window only where its reflection is weak. That is why ours has a full copper ground on the back.
@@ -1371,7 +1371,7 @@ A ground-backed SRR (an AMC) reflects almost totally, with a phase sweeping +180
 The frequency range where the reflection phase lies within ±90° of the target, so the reflected wave adds at least +3 dB to the direct wave (equal amplitudes). For a classical AMC the target is 0°; for us it is 2k₀h.
 
 **G11★. Why can one SRR not cover a 7 : 1 band?**
-Foster's theorem: a passive lossless surface's reflection phase *falls* with frequency, while the needed phase 2k₀h *rises*. A single resonance's ±90° band is only about k₀t ≈ 20 % for 1.6 mm FR-4 at 6 GHz. We would need the phase to stay between ≈ +10° and +120° over a 109 % band.
+Foster's theorem: a passive lossless surface's reflection phase *falls* with frequency, while the needed phase 2k₀h *rises*. A single resonance's ±90° band is only about k₀t ≈ 20 % for 1.6 mm FR-4 at 6 GHz. We would need the phase to stay between ≈ −40° and +105° over a 109 % band.
 
 **G12★. How can you widen it?**
 Dual-resonant cells (two rings, or ring + patch) that create a phase plateau; varying split angles across the array (Sen 2017); multiple layers; a thicker or lower-loss spacer substrate. Or accept a sub-band, or increase h.
@@ -1429,12 +1429,12 @@ Phase II starts at 2 ports and extends to 4. Orthogonal placement, each element 
 Hasan 2022: a 4-port antenna with a copper-backed 10 × 10 square-enclosed circular-SRR metasurface at 12 mm, ≈ 3.1–7.7 GHz, realized gain 5.4 → 8.3 dBi, isolation > 15.5 dB, ECC < 0.004.
 
 **I2★. What exactly is novel compared with Hasan 2022 and Al-Gburi 2022?**
-Compared with Hasan: we target full UWB (3.1–10.6 GHz rather than ≈ 3.1–7.7), at a gap about three times smaller (3.9 mm versus 12 mm), with a metal-plate baseline at the same gap.
-Compared with Al-Gburi: they have a single antenna with a ground-backed FSS and a 10 mm profile; we use an SRR reflector at a 3.9 mm gap and go on to MIMO.
+Compared with Hasan: we target full UWB (3.1–10.6 GHz rather than ≈ 3.1–7.7), at a gap six times smaller (2 mm versus 12 mm), with a metal-plate baseline at the same gap.
+Compared with Al-Gburi: they have a single antenna with a ground-backed FSS and a 10 mm profile; we use an SRR reflector at a 2 mm gap and go on to MIMO.
 The novelty is the combination, and it is a target until our metasurface results are in.
 
 **I3. Has anyone done UWB MIMO with a reflector?**
-Yes, outside our core review: for example Mohanty & Sahu 2022 (4-port, 2.08–10.4 GHz, metal reflector at ≈ 10 mm) and recent AMC/FSS UWB MIMO papers. That is why we claim the specific combination (SRR, 0.04 λ gap, PEC baseline), not "first".
+Yes, outside our core review: for example Mohanty & Sahu 2022 (4-port, 2.08–10.4 GHz, metal reflector at ≈ 10 mm) and recent AMC/FSS UWB MIMO papers. That is why we claim the specific combination (SRR, 0.021 λ gap, PEC baseline), not "first".
 
 **I4. Why did you pick these ten papers?**
 They span single-antenna reflectors (to learn gain-enhancement methods and gaps) and MIMO with metasurfaces (to learn isolation and diversity methods), focused on recent IEEE, Elsevier and MDPI work. [Add your search keywords and databases.]
@@ -1448,7 +1448,7 @@ A split-ring metasurface reflector behind a UWB circular monopole, ≈ +5.5 dB g
 ### J. Fabrication and measurement
 
 **J1★. How will you fabricate?**
-Etch or mill the antenna on 1.6 mm FR-4 (photolithography or a PCB milling machine) and mount an SMA end-launch connector on the CPW. Fabricate the metasurface board the same way and hold it at 3.9 mm with non-metallic (nylon or Teflon) spacers or foam.
+Etch or mill the antenna on 1.6 mm FR-4 (photolithography or a PCB milling machine) and mount an SMA end-launch connector on the CPW. Fabricate the metasurface board the same way and hold it at 2 mm with non-metallic (nylon or Teflon) spacers or foam.
 
 **J2★. How will you measure?**
 S-parameters on a calibrated VNA (SOLT). Patterns and gain in an anechoic chamber using the gain-comparison (substitution) method with a standard horn: G_AUT = G_ref + (P_AUT − P_ref) in dB.
@@ -1459,7 +1459,7 @@ It is cheap, widely available and standard. But εᵣ varies (≈ 4.2–4.7) bet
 **J4. What differences do you expect between simulation and measurement?**
 Frequency shifts from εᵣ tolerance, fabrication tolerance (± tens of µm on slots), connector and solder effects, cable radiation at low frequency, and air-gap tolerance. Most of all, our weak 6.5 and 12.2 GHz points could cross −10 dB.
 
-**J5. How will you hold a 3.9 mm air gap accurately?**
+**J5. How will you hold a 2 mm air gap accurately?**
 With precision nylon spacers at the corners, outside the radiating region, or a low-εᵣ foam layer (εᵣ ≈ 1.05). We would simulate the spacers if they are close to the antenna.
 
 **J6. Far-field distance for measurement?**
@@ -1487,19 +1487,19 @@ From measured S-parameters (with the lossless caveat), or better from measured c
 
 **K4★. Did you check mesh convergence?**
 - *Answer if yes:* "Yes. Adaptive mesh refinement ran [n] passes and converged to ΔS < [x]. [Optionally:] we also compared the final S₁₁ at a finer mesh, and it changed by less than [y] dB in band."
-- *Fallback if not:* "The frequency-domain solver's adaptive mesh refinement provides the basic check. We haven't yet done a separate refinement study on the final design. We'll do it before the metasurface runs, because the 3.9 mm gap needs a fine mesh in the gap."
+- *Fallback if not:* "The frequency-domain solver's adaptive mesh refinement provides the basic check. We haven't yet done a separate refinement study on the final design. We'll do it before the metasurface runs, because the 2 mm gap needs a fine mesh in the gap."
 
-**K5★. Why 3.9 mm? What if you used a metal plate?**
-- *Answer:* "We want a low profile, and 3.9 mm is only 0.04 λ at 3.1 GHz. At that gap the round trip adds only 29° at 3.1 GHz and 99° at 10.6 GHz. A metal plate adds 180°, so it's 151° out of phase at 3.1 GHz, about −6 dB in the ray model, and it's within ±90° only above 9.6 GHz. In the near field it also shorts out the antenna. So a plate fails at this gap, and that's why the metasurface's reflection phase matters. A plate would need ≈ 24 mm for 3.1 GHz, or ≈ 12 mm to cover most of UWB."
-- *Fallback:* "We're simulating the metal plate at the same 3.9 mm as a baseline, so the comparison will be shown, not just argued. [Real reason for 3.9 mm: fill in.]"
+**K5★. Why 2 mm? What if you used a metal plate?**
+- *Answer:* "We want a low profile, and 2 mm is only 0.021 λ at 3.1 GHz. At that gap the round trip adds only 15° at 3.1 GHz and 51° at 10.6 GHz. A metal plate adds 180°, so it's 165° out of phase at 3.1 GHz, about −11.7 dB in the ray model, and it never gets within ±90° in our band (only above ≈ 18.7 GHz). In the near field it also shorts out the antenna. So a plate fails at this gap, and that's why the metasurface's reflection phase matters. A plate would need ≈ 24 mm for 3.1 GHz, or ≈ 12 mm to cover most of UWB."
+- *Fallback:* "We're simulating the metal plate at the same 2 mm as a baseline, so the comparison will be shown, not just argued. [Real reason for 2 mm: fill in.]"
 
 **K6★. How do you know the SRR reflects in phase?**
-- *Answer:* "We simulate one cell with unit-cell boundaries and a Floquet port, and read the phase of S(Zmax,Zmax) de-embedded to the surface. Then we check it against the required band, φ_R between ≈ +10° and +120° over UWB. As sanity checks: removing the rings should give ≈ 180° (a bare ground), and the cell's phase should cross 0° near its resonance."
+- *Answer:* "We simulate one cell with unit-cell boundaries and a Floquet port, and read the phase of S(Zmax,Zmax) de-embedded to the surface. Then we check it against the required band, φ_R between ≈ −40° and +105° over UWB. As sanity checks: removing the rings should give ≈ 180° (a bare ground), and the cell's phase should cross 0° near its resonance."
 - *Fallback:* "We don't know yet. That simulation is in progress, and until it's done our gap analysis says what the SRR must do, not what it does."
 
 **K7★. Will the metasurface spoil your bandwidth?**
-- *Answer:* "It might. At 0.04 λ it loads the antenna in the near field, and our weak points at 6.5 and 12.2 GHz have only about 0.3–0.5 dB of margin. Our plan is to simulate with the metasurface in place, re-tune Lg and the gap if needed, and report both S₁₁ and realized gain. Some papers, such as Hussain 2023, saw the band widen, so it can go either way."
-- *Fallback:* "If the full UWB band can't be kept at 3.9 mm, we'll report the trade-off: either increase the gap, or report the band that is kept and the gain gained."
+- *Answer:* "It might. At 0.021 λ it loads the antenna in the near field, and our weak points at 6.5 and 12.2 GHz have only about 0.3–0.5 dB of margin. Our plan is to simulate with the metasurface in place, re-tune Lg and the gap if needed, and report both S₁₁ and realized gain. Some papers, such as Hussain 2023, saw the band widen, so it can go either way."
+- *Fallback:* "If the full UWB band can't be kept at 2 mm, we'll report the trade-off: either increase the gap, or report the band that is kept and the gain gained."
 
 **K8★. Is ≈ 5 dBi good? IEEE versus realized?**
 - *Answer:* "For a bidirectional monopole, 2.9–4.9 dBi across UWB is typical, not high. Reflector-backed antennas in our review reach 8–11 dBi, which is our motivation. Our numbers are CST 'Gain', which is IEEE gain and excludes port mismatch. Realized gain = (1 − |S₁₁|²)·G, so inside the −10 dB band it is at most 0.46 dB lower."
@@ -1534,8 +1534,8 @@ From measured S-parameters (with the lossless caveat), or better from measured c
 **K14. Doesn't the R sweep also change the feed gap?**
 "Yes. The patch is centred at x = 8 mm, so increasing R moves its lower edge towards the ground. The gap went from about 11.2 mm at R = 4 mm to 0.73 mm at R = 15 mm. So the R sweep is partly a gap sweep, and that coupling is one reason a joint optimisation would be better."
 
-**K15. Is 0.04 λ in the far field of the metasurface? Can you use reflection phase at all?**
-"No. It's in the reactive near field, because λ/2π > 3.9 mm below ≈ 12.2 GHz. The plane-wave reflection phase is a design guide, which is standard practice in AMC papers. The full-wave simulation of the antenna and metasurface is the real answer."
+**K15. Is 0.021 λ in the far field of the metasurface? Can you use reflection phase at all?**
+"No. It's in the reactive near field, because λ/2π > 2 mm below ≈ 23.9 GHz. The plane-wave reflection phase is a design guide, which is standard practice in AMC papers. The full-wave simulation of the antenna and metasurface is the real answer."
 
 **K16. Your ±90° rule: where does it come from?**
 "Two equal waves within ±90° add to at least √2 times one wave, which is +3 dB. They still exceed one wave up to ±120°. So ±90° is a convention for 'clearly constructive'."
@@ -1548,7 +1548,7 @@ The formula: **state the fact → give the reason → say what you are doing abo
 Never apologise twice, never guess a number, and never let an examiner discover a weakness you already knew about.
 
 - **Metasurface results are pending.**
-  > "The metasurface stage is in progress. What we can show today is the theory that sets its target, which is a reflection phase of roughly +10° to +120° across UWB at our 3.9 mm gap. We've also defined the fair test: antenna alone versus a metal plate versus the metasurface, all at the same gap and mesh. We'll present those results at the end-semester evaluation. We didn't want to show partial numbers before they're verified."
+  > "The metasurface stage is in progress. What we can show today is the theory that sets its target, which is a reflection phase of roughly −40° to +105° across UWB at our 2 mm gap. We've also defined the fair test: antenna alone versus a metal plate versus the metasurface, all at the same gap and mesh. We'll present those results at the end-semester evaluation. We didn't want to show partial numbers before they're verified."
 - **Gain was read from a plot.**
   > "The gain values are read from the CST gain-versus-frequency plot, so they're accurate to about ±0.1 dB. They're IEEE gain. We'll export the data and the realized-gain curve directly for the final report."
 - **Sweep artefacts exist.**
@@ -1571,7 +1571,7 @@ Never apologise twice, never guess a number, and never let an examiner discover 
 | Item | Value |
 |---|---|
 | Antenna | CPW-fed regular decagon, R = 15 mm, on 50 × 50 mm FR-4 (εᵣ 4.3, tan δ 0.025, 1.6 mm); feed 3 mm, slots 0.5 mm; p = 0.73 mm |
-| Metasurface | 6 × 5 double-split-ring cells on 1.6 mm FR-4, full copper ground, 3.9 mm air gap; total profile ≈ 7.1 mm |
+| Metasurface | 6 × 5 double-split-ring cells on 1.6 mm FR-4, full copper ground, 2 mm air gap; total profile ≈ 5.2 mm |
 | Optimised parameters | R = 15 mm, Lg = −7 mm |
 | Lg sweep | 10 values from −20 to −7 mm (R = 15); first resonance ≈ 1.6 → 2.7 GHz |
 | R sweep | 13 values from 4 to 15 mm (Lg = −7) |
@@ -1580,11 +1580,11 @@ Never apologise twice, never guess a number, and never let an examiner discover 
 | Weak points | ≈ 6.5 GHz (−10.3 dB), ≈ 12.2 GHz (−10.5 dB) |
 | IEEE gain | ≈ 1 dBi at 2 GHz; 3.3 dBi near 3.6 GHz; **2.9–4.9 dBi over UWB** (min near 6.3, max near 8.5 GHz); peak ≈ 5.1 dBi near 13.5 GHz (±0.1 dB, read from plot) |
 | Realized gain bound | G_R ≥ G − 0.46 dB inside the −10 dB band |
-| Gap | h = 3.9 mm = 0.040 λ at 3.1 GHz |
-| 2k₀h | 20° (2.16), 29° (3.1), 64° (6.85), 99° (10.6), 147° (15.73 GHz) |
-| PEC | λ/4 = 24.2 mm at 3.1 GHz; at 3.9 mm, 151° off at 3.1 GHz; ±90° only above 9.6 GHz; break-even ≈ 6.4 GHz |
-| Required metasurface phase | ≈ +9° … +119° across 3.1–10.6 GHz *(computed)* |
-| Near field | λ/2π > 3.9 mm below ≈ 12.2 GHz |
+| Gap | h = 2 mm = 0.021 λ at 3.1 GHz |
+| 2k₀h | 10° (2.16), 15° (3.1), 33° (6.85), 51° (10.6), 76° (15.73 GHz) |
+| PEC | λ/4 = 24.2 mm at 3.1 GHz; at 2 mm, 165° off at 3.1 GHz; never within ±90° in our band (only above ≈ 18.7 GHz); break-even ≈ 12.5 GHz |
+| Required metasurface phase | ≈ −39° … +105° across 3.1–10.6 GHz *(computed)* |
+| Near field | λ/2π > 2 mm below ≈ 23.9 GHz |
 | Pending | SRR period and ring sizes, unit-cell phase, antenna + MS, PEC baseline, realized gain, patterns, CST port impedance |
 
 **Formulas**
@@ -1665,7 +1665,7 @@ Speakers as in §5 (swap if your split differs). Times are approximate.
 | Time | Chanswarang (slides 1–3, 15) | Anushka (4–6) | Nishit (7–10) | Sanjana (11–14) |
 |---|---|---|---|---|
 | 2 h | §1.1–1.4, §1.6 (basics, UWB) | §1.9–1.12 (metasurfaces, SRR, HIS, reflectors) + §4 | §1.5, 1.7, 1.13 (CPW, monopoles, CST) + §3 | §1.8 (MIMO) + §2.5–2.9 |
-| 1.5 h | **Together:** fix the slides with §0 items 1–3, 6 and 9. Agree the "3.9 mm reason" (E16). Get the SRR period and ring sizes from CST. | | | |
+| 1.5 h | **Together:** fix the slides with §0 items 1–3, 6 and 9. Agree the "2 mm reason" (E16). Get the SRR period and ring sizes from CST. | | | |
 | 2 h | **CST tasks** (whoever has the CST PC, Appendix A): read the parameter list and fill the dimension table (A.1); find mesh-convergence info in the log (A.3); re-run the > 0 dB Lg case (A.4). If time allows, start the PEC-plate run (A.7) overnight. | | | |
 | 1 h | Each person writes their own slide notes from §5 in their own words, and rehearses alone twice. | | | |
 
@@ -1722,7 +1722,7 @@ Read Ws and Ls from the Parameter List, or from the substrate brick's dimensions
 4. De-embed Zmax to the SRR's top surface (Floquet port → distance to reference plane), so the phase refers to the surface.
 5. Run the sweep from 2–16 GHz, then plot **arg S(Zmax(1),Zmax(1))** and the magnitude. Check both polarizations, Zmax(1) and Zmax(2) (TE/TM).
 6. **Sanity check:** with the SRR deleted and the ground present, the phase should be ≈ 180° at low frequency.
-7. Overlay the target band: φ_R = 720·3.9/λ₀ ± 90° (§3.4 table).
+7. Overlay the target band: φ_R = 720·2/λ₀ ± 90° (§3.4 table).
 
 **A.6 Patterns, E/H planes, realized gain, F/B, efficiency**
 - **Monitors:** Simulation → Field Monitor → Farfield/RCS at e.g. 3, 4, 6, 8 and 10 GHz (more for gain-versus-frequency).
@@ -1735,12 +1735,12 @@ Read Ws and Ls from the Parameter List, or from the substrate brick's dimensions
 
 **A.7 PEC baseline (same gap)**
 1. Copy the project.
-2. Replace the metasurface with a single PEC (or copper) brick of the **same footprint**, 3.9 mm behind the antenna substrate's bottom face.
+2. Replace the metasurface with a single PEC (or copper) brick of the **same footprint**, 2 mm behind the antenna substrate's bottom face.
 3. Use the same mesh, frequencies and monitors.
 4. Export S₁₁, realized gain and F/B for three cases: antenna alone, PEC and metasurface.
 
 **A.8 Antenna + metasurface**
-1. Build the 6 × 5 cells, centred under the antenna, 3.9 mm behind.
+1. Build the 6 × 5 cells, centred under the antenna, 2 mm behind.
 2. Make sure the waveguide port does not cut into the metasurface (limit its downward extension), and re-check its line impedance.
 3. Run the model. If S₁₁ breaks near 6.5 or 12.2 GHz or the band edge, re-sweep Lg with the metasurface in place.
 

@@ -13,3 +13,7 @@ figures_demo/
 *.cst.lok
 
 .DS_Store
+
+# Deck builder (presentation/deck): npm packages and build-time crops
+presentation/deck/node_modules/
+presentation/deck/.cache/
