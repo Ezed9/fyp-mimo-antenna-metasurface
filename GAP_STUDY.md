@@ -14,11 +14,13 @@ a literature review, and an audit of the simulation model.
 1. **3.9 mm (the current CST model) is far too small.** The metasurface's copper ground sits 7.1 mm behind
    the radiator and shorts out its low band: |S11| is −1.5 dB at 2 GHz and the antenna is unmatched from
    2.0 to 4.3 GHz.
-2. **About 30 mm of air (antenna copper to metasurface ground ≈ 33 mm) is the smallest gap that keeps the low
-   band.** At h = 30 mm the −10 dB band starts at 1.9 GHz (−14.4 dB at 2.0 GHz) and runs to 11.0 GHz; h = 40 mm
+2. **With the metasurface as described (15 mm rings → ~100 × 100 mm board), about 30 mm of air (antenna copper
+   to metasurface ground ≈ 33 mm) is the smallest gap that keeps the low band.** At h = 30 mm the −10 dB band starts at 1.9 GHz (−14.4 dB at 2.0 GHz) and runs to 11.0 GHz; h = 40 mm
    behaves the same. Every gap of 27.5 mm or less loses 2.0–2.15 GHz or more. Gaps of 20 mm or less also open
    a second hole around 3–3.7 GHz. **Working window: 30–40 mm. Aim for 32.5–35 mm,** which keeps ≥ 4.8 dB of
-   margin at 2.0 GHz and tolerates ±2.5 mm of spacer error.
+   margin at 2.0 GHz and tolerates ±2.5 mm of spacer error. (If the metasurface is really a 50 × 50 mm board,
+   i.e. the given "R" values are diameters: ≥ 20 mm is needed to keep 2.1–4 GHz, and no gap recovers
+   2.0–2.1 GHz; see §5.4.)
 3. **No gap gives |S11| < −10 dB over all of 2–15 GHz in this model.** The remaining failure, 11.0–13.0 GHz
    (−9 dB), belongs to the antenna itself. It is there without the metasurface (CST: −10.5 dB, openEMS: −7.5 to
    −9 dB, i.e. marginal in both), and any gap ≥ 15 mm changes it by less than 0.3 dB. Fix it in the antenna
@@ -157,7 +159,30 @@ give an in-phase band.
 
 ### 5.4 Sensitivity: 50 × 50 mm metasurface ("R values are diameters")
 
-SMALL_PLACEHOLDER
+Same antenna, but the metasurface is a 50 × 50 mm board (the size of the antenna) with 7.5 mm outer rings
+(radii 3.5–3.75 and 2.5–2.75 mm, 0.25 mm splits, pitch 10 × 8.33 mm), still with a full copper ground. The
+antenna region was meshed at 0.2 mm for these runs, so they are compared with a bare-antenna run on the
+same mesh.
+
+| Gap h (mm) | \|S11\| at 2.0 GHz | Fails (2–15 GHz) | Verdict |
+|---|---|---|---|
+| no MS (0.2 mm mesh) | −8.8 dB | 2.00–2.05, 10.98–12.47 | antenna alone |
+| 3.9 | −1.1 dB | 2.00–4.30, 10.56–12.36, 13.07–13.49 | ✗ low band destroyed |
+| 10 | −2.2 dB | 2.00–4.10, 11.04–12.90 | ✗ |
+| 20 | −8.1 dB | 2.00–2.10, 11.63–13.21 | almost: only the bottom 0.1 GHz |
+| 30 | −7.1 dB | 2.00–2.11, 11.46–13.17 | almost: only the bottom 0.1 GHz |
+| 15, 25 | | (queued) | |
+
+What changes with the smaller board:
+
+* **Small gaps are just as bad.** 3.9 mm and 10 mm lose 2–4 GHz, exactly like the 100 mm metasurface. A
+  ground-backed board the size of the antenna still shorts out the low band.
+* **From ~20 mm up it disturbs the antenna less.** At 20 mm it fails only at 2.00–2.10 GHz, versus 2.00–2.26
+  and 3.03–3.49 GHz for the 100 mm board.
+* **It cannot pull 2.0 GHz in.** At 30 mm the 100 mm board is a ~λ/4 reflector at 2 GHz and gives
+  −14 dB there. A 50 mm board is only 0.33 λ wide at 2 GHz, too small to do that, so 2.00–2.1 GHz stays
+  at −7 to −8 dB, slightly worse than the antenna alone. With a board this size, the 2.0 GHz edge has to
+  be fixed in the antenna.
 
 ---
 
