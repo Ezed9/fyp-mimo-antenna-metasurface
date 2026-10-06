@@ -1,33 +1,7 @@
---- a/b/FDTD/extensions/engine_ext_debyematerial.h	2026-10-06 08:07:50.785540827 +0000
-+++ b/FDTD/extensions/engine_ext_debyematerial.h	2026-10-06 08:07:50.812559043 +0000
-@@ -60,12 +60,23 @@
- 	virtual void DoPreVoltageUpdates();
- 	virtual void DoPostVoltageUpdates();
- 
-+	//! multithreaded variants: every cell is independent, so each thread takes a contiguous slice
-+	virtual void DoPreVoltageUpdates(int threadID);
-+	virtual void DoPostVoltageUpdates(int threadID);
-+	using Engine_Ext_Dispersive::Apply2Voltages;
-+	virtual void Apply2Voltages(int threadID);
-+
- protected:
- 	template <typename EngType>
--	void DoPreVoltageUpdatesImpl(EngType* eng);
-+	void DoPreVoltageUpdatesImpl(EngType* eng, unsigned int start, unsigned int stop);
-+
-+	template <typename EngType>
-+	void DoPostVoltageUpdatesImpl(EngType* eng, unsigned int start, unsigned int stop);
- 
- 	template <typename EngType>
--	void DoPostVoltageUpdatesImpl(EngType* eng);
-+	void Apply2VoltagesRangeImpl(EngType* eng, unsigned int start, unsigned int stop);
-+
-+	void ThreadRange(int threadID, unsigned int &start, unsigned int &stop) const;
- 
- 	Operator_Ext_DebyeMaterial* m_Op_Ext_Deb;
- 
---- a/b/FDTD/extensions/engine_ext_debyematerial.cpp	2026-10-06 08:07:50.787333406 +0000
-+++ b/FDTD/extensions/engine_ext_debyematerial.cpp	2026-10-06 08:07:50.813053901 +0000
+diff --git a/FDTD/extensions/engine_ext_debyematerial.cpp b/FDTD/extensions/engine_ext_debyematerial.cpp
+index dadf312..c9003f8 100644
+--- a/FDTD/extensions/engine_ext_debyematerial.cpp
++++ b/FDTD/extensions/engine_ext_debyematerial.cpp
 @@ -16,6 +16,7 @@
  */
  
@@ -36,7 +10,7 @@
  #include "operator_ext_debyematerial.h"
  #include "FDTD/engine_sse.h"
  
-@@ -67,13 +68,22 @@
+@@ -67,13 +68,22 @@ Engine_Ext_DebyeMaterial::~Engine_Ext_DebyeMaterial()
  	volt_pre_ADE = NULL;
  }
  
@@ -61,7 +35,7 @@
  	{
  		for (int n=0; n<3; ++n)
  		{
-@@ -94,16 +104,23 @@
+@@ -94,16 +104,23 @@ void Engine_Ext_DebyeMaterial::DoPreVoltageUpdatesImpl(EngType* eng)
  
  void Engine_Ext_DebyeMaterial::DoPreVoltageUpdates()
  {
@@ -88,7 +62,7 @@
  	{
  		for (int n=0; n<3; ++n)
  		{
-@@ -120,5 +137,30 @@
+@@ -120,5 +137,30 @@ void Engine_Ext_DebyeMaterial::DoPostVoltageUpdatesImpl(EngType* eng)
  
  void Engine_Ext_DebyeMaterial::DoPostVoltageUpdates()
  {
@@ -120,3 +94,33 @@
 +	ThreadRange(threadID, start, stop);
 +	ENG_DISPATCH_ARGS(Apply2VoltagesRangeImpl, start, stop);
  }
+diff --git a/FDTD/extensions/engine_ext_debyematerial.h b/FDTD/extensions/engine_ext_debyematerial.h
+index 1c4ea03..afd0cbd 100644
+--- a/FDTD/extensions/engine_ext_debyematerial.h
++++ b/FDTD/extensions/engine_ext_debyematerial.h
+@@ -60,12 +60,23 @@ public:
+ 	virtual void DoPreVoltageUpdates();
+ 	virtual void DoPostVoltageUpdates();
+ 
++	//! multithreaded variants: every cell is independent, so each thread takes a contiguous slice
++	virtual void DoPreVoltageUpdates(int threadID);
++	virtual void DoPostVoltageUpdates(int threadID);
++	using Engine_Ext_Dispersive::Apply2Voltages;
++	virtual void Apply2Voltages(int threadID);
++
+ protected:
+ 	template <typename EngType>
+-	void DoPreVoltageUpdatesImpl(EngType* eng);
++	void DoPreVoltageUpdatesImpl(EngType* eng, unsigned int start, unsigned int stop);
++
++	template <typename EngType>
++	void DoPostVoltageUpdatesImpl(EngType* eng, unsigned int start, unsigned int stop);
+ 
+ 	template <typename EngType>
+-	void DoPostVoltageUpdatesImpl(EngType* eng);
++	void Apply2VoltagesRangeImpl(EngType* eng, unsigned int start, unsigned int stop);
++
++	void ThreadRange(int threadID, unsigned int &start, unsigned int &stop) const;
+ 
+ 	Operator_Ext_DebyeMaterial* m_Op_Ext_Deb;
+ 
