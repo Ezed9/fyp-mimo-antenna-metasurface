@@ -21,7 +21,7 @@ fig, ax = plt.subplots(figsize=(7.2, 3.7), dpi=170)
 c = np.loadtxt(cst, delimiter=',', comments='#')
 ax.plot(c[:, 0], c[:, 1], color='#eb6834', lw=2.0, label='CST, team model (digitised from the report figure)')
 for k, arg in enumerate(sys.argv[3:]):
-    lab, fn = arg.split('=', 1)
+    lab, fn = arg.rsplit('=', 1)
     d = np.loadtxt(fn, delimiter=',', skiprows=1)
     ax.plot(d[:, 0], d[:, 1], color=COLORS[k % len(COLORS)], lw=1.8 if k == 0 else 1.2,
             ls='-' if k == 0 else (0, (5, 2)), label=lab)

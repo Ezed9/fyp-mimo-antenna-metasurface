@@ -19,7 +19,7 @@ plt.rcParams.update({'font.size': 9, 'axes.edgecolor': INK2, 'xtick.color': INK2
 out = sys.argv[1]
 fig, axs = plt.subplots(1, 2, figsize=(7.4, 3.3), dpi=170, sharey=True)
 for k, arg in enumerate(sys.argv[2:]):
-    lab, fn = arg.split('=', 1)
+    lab, fn = arg.rsplit('=', 1)
     rows = json.load(open(fn))['gain']
     f = [r['f_GHz'] for r in rows]
     axs[0].plot(f, [r['G_broadside_dBi'] for r in rows], color=COLORS[k], lw=2, marker='o', ms=4, label=lab)
