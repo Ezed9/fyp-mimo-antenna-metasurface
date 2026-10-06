@@ -52,6 +52,17 @@ THIS_WORK = {
     "metasurface": "6 × 5 SRR cells (two concentric split rings), copper-backed",
     "gap_mm": GAP_MM,
     "ms_ground": True,                    # full copper on the back of the metasurface board (team, 5 Oct)
+    # CST "Directivity,Phi=0.0,Max. Value (Subrange)": the highest directivity in the φ = 0° plane, NOT gain
+    # (no losses, no mismatch). Digitised (±0.05 dB) from figures/cst_single_final_directivity.png (antenna alone)
+    # and figures/cst_single_ms_directivity.jpg (with the metasurface) by analysis/plot_directivity.py, which
+    # prints these numbers. The metasurface run covers 1–6 GHz only, so the comparison is limited to it.
+    "dir_range_ghz": (1.0, 6.0),
+    "dir_peak_alone": (3.7, 4.0),         # dBi, GHz (flat top from 3.9 to 4.0 GHz)
+    "dir_peak_ms": (8.8, 5.9),            # dBi, GHz
+    "dir_mean_2_6": (2.3, 3.9),           # dBi, mean of the dB values over 2–6 GHz: alone, with metasurface
+    "dir_ms_higher_pct": 78,              # % of 2–6 GHz where the metasurface curve is higher
+    "dir_ms_lower_ghz": [(2.9, 3.1), (3.3, 4.0)],  # where the antenna alone is higher
+    "dir_worst_drop": (3.1, 3.0),         # dB lower, at GHz (the metasurface dip next to the 3.0–3.4 GHz S11 gap)
 }
 
 
