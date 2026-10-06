@@ -6,7 +6,7 @@
 
 ## Before you start
 
-**Time target:** 12–14 minutes for the talk, then questions. At a calm pace this script takes about 13½ minutes.
+**Time target:** about 14 minutes for the talk, then questions. At a calm pace this script takes about 14 minutes.
 
 ### Who presents what
 
@@ -15,16 +15,17 @@
 | Anushka Dam | 1–4 | Title, antenna basics, problem | about 3 min 15 s |
 | Nishit Baishya | 5–8 | Our antenna, our idea, objectives, literature | about 3 min 50 s |
 | Chanswarang Boro | 9–12 | Method, initial antenna, optimisation, optimised antenna | about 3 min 35 s |
-| Sanjana | 13–15 | Metasurface result, challenges, future work, conclusion | about 2 min 50 s |
+| Sanjana | 13–16 | Metasurface S11 and directivity, challenges, future work, conclusion | about 3 min 35 s |
 
 ### Tips
 
 - Look at the examiners, not at the screen. Turn to the slide only to point.
 - When you say a number, point at it on the plot.
 - Speak slowly. Use short sentences. Pause for a moment when the slide changes.
-- Say "GHz" as "gigahertz", "dB" as "dee-bee", "dBi" as "dee-bee-eye", and "S11" as "S-one-one".
+- Say "GHz" as "gigahertz", "dB" as "dee-bee", "dBi" as "dee-bee-eye", "S11" as "S-one-one", and "φ = 0°" as "phi equals zero degrees".
 - Hand over by name, for example: "Now Nishit will show our antenna."
-- **Never claim a gain improvement.** If asked, say: "Gain is our next simulation. We do not have that result yet."
+- **Call the new result "directivity", not "gain".** Say: "The metasurface makes the antenna more directive. The peak directivity rises from 3.7 to 8.8 dBi." If asked about gain, say: "Directivity is the gain before losses. Realized gain over the whole band is our next step."
+- Quote the fair numbers: the peak, 3.7 → 8.8 dBi, and "higher over 78 % of 2–6 GHz". Do not use the +7 dB at 5.9 GHz as a headline (Q44).
 - If you do not know an answer, say so. Then say how you would find out.
 - Practise with a timer at least twice. If you run late, shorten slides 2 and 3, not the results.
 
@@ -117,9 +118,9 @@
 - A metasurface is a thin board with a repeating pattern of small metal cells. Each cell is much smaller than the wavelength. Together they control how a wave reflects.
 - Ours has 6 × 5 cells, two split rings in each, on FR-4 with copper on the back. It sits 2 mm behind the antenna.
 - A plain metal sheet this close would weaken the forward wave over much of the band.
-- The split rings are *meant* to make the reflected wave add to the forward wave. **This is still to be confirmed by the gain simulation.**
+- The split rings are *meant* to make the reflected wave add to the forward wave. **Our CST result supports the goal:** more of the power now goes forward, and the peak directivity rises from 3.7 to 8.8 dBi (slide 14).
 
-> A metasurface is a thin board printed with a repeating pattern of small metal cells. Each cell is much smaller than the wavelength. Together, the cells control how a wave is reflected. Our metasurface has 6 by 5 cells. Each cell has two split rings. It is made on FR-4, with solid copper on the back. We place it only 2 millimetres behind the antenna. Why not a plain metal sheet? A metal sheet flips the wave when it reflects it. At such a small distance, the flipped wave comes back almost opposite to the forward wave, and weakens it over much of our band. The split rings are meant to change the reflection, so that the reflected wave adds to the forward wave instead. We still have to confirm this with the gain simulation.
+> A metasurface is a thin board printed with a repeating pattern of small metal cells. Each cell is much smaller than the wavelength. Together, the cells control how a wave is reflected. Our metasurface has 6 by 5 cells. Each cell has two split rings. It is made on FR-4, with solid copper on the back. We place it only 2 millimetres behind the antenna. Why not a plain metal sheet? A metal sheet flips the wave when it reflects it. At such a small distance, the flipped wave comes back almost opposite to the forward wave, and weakens it over much of our band. The split rings are meant to change the reflection, so that the reflected wave adds to the forward wave instead. Our first CST result supports the goal: the peak directivity rises from 3.7 to 8.8 dBi.
 
 *Transition:* "Let me now state our objectives clearly."
 
@@ -149,9 +150,10 @@
 - Three papers use a frequency selective surface (FSS) behind the antenna. The gain rises by roughly 4–6 dB, but the total height is 9–20 mm.
 - Sen 2017: double split-ring metasurface, about +5.5 dB. Hasan 2022: 4-port MIMO with a split-ring metasurface, 12 mm.
 - Gap: reflectors usually sit 9–20 mm away. A gap of only a few millimetres over 2–15 GHz is rarely reported.
+- Last row, our work: peak **directivity** 3.7 → 8.8 dBi with the metasurface 2 mm away. The papers quote gain, so do not claim we beat them yet.
 - Say "in the papers we reviewed". **Never say "first".**
 
-> This table shows five papers close to our work. Three of them place a frequency selective surface behind the antenna. That is a printed pattern that reflects the wave. They raise the gain by roughly 4 to 6 dB. But the whole structure is 9 to 20 millimetres thick. Sen and colleagues used a double split-ring metasurface, like ours, and reported about 5.5 dB more gain. Hasan and colleagues used a split-ring metasurface with a four-port MIMO antenna, at 12 millimetres. So here is the gap. In the papers we reviewed, the reflector usually sits 9 to 20 millimetres away. A gap of only a few millimetres, over 2 to 15 GHz, is rarely reported. Our aim is 2 millimetres, and then MIMO in Phase Two.
+> This table shows five papers close to our work. Three of them place a frequency selective surface behind the antenna. That is a printed pattern that reflects the wave. They raise the gain by roughly 4 to 6 dB. But the whole structure is 9 to 20 millimetres thick. Sen and colleagues used a double split-ring metasurface, like ours, and reported about 5.5 dB more gain. Hasan and colleagues used a split-ring metasurface with a four-port MIMO antenna, at 12 millimetres. So here is the gap. In the papers we reviewed, the reflector usually sits 9 to 20 millimetres away. A gap of only a few millimetres, over 2 to 15 GHz, is rarely reported. Ours is just 2 millimetres. The last row is our first result: the peak directivity rises from 3.7 to 8.8 dBi.
 
 *Transition:* "Now Chanswarang will explain how we did the work."
 
@@ -162,11 +164,12 @@
 **Presenter:** Chanswarang · **Time:** ~50 s
 
 **Key points to remember**
-- Eight steps. Steps 1–6 are done. Step 7 (gain plots) remains. Step 8 is Phase II.
+- Eight steps. Steps 1–7 are done. Step 7 is directivity versus frequency, with and without the metasurface (slide 14). Step 8 is Phase II.
+- Realized gain over the whole band and tuning still remain in this phase (slide 15).
 - Tool: CST Studio Suite 2019, frequency-domain solver, 0–18 GHz. Materials: FR-4 and copper.
 - Method: change one dimension at a time, and keep the value with the best S11.
 
-> We follow eight steps. Step one, we built the initial antenna in CST. In steps two and three, we swept the ground position, and then the patch size. Step four gave the optimised antenna and its S11. In step five we designed the metasurface. In step six we simulated the antenna together with the metasurface. These six steps are done. Step seven, the gain plots, is still remaining. Step eight is Phase Two: MIMO, fabrication and testing. We use CST Studio Suite 2019, with its frequency-domain solver, from 0 to 18 GHz. Our method is simple. We change one dimension at a time, and we keep the value that gives the best S11.
+> We follow eight steps. Step one, we built the initial antenna in CST. In steps two and three, we swept the ground position, and then the patch size. Step four gave the optimised antenna and its S11. In step five we designed the metasurface. In step six we simulated the antenna together with the metasurface. In step seven, we compared the directivity with and without the metasurface. These seven steps are done. Step eight is Phase Two: MIMO, fabrication and testing. We use CST Studio Suite 2019, with its frequency-domain solver, from 0 to 18 GHz. Our method is simple. We change one dimension at a time, and we keep the value that gives the best S11.
 
 *Transition:* "Let us see where we started."
 
@@ -220,47 +223,64 @@
 
 ## Slide 13 — Work done: antenna + metasurface S11
 
-**Presenter:** Sanjana · **Time:** ~65 s
+**Presenter:** Sanjana · **Time:** ~55 s
 
 **Key points to remember**
 - The band now runs from about 2.0 GHz up to 18 GHz. 18 GHz is only where the simulation stops.
 - Three narrow gaps above −10 dB: 3.0–3.4 GHz (worst −6.6 dB), 4.5–4.7 GHz (−9.7 dB), 5.1–5.6 GHz (−8.8 dB).
 - Reason: so close, the metasurface changes the antenna's input match. It needs tuning.
-- **Gain is not simulated yet. Make no gain claim.**
+- Talk only about the match here. The directivity result is on the next slide.
 
-> On top is the antenna alone. Below is the same antenna with the metasurface 2 millimetres behind it. The band now starts a little lower, at about 2 GHz. It stays matched up to 18 GHz, which is where our simulation ends. But there are three narrow gaps where S11 rises above minus 10 dB. They are from 3.0 to 3.4 GHz, from 4.5 to 4.7 GHz, and from 5.1 to 5.6 GHz. The worst point is about minus 6.6 dB, near 3 GHz. Why does this happen? The metasurface is very close, so it changes the antenna's input match. We need to tune it. Also, we have not simulated the gain yet, so we make no claim about gain today.
+> On top is the antenna alone. Below is the same antenna with the metasurface 2 millimetres behind it. The band now starts a little lower, at about 2 GHz. It stays matched up to 18 GHz, which is where our simulation ends. But there are three narrow gaps where S11 rises above minus 10 dB. They are from 3.0 to 3.4 GHz, from 4.5 to 4.7 GHz, and from 5.1 to 5.6 GHz. The worst point is about minus 6.6 dB, near 3 GHz. Why does this happen? The metasurface is very close, so it changes the antenna's input match. We need to tune it.
 
-*Transition:* "Next, our challenges and the work ahead."
+*Transition:* "So does the metasurface do its main job, and send more of the power forward? Let us look at the directivity."
 
 ---
 
-## Slide 14 — Challenges & future work
+## Slide 14 — Work done: the metasurface raises the directivity
+
+**Presenter:** Sanjana · **Time:** ~55 s
+
+**Key points to remember**
+- The plot is CST directivity: at each frequency, the highest value in the φ = 0° plane. Copper solid line = with the metasurface, grey dashed line = antenna alone. The shading shows which one is higher.
+- Say "directivity", not "gain". Directivity is the gain the antenna would have with no losses.
+- Headlines: peak 3.7 dBi (near 4 GHz) → 8.8 dBi (at 5.9 GHz), +5.1 dB. Over 2–6 GHz, higher on 78 % of the band; mean 2.3 → 3.9 dBi (+1.6 dB).
+- Caveats: lower at ≈ 2.9–3.1 GHz (worst −3.1 dB at 3.0 GHz, beside the 3.0–3.4 GHz S11 gap) and at ≈ 3.3–4.0 GHz (by up to ≈ 2.2 dB). Data only from 1 to 6 GHz.
+- **Do not use the +7.3 dB at 5.9 GHz as the headline.** The antenna alone dips there because its beam leaves the φ = 0° plane (Q44).
+
+> This slide shows directivity against frequency. Directivity is the gain the antenna would have with no losses. The grey dashed line is the antenna alone, and the copper line is with the metasurface. The peak rises from 3.7 dBi alone to 8.8 dBi with the metasurface. From 2 to 6 GHz, the copper line is higher over 78 percent of the band, and 1.6 dB higher on average. So the metasurface makes the antenna more directive. It sends more of its power forward, as we intended. Two honest points. It is lower in two narrow bands, near 3 GHz and from 3.3 to 4 GHz. And this result covers only 1 to 6 GHz.
+
+*Transition:* "Realized gain over the whole band is our next step. Here are our challenges and the work ahead."
+
+---
+
+## Slide 15 — Challenges & future work
 
 **Presenter:** Sanjana · **Time:** ~60 s
 
 **Key points to remember**
-- Challenges: long simulation time; sweep glitches near 4 and 6 GHz from too few frequency points (to be re-run); thin match margin; metasurface detuning.
-- Rest of Phase I: gain versus frequency, alone and with the metasurface, then compare. Tune the metasurface.
+- Challenges: long simulation time; sweep glitches near 4 and 6 GHz from too few frequency points (to be re-run); thin match margin; metasurface detuning (three S11 gaps, two directivity dips).
+- Remaining in this phase: realized gain over the whole 2–15 GHz band, alone and with the metasurface; tune the metasurface to close the S11 gaps and the directivity dips; radiation patterns.
 - Phase II: 4-port MIMO (elements turned 90°) with the metasurface; isolation and ECC; fabricate on FR-4; measure with a VNA and in an anechoic chamber.
 - Expected outcomes: thin wideband antenna with higher gain, compact MIMO with good isolation, tested prototype.
 
-> We faced four main challenges. Simulations take a long time. A few sweep curves show glitches near 4 and 6 GHz, because of too few frequency points. We will re-run them. The match margin is thin in two places. And the metasurface detunes the antenna. To finish Phase One, we will plot gain against frequency, for the antenna alone and with the metasurface, and compare them. We will also tune the metasurface. In Phase Two, we will build a four-port MIMO antenna, with each element turned by 90 degrees. We will check isolation and ECC. Then we will fabricate it and measure it. We expect a thin, higher-gain wideband antenna, a compact MIMO antenna, and a tested prototype.
+> We faced four main challenges. Simulations take a long time. A few sweep curves show glitches near 4 and 6 GHz, because of too few frequency points. We will re-run them. The match margin is thin in two places. And the metasurface detunes the antenna, and the directivity dips in two narrow bands. To finish Phase One, we will simulate the realized gain from 2 to 15 GHz, tune the metasurface to close the gaps and the dips, and plot the radiation patterns. In Phase Two, we will build a four-port MIMO antenna, with each element turned by 90 degrees. We will check isolation and ECC. Then we will fabricate it and measure it. We expect a thin, higher-gain wideband antenna, a compact MIMO antenna, and a tested prototype.
 
 *Transition:* "Let me sum up."
 
 ---
 
-## Slide 15 — Conclusion & references
+## Slide 16 — Conclusion & references
 
 **Presenter:** Sanjana · **Time:** ~45 s
 
 **Key points to remember**
 - Antenna designed and optimised: matched from 2.16 to 15.73 GHz.
-- Metasurface added at 2 mm: about 2–18 GHz, except three narrow gaps that need tuning.
-- Next: gain plots with and without the metasurface, then MIMO.
+- Metasurface added at 2 mm: about 2–18 GHz, except three narrow gaps that need tuning. Peak directivity 3.7 → 8.8 dBi.
+- Next: realized gain and tuning, then the MIMO antenna.
 - Thank the panel and invite questions.
 
-> To conclude. We designed a CPW-fed decagon antenna and optimised it in CST. It is matched from about 2.2 to 15.7 GHz. We then placed a split-ring metasurface 2 millimetres behind it. Now the match reaches from about 2 to 18 GHz, except for three narrow gaps that need tuning. Our next steps are the gain plots, with and without the metasurface, and then the MIMO antenna. Our main references are listed on this slide. Thank you for listening. We are happy to take your questions.
+> To conclude. We designed a CPW-fed decagon antenna and optimised it in CST. It is matched from about 2.2 to 15.7 GHz. We then placed a split-ring metasurface 2 millimetres behind it. Now the match reaches from about 2 to 18 GHz, except for three narrow gaps that need tuning. And the peak directivity rises from 3.7 to 8.8 dBi. Next come the realized gain and the tuning, and then the MIMO antenna. Our main references are listed on this slide. Thank you for listening. We are happy to take your questions.
 
 ---
 
@@ -292,7 +312,7 @@ A resonance is a frequency where the antenna "fits" the wave naturally, like a s
 Gain tells us how strongly the antenna sends power in its best direction. We compare it with an imaginary "isotropic" antenna that sends power equally in all directions. dBi means "dB relative to isotropic". It includes the antenna's losses.
 
 **Q8. What is the difference between gain and directivity?**
-Directivity only describes the shape of the pattern: how much the antenna focuses power. Gain is directivity reduced by the antenna's own losses, such as loss in the copper and in the FR-4. So gain is always a little lower than directivity.
+Directivity only describes the shape of the pattern: how much the antenna focuses power. Gain is directivity reduced by the antenna's own losses, such as loss in the copper and in the FR-4. So gain is always a little lower than directivity. Our slide-14 result is directivity, so it does not include these losses yet.
 
 **Q9. What is a radiation pattern, and why does a printed monopole have low gain?**
 A radiation pattern is a map of how strongly the antenna radiates in each direction. A printed monopole radiates almost the same to the front and to the back of the board, so its power is spread out. Spread-out power means low gain in any one direction.
@@ -355,7 +375,7 @@ It is a small metal ring with a cut in it. The ring acts like a small coil, an i
 Each ring has its own resonance, so two rings of different sizes give two resonances. Close together, they help the cell work over a wider range. The two rings also couple to each other, which adds capacitance and lowers the resonance, so the cell can stay small.
 
 **Q27. Why a metasurface and not a plain metal plate?**
-A metal plate flips the wave when it reflects it. The wave also travels to the plate and back. If the plate is a quarter wavelength away, that trip makes up for the flip, and the two waves add. At only 2 mm, the trip is far too short across our whole band, so the reflected wave comes back almost opposite and cancels the forward wave. The split rings are meant to change the reflection so that it adds instead. The gain simulation will confirm whether, and over which part of the band, this works.
+A metal plate flips the wave when it reflects it. The wave also travels to the plate and back. If the plate is a quarter wavelength away, that trip makes up for the flip, and the two waves add. At only 2 mm, the trip is far too short across our whole band, so the reflected wave comes back almost opposite and cancels the forward wave. The split rings are meant to change the reflection so that it adds instead. Our first result supports this: with the metasurface, more of the power goes forward, and the peak directivity rises from 3.7 to 8.8 dBi. Realized gain, and a plate at the same gap, will show over which part of the band the forward signal really gets stronger.
 
 **Q28. Why must a plain metal sheet be about a quarter wavelength away?**
 The reflection flips the wave by half a cycle. Going to the sheet and back adds another half cycle when the sheet is a quarter wavelength away. Together that is one full cycle, so the reflected wave lines up with the forward wave and adds. At the low end of our band, a quarter wavelength is a few centimetres, which is too thick.
@@ -380,56 +400,73 @@ At 2 mm, the metasurface sits very close to the antenna, in its near field. It c
 **Q34. Why does the band now start a little lower, at about 2 GHz?**
 We believe the metasurface adds extra loading near the antenna, which pulls the lowest resonance down a little. This is a small shift, and the three gaps above it matter more right now.
 
-**Q35. Did the metasurface improve the gain?**
-We do not know yet. We have only the S11 result with the metasurface. The gain plots, with and without the metasurface, are our very next simulations. We do not claim any gain improvement today.
-
-**Q36. Why don't you have gain results yet?**
-Gain needs far-field results at many frequencies, and the antenna-plus-metasurface model is large, so each run takes a long time. We first made sure the match was right, because gain only matters where the antenna is matched. Gain is the next step in Phase I.
-
-**Q37. What does "thin margin near 6.5 and 12.2 GHz" mean?**
+**Q35. What does "thin margin near 6.5 and 12.2 GHz" mean?**
 At those frequencies, S11 is only just below −10 dB. A small change in a real board, such as a slightly different FR-4 or a small etching error, could push it above the line. We want more margin before fabrication.
 
-**Q38. What are the limitations of your work so far?**
-Everything is simulation only, with no measurement yet. FR-4 is lossy, which will lower the gain and efficiency. The match margin is thin in two places, a few sweep curves have glitches that we must re-run, and the metasurface has created three mismatch gaps. Also, our optimisation was one dimension at a time, and both best values sit at the edge of the range.
+**Q36. What are the limitations of your work so far?**
+Everything is simulation only, with no measurement yet. FR-4 is lossy, which will lower the gain and efficiency. The match margin is thin in two places, a few sweep curves have glitches that we must re-run, and the metasurface has created three mismatch gaps. Our directivity result is not realized gain, it covers only 1–6 GHz and one plane, and it dips in two narrow bands. Also, our optimisation was one dimension at a time, and both best values sit at the edge of the range.
 
-**Q39. What is new in your work?**
-In the papers we reviewed, the reflector usually sits 9–20 mm behind the antenna. We are trying to make it work at 2 mm across 2–15 GHz, and then use it with a MIMO antenna. We do not claim to be the first. Our aim is this combination.
+**Q37. What is new in your work?**
+In the papers we reviewed, the reflector usually sits 9–20 mm behind the antenna. We are trying to make it work at 2 mm across 2–15 GHz, and then use it with a MIMO antenna. Our first result is encouraging: at 2 mm, the peak directivity rises from 3.7 to 8.8 dBi. We do not claim to be the first. Our aim is this combination.
 
-**Q40. Did you compare with a plain metal plate at the same gap?**
-Not yet. It is a fair test: the same plate size at the same 2 mm gap. We would like to add it to the gain runs, so that we can show whether the metasurface really does better than a plain plate.
+**Q38. Did you compare with a plain metal plate at the same gap?**
+Not yet. It is a fair test: the same plate size at the same 2 mm gap. It matters even more now. A plain plate this close would probably also push the power to one side and raise the directivity. But it would also cancel much of the antenna's radiation and spoil the match. Directivity does not show that; realized gain does. So we will add the plate to the realized-gain runs, to show whether the metasurface really does better.
+
+## The directivity result (slide 14)
+
+**Q39. Did the metasurface improve the gain?**
+It made the antenna more directive, which is what it is meant to do. In CST, the peak directivity rose from 3.7 to 8.8 dBi. From 2 to 6 GHz, it was higher over 78 % of the band, and 1.6 dB higher on average. But this is directivity, not realized gain, it covers only 1–6 GHz, and it is lower in two narrow bands. So today we say "more directive". Realized gain over the whole band is our next step.
+
+**Q40. Is this result gain or directivity?**
+Directivity. It is the gain the antenna would have with no losses: it shows how strongly the antenna focuses its power in its best direction. Gain also subtracts the loss in the copper and the FR-4. Realized gain also subtracts the power reflected at the port, so it drops most where S11 is poor, as in the 3.0–3.4 GHz gap. Realized gain is what a real link sees, so it is our next result.
+
+**Q41. Why the φ = 0° plane?**
+That is how this CST plot was set up. At each frequency, it takes the highest directivity in one cut, the φ = 0° plane. This cut stands at right angles to the board, so it contains the direction straight out of the board, front and back. That makes it a sensible cut for a reflector. But it is only one plane. If the beam tilts out of it, the plot misses the true maximum, as it does for the antenna alone near 5.5 GHz. For realized gain, we will take the maximum over all directions.
+
+**Q42. Why only 1–6 GHz?**
+CST gives directivity only at frequencies that have a farfield monitor. The metasurface run had farfield monitors only from 1 to 6 GHz, every 0.1 GHz. The antenna-alone run had dense monitors from 1 to 6 GHz, plus only 9 and 18 GHz. So we compare the two over 2–6 GHz, where both runs have data and the antenna is matched. Above 6 GHz we do not know yet what the metasurface does.
+
+**Q43. Why does the directivity drop near 3 GHz?**
+We are not sure yet. The worst drop is at 3.0 GHz, where the metasurface curve is 3.1 dB below the antenna alone. That is right next to the 3.0–3.4 GHz S11 gap, so the metasurface interacts strongly with the antenna there. Two likely reasons: the reflected wave comes back out of step and cancels part of the forward wave, or the beam tilts out of the φ = 0° plane. The 3D pattern at 3 GHz will tell us which. A smaller dip, up to about 2.2 dB, runs from 3.3 to 4.0 GHz. We will tune the metasurface to close these dips and the S11 gaps.
+
+**Q44. Why not quote the +7 dB at 5.9 GHz?**
+Because it would not be fair. At 5.9 GHz the metasurface curve is 7.3 dB higher, but that number is inflated: the antenna alone dips there in this plane, because its beam points out of the φ = 0° plane. Our earlier 3D gain plot shows about 4.3 dBi for the antenna alone near 5.4 GHz, far more than this plane shows. So we quote fairer numbers: the peak rises from 3.7 to 8.8 dBi (+5.1 dB), and over 2–6 GHz the metasurface is higher on 78 % of the band, by 1.6 dB on average.
+
+**Q45. How will you get realized gain?**
+In CST, with the Farfield Result template: Post-Processing → Template Based Post-Processing → Farfield and Antenna Properties → Farfield Result. We choose Realized Gain, the maximum over all directions (not one plane), and all farfield monitors. That gives one realized-gain curve against frequency. For the whole band, we must first add farfield monitors from 2 to 15 GHz, ideally every 0.5 GHz, to both models, and re-run them with the same settings. The steps are in CST_GUIDE.md. Realized gain counts the FR-4 loss and the mismatch, so it is the fair test.
 
 ## MIMO and future work
 
-**Q41. What is MIMO?**
+**Q46. What is MIMO?**
 MIMO means using several antennas at the transmitter and the receiver. It can send different data streams at the same time over the same band. That is called spatial multiplexing, and it gives more data. It can also send copies of the same data over different paths. That is called diversity, and it makes the link more reliable.
 
-**Q42. What is isolation?**
+**Q47. What is isolation?**
 Isolation tells us how little signal leaks from one antenna port into another on the same board. We read it from S21 and the other coupling curves. A more negative value is better. Many papers aim for better than about 15 dB.
 
-**Q43. What is ECC?**
+**Q48. What is ECC?**
 ECC is the envelope correlation coefficient. It tells us how similar the signals, or patterns, of two antennas are. 0 means fully independent, and 1 means identical. Lower is better. A value below 0.5 is usually accepted, and good designs reach much lower.
 
-**Q44. Why turn the four elements by 90°?**
+**Q49. Why turn the four elements by 90°?**
 Each turned element points its fields in a different direction, so the elements "see" the space differently. This lowers the coupling between them and lowers the ECC. It also gives polarisation diversity.
 
-**Q45. Will the metasurface affect the MIMO isolation?**
+**Q50. Will the metasurface affect the MIMO isolation?**
 It can, because it is a shared surface behind all four elements. Some papers, such as Hasan 2022, report better isolation with a metasurface, but we must check our own design. We will compare isolation and ECC with and without it.
 
 ## Measurement
 
-**Q46. How will you fabricate the antenna?**
+**Q51. How will you fabricate the antenna?**
 We will etch the antenna and the metasurface on FR-4 boards with copper, using standard PCB methods. Then we will solder an SMA connector at the CPW feed edge.
 
-**Q47. How will you measure S11?**
+**Q52. How will you measure S11?**
 We will use a vector network analyser, or VNA. First we calibrate it with a standard calibration kit, so the cable effects are removed. Then we connect the antenna and record S11 across the band. For MIMO, we also record the coupling between ports.
 
-**Q48. How will you measure gain and the radiation pattern?**
+**Q53. How will you measure gain and the radiation pattern?**
 In an anechoic chamber, whose walls are covered with absorbers so that there are no reflections. We rotate the antenna and record the received power in each direction to get the pattern. For gain, we compare our antenna with a reference horn of known gain.
 
-**Q49. How will you hold the metasurface at 2 mm?**
+**Q54. How will you hold the metasurface at 2 mm?**
 With small spacers made of foam or plastic, which affect the wave very little. Foam is close to air, so it keeps the setup close to the simulation.
 
-**Q50. Will measured results match the simulation?**
+**Q55. Will measured results match the simulation?**
 They should be close, but not identical. Real FR-4, etching errors, the SMA connector, the solder and the cable all add small changes. The thin-margin regions are the most likely to move, so we will watch them closely.
 
 ---
@@ -437,6 +474,8 @@ They should be close, but not identical. Real FR-4, etching errors, the SMA conn
 # Sources
 
 Facts in this script were checked against the sources below. Most website fetches were blocked by the network proxy, so the online checks used search-result summaries of these pages. The two textbooks are standard references that we did not open online.
+
+**Project data.** Every S11 and directivity number comes from the team's CST runs. The slide-14 curves were digitised from the CST plots (`figures/cst_single_final_directivity.png`, `figures/cst_single_ms_directivity.jpg`) to about ±0.05 dB, into `exports/single_final_directivity_digitized.csv` and `exports/single_ms_directivity_digitized.csv`. `analysis/plot_directivity.py` draws the comparison and computes the numbers.
 
 **Main sources**
 

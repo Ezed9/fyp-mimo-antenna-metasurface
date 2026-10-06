@@ -84,6 +84,11 @@ is wrong, overstated or risky. Fix them in the slides **before** the evaluation.
     It does help on **receive**, lets you reach the limit with less amplifier power, and focuses energy in one direction
     (less towards the user's body or the device behind). This also applies to imaging, radar and WBAN.
 
+11. **The metasurface result is directivity, not gain. Say so every time.**
+    The CST comparison (§2.10) plots "Directivity,Phi=0.0,Max. Value (Subrange)": the highest directivity in the φ = 0° plane, from 1 to 6 GHz only.
+    Directivity leaves out the FR-4 and copper loss and the port mismatch, and any reflector close behind the antenna raises it, even a plain metal plate.
+    Say *"the metasurface makes the antenna more directive: peak directivity 3.7 → 8.8 dBi"*, never *"the gain rose by 5 dB"*. Realized gain over the whole band is the next run.
+
 ---
 
 ## 1. Fundamentals, from zero to deep
@@ -185,6 +190,7 @@ Reference values: isotropic 0 dBi, short dipole 1.76 dBi, half-wave dipole 2.15 
 - **IEEE gain:** G = e_rad·D = 4π·U_max / P_accepted. It includes conductor and dielectric loss but **excludes port mismatch**.
 - **Realized gain:** G_R = (1 − |Γ|²)·G = 4π·U_max / P_incident. It **includes mismatch**. This is what a link budget actually sees.
 - CST naming: "Directivity", "Gain" (= IEEE gain), "Realized Gain". **Our brief's gain plot is CST "Gain" (IEEE).**
+  The comparison with the metasurface (§2.10) is CST "Directivity".
 - Inside our −10 dB band, G_R ≥ G − 0.46 dB *(computed)*. At the weak points:
   - near 6.5 GHz (≈ −10.3 dB): G_R ≈ G − 0.43 dB;
   - near 12.2 GHz (≈ −10.5 dB): G_R ≈ G − 0.41 dB.
@@ -562,7 +568,7 @@ If it arrives **out of step**, they cancel.
 | Lg | Coordinate of the CPW grounds' edge along the feed axis (x) | **−7 mm** (optimised; initial baseline was −20 mm) |
 | W_f | Feed strip width | 3 mm |
 | G | CPW slot width | 0.5 mm |
-| Ground planes | Each ground plane's extent | x from −25 to −7 mm (18 mm); 23 mm wide (|y| from 2 to 25 mm) |
+| Ground planes | Each ground plane's extent | x from −25 to −7 mm (18 mm); 23 mm wide (\|y\| from 2 to 25 mm) |
 | p | Feed gap = patch's lower edge − Lg | **0.73 mm** (optimised) / **13.73 mm** (initial baseline) |
 | Copper | Thickness t | 0.035 mm (standard 1 oz copper) |
 | h (gap) | Antenna-to-metasurface air gap | **2 mm** |
@@ -646,6 +652,7 @@ If it arrives **out of step**, they cancel.
   - The dip near 6.3 GHz coincides with the weak match near 6.5 GHz. It probably marks a **current-mode transition** where the pattern changes shape.
     *Hypothesis: confirm by looking at the 3D pattern or surface current at 6.3 GHz.*
   - **This is IEEE gain.** Realized gain is at most 0.46 dB lower inside the −10 dB band (§1.4).
+- For the comparison with the metasurface, see §2.10. That plot is directivity, in the φ = 0° plane only.
 
 ### 2.7 What "best" means, and why the optima sit at the sweep edge
 
@@ -683,15 +690,73 @@ If it arrives **out of step**, they cancel.
 
 Appendix A.5 gives the steps.
 
-**Antenna + metasurface (status: pending).**
-- Place the 6 × 5 array at h = 2 mm behind the board.
-- Re-run S₁₁ (near-field loading will detune it, so expect to re-tune Lg) and the gain, F/B and patterns.
+**Antenna + metasurface (status: S₁₁ and directivity done; realized gain, patterns and tuning pending).**
+- The 6 × 5 array sits at h = 2 mm behind the board.
+- S₁₁ (done): below −10 dB from ≈ 2.0 GHz up to 18 GHz, except three narrow gaps: 3.0–3.4 GHz (worst ≈ −6.6 dB),
+  4.5–4.7 GHz (≈ −9.7 dB) and 5.1–5.6 GHz (≈ −8.8 dB). Near-field loading detuned it, as expected, so Lg, the gap and the rings need re-tuning.
+- Directivity over 1–6 GHz (done): peak 3.7 → 8.8 dBi (§2.10).
+- Still to do: realized gain over the whole band, F/B and patterns.
 
 **Why the PEC baseline matters.**
 - Without it, any gain increase could be credited to "having a reflector" rather than to the metasurface's phase engineering.
 - A **metal plate of the same size at the same 2 mm** is the fair control. Theory predicts it fails across UWB (§3.4).
 - If the SRR beats the plate, that is direct evidence that the reflection phase is doing the work.
 - Very few papers show this comparison, so it is a strength of our plan.
+
+### 2.10 The directivity comparison: antenna alone versus antenna + metasurface
+
+**What was plotted.**
+- Two CST plots, both titled "Directivity,Phi=0.0,Max. Value (Subrange)": at each frequency, the **highest directivity in the φ = 0° plane**.
+  - Antenna alone: `figures/cst_single_final_directivity.png`. With the metasurface: `figures/cst_single_ms_directivity.jpg`.
+  - Digitised (≈ ±0.05 dB) into `exports/single_final_directivity_digitized.csv` and `exports/single_ms_directivity_digitized.csv`.
+    `analysis/plot_directivity.py` overlays them (`figures/fig_directivity_compare.png`; deck version `fig_directivity_compare_deck.png`) and computes every number below.
+- **Directivity is not gain.** D says how strongly the antenna focuses the power it radiates: it is the gain the antenna would have with no losses.
+  IEEE gain G = e_rad·D also counts the FR-4 and copper loss, and realized gain G_R = (1 − |S₁₁|²)·G also counts the mismatch (§1.4).
+  So the realized gain will be lower than these curves, most of all where S₁₁ is poor.
+- **The φ = 0° plane** is one cut at right angles to the board. It contains the direction straight out of the board, front and back, but it is not the whole sphere.
+  If the beam tilts out of the cut, the plot under-reads the true maximum.
+
+**Numbers** *(digitised from the CST plots)*
+
+| | Antenna alone | With metasurface |
+|---|---|---|
+| Peak directivity | 3.7 dBi near 4 GHz (flat top 3.9–4.0 GHz) | **8.8 dBi at 5.9 GHz** (+5.1 dB) |
+| Other features | dips to ≈ 0.0 dBi near 5.5 GHz (in this plane) | peaks of 5.7 dBi (2.8 GHz), 5.5 dBi (3.1 GHz), 5.1 dBi (4.2 GHz); sharp dip to −0.2 dBi at 3.0 GHz |
+| Mean over 2–6 GHz (average of the dB values) | 2.3 dBi | 3.9 dBi (+1.6 dB) |
+
+- Over 2–6 GHz, where the antenna is matched and both runs have data, the metasurface curve is **higher on 78 % of the band**.
+- **Where the metasurface is lower:** ≈ 2.9–3.1 GHz (worst −3.1 dB at 3.0 GHz, right next to the 3.0–3.4 GHz S₁₁ gap) and ≈ 3.3–4.0 GHz (by up to ≈ 2.2 dB).
+- **Not a fair headline:** the same-frequency difference is +4 to +7 dB from 5.2 to 6.0 GHz (+7.3 dB at 5.9 GHz).
+  But in this plane the antenna alone dips there because its beam points out of the φ = 0° plane: its 3D IEEE gain (§2.6) is ≈ 4.3 dBi at 5.4 GHz,
+  and directivity is never below gain. Quote the peak-to-peak and the 78 % / +1.6 dB figures instead.
+- **Data limits:** the metasurface run has farfield monitors only at 1–6 GHz (every 0.1 GHz). The antenna-alone run has dense samples at 1–6 GHz plus only 9 and 18 GHz;
+  the straight lines above 6 GHz in its plot are just CST joining those points. Nothing is known above 6 GHz with the metasurface yet.
+
+**Why the metasurface raises it.**
+- The bare monopole radiates almost equally to the front and the back (§2.1), so its directivity is only a few dBi.
+- The copper-backed metasurface reflects the backward wave forward. More of the radiated power goes into the front half-space, so the beam is more concentrated and the directivity rises.
+  This is the "send the backward wave forward" goal of the project.
+- Where the reflected wave comes back out of step (§3.4), it partly cancels the forward wave, and the beam can also tilt.
+  That is a likely reason for the two dips. The 3D pattern at 3.0 GHz will tell (not yet checked).
+
+**What it does not prove yet.**
+- Any reflector close behind the antenna makes the beam one-sided, so even a plain metal plate would raise the directivity.
+  At 2 mm the plate would also cancel much of the radiation and spoil the match (§3.4 (a)), which shows up only in realized gain.
+- So directivity alone cannot show that the metasurface beats a plate. The realized gain and the PEC baseline (§2.9) will.
+
+**How to say it.**
+> "The metasurface makes the antenna more directive: it sends more of its power forward, as intended. The peak directivity rises from 3.7 to 8.8 dBi,
+> and from 2 to 6 GHz it is higher over 78 % of the band, by 1.6 dB on average. This is directivity, not realized gain, in the φ = 0° plane and from 1 to 6 GHz only,
+> and it dips in two narrow bands near 3 GHz. Realized gain over the whole band is our next run."
+
+**Next run.** CST Farfield Result template → Realized Gain, maximum over all directions, all farfield monitors.
+Add farfield monitors at 2–15 GHz, ideally every 0.5 GHz, to both models (Appendix A.6 and `CST_GUIDE.md`).
+
+**Examiner may ask.**
+- *"Is this gain?"* No, it is directivity: the gain before losses. Realized gain is next.
+- *"Why only up to 6 GHz?"* The metasurface run's farfield monitors stop at 6 GHz.
+- *"Why is it lower near 3 GHz?"* It sits next to the 3.0–3.4 GHz S₁₁ gap, where the metasurface interacts strongly with the antenna. Out-of-step reflection or a beam tilt are likely; not yet checked.
+- *"Would a metal plate do the same?"* It would also raise the directivity, but at 2 mm it would spoil the match and the efficiency. Realized gain and the plate run will show the difference.
 
 ---
 
@@ -866,7 +931,7 @@ Columns: Ports | Band (GHz) | Feed | Reflector type | Gap (mm / λ) | Gain witho
 | **Hasan 2022** | 4 | ≈ 3.1–7.7 | 10×10 SRR, copper-backed | 12 mm | 5.4 → 8.3 dBi (realized) |
 | Althuwayb 2023 | 2×2 | 5.0–6.6 | EBG | [check] | ≈ 10 dBi |
 | Wu 2023 | 2 | 4.76–6.77 | polarization-conversion metasurface | [check] | 7.95 dBic |
-| **This work** | 1 → 4 (Phase II) | 2.16–15.73 (antenna alone, sim.) | SRR metasurface | **2 mm (0.021λ at 3.1 GHz)** | 2.9–4.9 dBi (IEEE, alone) → [pending] |
+| **This work** | 1 → 4 (Phase II) | 2.16–15.73 (antenna alone, sim.) | SRR metasurface | **2 mm (0.021λ at 3.1 GHz)** | 2.9–4.9 dBi (IEEE, alone); with MS: peak directivity 3.7 → 8.8 dBi (φ = 0° plane, 1–6 GHz) |
 
 How to talk through it:
 1. Read the table **by column, not by row**: "Look at the gap column: 9, 10, 12, 20 mm. Ours is 2."
@@ -893,11 +958,15 @@ How to talk through it:
 
 **Honest caveat to keep in mind:** UWB MIMO antennas with reflectors or AMCs *do* exist outside our review (§0 item 2).
 So the novelty is the **combination** (SRR + 0.021 λ gap + PEC baseline + full UWB + MIMO), not any single element.
-And until the metasurface results are in, the novelty is a **hypothesis we are testing**, not a result.
+The first metasurface result supports it: at 2 mm the peak directivity rises from 3.7 to 8.8 dBi (§2.10).
+But until realized gain and the metal-plate baseline are in, the novelty is still a **claim we are testing**, not a proven result.
 
 ---
 
 ## 5. Presentation: slide-by-slide (≈ 15 min)
+
+> **The final deck has 16 slides** (`SLIDES_OUTLINE.md`). Its script and presenter split are in `presentation/SPEAKER_SCRIPT.md`: rehearse from that file.
+> This section is the earlier 15-slide plan. Keep it for background and for the extra detail in each slide.
 
 **Default speaker split.** The team chose to set the split themselves but did not send it, so this is a contiguous default.
 Swap names freely; the timings stay.
@@ -1031,36 +1100,38 @@ Each script below is roughly what to say, not something to read out. **Bold** ma
   - Unit cell with unit-cell boundaries and a Floquet port gives the reflection phase.
   - Target phase ≈ −40° to +105° over UWB.
   - Plan: antenna + metasurface versus PEC at 2 mm.
-  - Status: [results pending / fill in].
-- *Script (if no results):* "The metasurface is built from split-ring resonators. Each ring is a tiny LC circuit, and its resonance sets where the surface reflects in phase.
-  We are characterising the unit cell with periodic boundaries and a Floquet port to get its reflection phase,
-  and we will compare it with the target curve from slide 7, roughly minus 40 to plus 105 degrees.
-  Then we will simulate the antenna with the metasurface, the antenna with a metal plate at the same 2 mm, and the antenna alone, with the same mesh and settings.
-  **These metasurface results are still running, and we will present them at the end-semester evaluation.** One thing we already expect from theory:
+  - Status: antenna + metasurface S₁₁ (three narrow gaps, 3.0–5.6 GHz) and directivity over 1–6 GHz (peak 3.7 → 8.8 dBi) are done (§2.9, §2.10).
+    Unit-cell phase and PEC baseline: [results pending / fill in].
+- *Script:* "The metasurface is built from split-ring resonators. Each ring is a tiny LC circuit, and its resonance sets where the surface reflects in phase.
+  With the metasurface 2 millimetres behind the antenna, the band reaches from about 2 to 18 GHz, with three narrow gaps that need tuning.
+  And the antenna becomes more directive: the peak directivity rises from 3.7 to 8.8 dBi, and from 2 to 6 GHz it is higher over 78 percent of the band.
+  **The metasurface sends more of the power forward. This is directivity from 1 to 6 GHz, so realized gain over the whole band is our next run.**
+  We will also characterise the unit cell with periodic boundaries and a Floquet port, and compare it with the target curve from slide 7, roughly minus 40 to plus 105 degrees,
+  and we will simulate a metal plate at the same 2 mm. One thing we already expect from theory:
   a single resonance cannot stay in phase over the whole 3.4-to-1 band, so we are also preparing a dual-resonance cell."
-- *If results arrive:* replace the script with the real phase curve and the S₁₁ and gain comparison. Never estimate.
+- *Unit-cell phase and PEC baseline:* show them only when the results exist. Never estimate.
 
 **Slide 13: Work done and challenges (Sanjana, 0:45)**
 - *Points:*
-  - *Done:* literature review, antenna design, Lg and R sweeps, optimised antenna (S₁₁ and gain), gap theory.
-  - *Challenges:* sweep artefacts (we use only the final smooth run), 2 mm is in the near field, one resonance cannot cover UWB, simulation time.
-- *Script:* "So far we've completed the review, the antenna design and optimisation, and the theory for the gap.
+  - *Done:* literature review, antenna design, Lg and R sweeps, optimised antenna (S₁₁ and gain), gap theory, antenna + metasurface S₁₁ and directivity (1–6 GHz).
+  - *Challenges:* sweep artefacts (we use only the final smooth run), 2 mm is in the near field (three S₁₁ gaps, two directivity dips), one resonance cannot cover UWB, simulation time.
+- *Script:* "So far we've completed the review, the antenna design and optimisation, the theory for the gap, and the first metasurface results: S11 and directivity.
   Our challenges are the sweep artefacts we showed, the near-field coupling at such a small gap, and the bandwidth limit of a single SRR resonance."
 
 **Slide 14: Future work and expected outcomes (Sanjana, 1:00)**
 - *Points:*
-  - Finish the unit cell, the antenna + metasurface, the PEC baseline, realized gain, patterns and F/B.
+  - Finish the unit cell, the PEC baseline, realized gain over the whole band, patterns and F/B; tune the metasurface (S₁₁ gaps, directivity dips).
   - Phase II: 2/4-port MIMO (orthogonal elements), isolation > 15 dB, ECC < 0.01 target, DG, TARC, CCL, MEG.
   - Fabrication on FR-4, VNA and anechoic-chamber measurement.
   - Timeline: [fill in month by month].
-- *Script:* "Next we finish the metasurface comparison. Then in Phase II we build the MIMO version, place the elements orthogonally for isolation,
+- *Script:* "Next we finish the metasurface comparison with realized gain over the whole band, and tune the metasurface. Then in Phase II we build the MIMO version, place the elements orthogonally for isolation,
   and evaluate isolation, ECC, diversity gain, TARC, channel capacity loss and MEG.
   Finally we fabricate on FR-4 and measure S-parameters on a VNA and patterns in an anechoic chamber. We expect [targets, not results]:
   full-UWB matching, isolation above 15 dB, and a gain improvement over at least part of the band compared with both no reflector and a metal plate. Back to Chanswarang."
 
 **Slide 15: Conclusion and references (Chanswarang, 0:30)**
 - *Points:* three take-aways plus a references list.
-- *Script:* "To conclude: one, our CPW-fed decagonal monopole covers 2.16 to 15.73 GHz with 3 to 5 dBi gain. Two, theory shows a metal plate cannot work 2 mm behind it, but a metasurface with the right reflection phase can. Three, the metasurface and MIMO stages are next.
+- *Script:* "To conclude: one, our CPW-fed decagonal monopole covers 2.16 to 15.73 GHz with 3 to 5 dBi gain. Two, theory shows a metal plate cannot work 2 mm behind it, but a metasurface with the right reflection phase can. Three, with the metasurface 2 mm behind it, the peak directivity rises from 3.7 to 8.8 dBi; realized gain, tuning and MIMO are next.
   Thank you. We're happy to take questions."
 
 **Transitions (memorise these):**
@@ -1161,7 +1232,7 @@ D = 4πU_max/P_rad, how concentrated the radiation is compared with an isotropic
 IEEE gain G = e_rad·D includes ohmic and dielectric loss but not mismatch. Realized gain G_R = (1 − |S₁₁|²)·G also includes mismatch. CST's "Gain" is IEEE; "Realized Gain" is a separate option.
 
 **C3★. What is your gain?**
-IEEE gain ≈ 2.9–4.9 dBi across 3.1–10.6 GHz (lowest near 6.3 GHz, highest near 8.5 GHz), with a peak ≈ 5.1 dBi near 13.5 GHz. These values are read from the CST plot to ±0.1 dB. Realized gain inside the band is at most 0.46 dB lower.
+IEEE gain ≈ 2.9–4.9 dBi across 3.1–10.6 GHz (lowest near 6.3 GHz, highest near 8.5 GHz), with a peak ≈ 5.1 dBi near 13.5 GHz. These values are read from the CST plot to ±0.1 dB. Realized gain inside the band is at most 0.46 dB lower. With the metasurface we have directivity so far, not gain: the peak rises from 3.7 to 8.8 dBi (φ = 0° plane, 1–6 GHz; §2.10).
 
 **C4. What is radiation efficiency?**
 e_rad = P_rad/P_accepted. Losses in copper and FR-4 reduce it. Total efficiency also multiplies by (1 − |S₁₁|²). Ours is [fill in from CST].
@@ -1241,7 +1312,7 @@ How well the received pulse keeps the shape of the transmitted one. A flat group
 ### E. Our design and results
 
 **E1★. Describe your antenna in 30 seconds.**
-A regular decagonal patch of circumradius 15 mm, fed by a coplanar waveguide (3 mm strip, 0.5 mm slots) on a 50 × 50 mm, 1.6 mm FR-4 board, with the CPW grounds on the same side and their edge at Lg = −7 mm, a 0.73 mm gap from the patch. It is matched from 2.16 to 15.73 GHz (151.7 % FBW) with 2.9–4.9 dBi IEEE gain over UWB. An SRR metasurface 2 mm behind it is the next step.
+A regular decagonal patch of circumradius 15 mm, fed by a coplanar waveguide (3 mm strip, 0.5 mm slots) on a 50 × 50 mm, 1.6 mm FR-4 board, with the CPW grounds on the same side and their edge at Lg = −7 mm, a 0.73 mm gap from the patch. It is matched from 2.16 to 15.73 GHz (151.7 % FBW) with 2.9–4.9 dBi IEEE gain over UWB. With an SRR metasurface 2 mm behind it, the peak directivity rises from 3.7 to 8.8 dBi (CST, φ = 0° plane, 1–6 GHz); realized gain is next.
 
 **E2★. What is Lg, physically?**
 The coordinate of the CPW grounds' edge along the feed axis (x in the CST model). It sets how close the ground comes to the patch, which sets the exposed feed length and the coupling gap: p = 0.73 mm at Lg = −7 mm.
@@ -1271,7 +1342,7 @@ A disc-like monopole is naturally very wideband. The extra range is margin and i
 UWB needs 109.5 % (3.1–10.6 GHz). We have 151.7 %, with ≈ 0.94 GHz of margin below 3.1 GHz and ≈ 5.1 GHz above 10.6 GHz.
 
 **E11★. Is about 5 dBi good?**
-For a bidirectional planar monopole, yes: 2–5 dBi is typical. It is low compared with the 8–11 dBi reflector-backed designs in the literature, which is exactly the motivation for adding the metasurface.
+For a bidirectional planar monopole, yes: 2–5 dBi is typical. It is low compared with the 8–11 dBi reflector-backed designs in the literature, which is exactly the motivation for adding the metasurface. With the metasurface the peak directivity reaches 8.8 dBi, but that is directivity; a fair comparison with those papers needs realized gain.
 
 **E12. Why is the gain lowest near 6.3 GHz?**
 That is where one current mode hands over to the next, coinciding with the weak match at 6.5 GHz. The pattern likely changes shape there. We would confirm by plotting the pattern and surface current at 6.3 GHz.
@@ -1291,8 +1362,8 @@ Answer honestly: [fill in the real reason: guide's suggestion, available spacer,
 **E17. Did you look at surface currents?**
 [fill in]. If not: "Not yet. We plan to plot them at the resonances to confirm the mode picture, for example strong ground-edge current at the first resonance."
 
-**E18. What changes will the metasurface cause to S₁₁?**
-At 0.021 λ it will load the antenna in the near field and shift the resonances, so the weak points may break. We will re-tune Lg (and p) with the metasurface in place.
+**E18. What changes did the metasurface cause to S₁₁?**
+At 0.021 λ it loads the antenna in the near field and shifts the match. In CST, S₁₁ now stays below −10 dB from ≈ 2.0 to 18 GHz, except three narrow gaps (3.0–3.4, 4.5–4.7 and 5.1–5.6 GHz; worst ≈ −6.6 dB). We will re-tune Lg (and p), the gap and the rings with the metasurface in place.
 
 ### F. CST and simulation
 
@@ -1321,7 +1392,7 @@ A result is converged when refining the mesh changes it by less than a tolerance
 You define parameters (Lg, R), add sequences with start/stop/steps under Simulation → Parameter Sweep, and CST runs each combination, storing all results so they can be overlaid in 1D results.
 
 **F9. How did you get gain versus frequency?**
-Far-field monitors at several frequencies, then the maximum gain at each frequency plotted as a 1D curve. The curve is only as dense as the monitor set: [fill in which frequencies].
+Far-field monitors at several frequencies, then the maximum gain at each frequency plotted as a 1D curve. The curve is only as dense as the monitor set: [fill in which frequencies]. For the directivity comparison (§2.10) the monitors were: antenna alone, dense at 1–6 GHz plus 9 and 18 GHz; with the metasurface, every 0.1 GHz from 1 to 6 GHz. That plot takes the maximum in the φ = 0° plane only.
 
 **F10. How do you get realized gain in CST?**
 Choose "Realized Gain" in the far-field plot properties, or use template-based post-processing (Farfield and Antenna Properties → Realized Gain, maximum value) over all monitors. Or compute G_R = (1 − |S₁₁|²)·G from the IEEE gain.
@@ -1431,7 +1502,7 @@ Hasan 2022: a 4-port antenna with a copper-backed 10 × 10 square-enclosed circu
 **I2★. What exactly is novel compared with Hasan 2022 and Al-Gburi 2022?**
 Compared with Hasan: we target full UWB (3.1–10.6 GHz rather than ≈ 3.1–7.7), at a gap six times smaller (2 mm versus 12 mm), with a metal-plate baseline at the same gap.
 Compared with Al-Gburi: they have a single antenna with a ground-backed FSS and a 10 mm profile; we use an SRR reflector at a 2 mm gap and go on to MIMO.
-The novelty is the combination, and it is a target until our metasurface results are in.
+The novelty is the combination. The first result supports it (peak directivity 3.7 → 8.8 dBi at 2 mm), but it stays a target until realized gain and the plate baseline are in.
 
 **I3. Has anyone done UWB MIMO with a reflector?**
 Yes, outside our core review: for example Mohanty & Sahu 2022 (4-port, 2.08–10.4 GHz, metal reflector at ≈ 10 mm) and recent AMC/FSS UWB MIMO papers. That is why we claim the specific combination (SRR, 0.021 λ gap, PEC baseline), not "first".
@@ -1498,11 +1569,11 @@ From measured S-parameters (with the lossless caveat), or better from measured c
 - *Fallback:* "We don't know yet. That simulation is in progress, and until it's done our gap analysis says what the SRR must do, not what it does."
 
 **K7★. Will the metasurface spoil your bandwidth?**
-- *Answer:* "It might. At 0.021 λ it loads the antenna in the near field, and our weak points at 6.5 and 12.2 GHz have only about 0.3–0.5 dB of margin. Our plan is to simulate with the metasurface in place, re-tune Lg and the gap if needed, and report both S₁₁ and realized gain. Some papers, such as Hussain 2023, saw the band widen, so it can go either way."
+- *Answer:* "Partly. With the metasurface in place, S₁₁ stays below −10 dB from about 2 to 18 GHz, so the band as a whole widened, but three narrow gaps opened between 3.0 and 5.6 GHz (worst ≈ −6.6 dB). At 0.021 λ the metasurface loads the antenna in the near field. We will re-tune Lg, the gap and the rings, and report both S₁₁ and realized gain. Hussain 2023 also saw the band widen with a reflector."
 - *Fallback:* "If the full UWB band can't be kept at 2 mm, we'll report the trade-off: either increase the gap, or report the band that is kept and the gain gained."
 
 **K8★. Is ≈ 5 dBi good? IEEE versus realized?**
-- *Answer:* "For a bidirectional monopole, 2.9–4.9 dBi across UWB is typical, not high. Reflector-backed antennas in our review reach 8–11 dBi, which is our motivation. Our numbers are CST 'Gain', which is IEEE gain and excludes port mismatch. Realized gain = (1 − |S₁₁|²)·G, so inside the −10 dB band it is at most 0.46 dB lower."
+- *Answer:* "For a bidirectional monopole, 2.9–4.9 dBi across UWB is typical, not high. Reflector-backed antennas in our review reach 8–11 dBi, which is our motivation. Our numbers are CST 'Gain', which is IEEE gain and excludes port mismatch. Realized gain = (1 − |S₁₁|²)·G, so inside the −10 dB band it is at most 0.46 dB lower. With the metasurface the peak directivity reaches 8.8 dBi, but that is directivity, not realized gain."
 - *Fallback:* "We'll add the realized-gain curve directly from CST in the next version, but the bound already tells us it is within half a dB in band."
 
 **K9★. What exactly is novel compared with Hasan 2022 and Al-Gburi 2022?**
@@ -1525,7 +1596,7 @@ From measured S-parameters (with the lossless caveat), or better from measured c
 - *Fallback:* "FR-4 was chosen for cost and availability. Its tan δ ≈ 0.02 loss will show up as lower efficiency at the top of the band, and we'll report realized gain so the loss is included."
 
 **K12★. What if the metasurface does not improve the gain?**
-- *Answer:* "Then we'll report that, with the reason. Our phase analysis and the metal-plate baseline will tell us whether the phase was wrong, the near-field loading dominated, or the band was too wide for one resonance. Then we fix it: a dual-resonant or graded cell, a thicker spacer, or a larger gap, and we report gain against gap. A justified negative result with a fair baseline is still a valid result."
+- *Answer:* "So far it does raise the directivity: the peak goes from 3.7 to 8.8 dBi, and it is higher over 78 % of 2–6 GHz, with two narrow dips. If realized gain shows a smaller benefit, we'll report that, with the reason. Our phase analysis and the metal-plate baseline will tell us whether the phase was wrong, the near-field loading dominated, or the band was too wide for one resonance. Then we fix it: a dual-resonant or graded cell, a thicker spacer, or a larger gap, and we report gain against gap. A justified negative result with a fair baseline is still a valid result."
 - *Fallback:* "Theory already predicts the improvement will be partial over UWB, not uniform. So our success criterion is a clear gain increase over part of the band without losing the match, compared with both no reflector and a metal plate."
 
 **K13. Your f_L formula gives 2.18 GHz against 2.16 GHz simulated. Isn't the agreement suspicious?**
@@ -1547,10 +1618,11 @@ From measured S-parameters (with the lossless caveat), or better from measured c
 The formula: **state the fact → give the reason → say what you are doing about it → move on.**
 Never apologise twice, never guess a number, and never let an examiner discover a weakness you already knew about.
 
-- **Metasurface results are pending.**
-  > "The metasurface stage is in progress. What we can show today is the theory that sets its target, which is a reflection phase of roughly −40° to +105° across UWB at our 2 mm gap. We've also defined the fair test: antenna alone versus a metal plate versus the metasurface, all at the same gap and mesh. We'll present those results at the end-semester evaluation. We didn't want to show partial numbers before they're verified."
+- **The metasurface result is directivity, from 1 to 6 GHz only.**
+  > "Our first metasurface result is directivity, which is the gain before losses, in the φ = 0° plane from 1 to 6 GHz. It shows that the metasurface sends more of the power forward: the peak rises from 3.7 to 8.8 dBi, and it is higher over 78 % of 2 to 6 GHz. It is lower in two narrow bands near 3 GHz, which we will tune. We didn't want to call directivity 'gain', so realized gain over the whole band, and the metal-plate baseline at the same gap, are our next runs."
 - **Gain was read from a plot.**
   > "The gain values are read from the CST gain-versus-frequency plot, so they're accurate to about ±0.1 dB. They're IEEE gain. We'll export the data and the realized-gain curve directly for the final report."
+  The directivity curves (§2.10) were digitised from the CST plots to about ±0.05 dB; the data are in `exports/`.
 - **Sweep artefacts exist.**
   > "Yes, a few sweep curves have numerical artefacts: jumps near 4 and 6.2 GHz, and one value above 0 dB, which is physically impossible for a passive antenna. They come from the broadband frequency-sweep interpolation for those parameter values. We didn't use those curves for any number. The final optimised run is smooth, and [we have re-run the case / we are re-running it to confirm]."
 - **Some literature values come from abstracts.**
@@ -1580,12 +1652,14 @@ Never apologise twice, never guess a number, and never let an examiner discover 
 | Weak points | ≈ 6.5 GHz (−10.3 dB), ≈ 12.2 GHz (−10.5 dB) |
 | IEEE gain | ≈ 1 dBi at 2 GHz; 3.3 dBi near 3.6 GHz; **2.9–4.9 dBi over UWB** (min near 6.3, max near 8.5 GHz); peak ≈ 5.1 dBi near 13.5 GHz (±0.1 dB, read from plot) |
 | Realized gain bound | G_R ≥ G − 0.46 dB inside the −10 dB band |
+| S₁₁ with metasurface | below −10 dB from ≈ 2.0 to 18 GHz, except 3.0–3.4 (worst ≈ −6.6 dB), 4.5–4.7 and 5.1–5.6 GHz |
+| Directivity, φ = 0° plane, 1–6 GHz | peak 3.7 dBi (≈ 4 GHz) alone → **8.8 dBi (5.9 GHz)** with MS (+5.1 dB); over 2–6 GHz higher on 78 %, mean 2.3 → 3.9 dBi (+1.6 dB); lower at ≈ 2.9–3.1 GHz (−3.1 dB at 3.0 GHz) and ≈ 3.3–4.0 GHz. Directivity, not gain |
 | Gap | h = 2 mm = 0.021 λ at 3.1 GHz |
 | 2k₀h | 10° (2.16), 15° (3.1), 33° (6.85), 51° (10.6), 76° (15.73 GHz) |
 | PEC | λ/4 = 24.2 mm at 3.1 GHz; at 2 mm, 165° off at 3.1 GHz; never within ±90° in our band (only above ≈ 18.7 GHz); break-even ≈ 12.5 GHz |
 | Required metasurface phase | ≈ −39° … +105° across 3.1–10.6 GHz *(computed)* |
 | Near field | λ/2π > 2 mm below ≈ 23.9 GHz |
-| Pending | SRR period and ring sizes, unit-cell phase, antenna + MS, PEC baseline, realized gain, patterns, CST port impedance |
+| Pending | SRR period and ring sizes, unit-cell phase, PEC baseline, realized gain over 2–15 GHz (alone and with MS), tuning of the MS, patterns, CST port impedance |
 
 **Formulas**
 - λ₀ (mm) = 299.8/f (GHz); k₀ = 2π/λ₀; η₀ ≈ 377 Ω
@@ -1664,7 +1738,7 @@ Speakers as in §5 (swap if your split differs). Times are approximate.
 
 | Time | Chanswarang (slides 1–3, 15) | Anushka (4–6) | Nishit (7–10) | Sanjana (11–14) |
 |---|---|---|---|---|
-| 2 h | §1.1–1.4, §1.6 (basics, UWB) | §1.9–1.12 (metasurfaces, SRR, HIS, reflectors) + §4 | §1.5, 1.7, 1.13 (CPW, monopoles, CST) + §3 | §1.8 (MIMO) + §2.5–2.9 |
+| 2 h | §1.1–1.4, §1.6 (basics, UWB) | §1.9–1.12 (metasurfaces, SRR, HIS, reflectors) + §4 | §1.5, 1.7, 1.13 (CPW, monopoles, CST) + §3 | §1.8 (MIMO) + §2.5–2.10 |
 | 1.5 h | **Together:** fix the slides with §0 items 1–3, 6 and 9. Agree the "2 mm reason" (E16). Get the SRR period and ring sizes from CST. | | | |
 | 2 h | **CST tasks** (whoever has the CST PC, Appendix A): read the parameter list and fill the dimension table (A.1); find mesh-convergence info in the log (A.3); re-run the > 0 dB Lg case (A.4). If time allows, start the PEC-plate run (A.7) overnight. | | | |
 | 1 h | Each person writes their own slide notes from §5 in their own words, and rehearses alone twice. | | | |
@@ -1730,6 +1804,8 @@ Read Ws and Ls from the Parameter List, or from the substrate brick's dimensions
   - The E-plane is the cut containing the feed axis (polarization direction).
   - The H-plane is the cut perpendicular to it.
 - **Realized gain:** in Farfield Plot properties choose "Realized Gain". For a curve versus frequency use Post-Processing → Template Based Post-Processing → Farfield and Antenna Properties → Farfield Result → Realized Gain (max value) over all monitors.
+  - Take the maximum over all directions, not a φ = 0° cut (our directivity comparison was a φ = 0° cut, §2.10).
+  - Add farfield monitors from 2 to 15 GHz, ideally every 0.5 GHz, to both models (antenna alone and with the metasurface), with the same mesh and settings.
 - **Efficiencies:** shown in the farfield plot's info box (Rad. effic., Tot. effic.) or as 1D results.
 - **F/B:** the farfield 0D values or the polar plot readout. F/B = gain at the front direction minus gain at the back direction (dB).
 
@@ -1747,4 +1823,4 @@ Read Ws and Ls from the Parameter List, or from the substrate brick's dimensions
 ---
 
 *Prepared for the 7 Oct 2026 mid-semester evaluation. Numbers are from the team's brief, and computed values are labelled.
-Update this file when the metasurface results arrive.*
+Update this file when the realized-gain results arrive.*
