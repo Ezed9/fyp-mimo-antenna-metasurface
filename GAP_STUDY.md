@@ -26,7 +26,8 @@ a literature review, and an audit of the simulation model.
    −9 dB, i.e. marginal in both), and any gap ≥ 15 mm changes it by less than 0.3 dB. Fix it in the antenna
    (feed gap / ground edge / a ground slot), not with the gap.
 4. **At ~30 mm the metasurface is no longer doing "metasurface" work.** With a full copper ground and these
-   ring sizes it reflects like a metal plate over most of 2–15 GHz. At 30 mm that gives +4 to +6 dB broadside
+   ring sizes it reflects like a metal plate over most of 2–15 GHz. A plain copper board gives the same S11 at
+   30 mm, and a *better* low band than the rings at 20 mm (§5.3). At 30 mm that gives +4 to +6 dB broadside
    gain at 2–3 GHz, but broadside nulls near 5 GHz (−15 dBi) and 9 GHz, exactly where a plate 33 mm behind
    the antenna puts them. So the gap that satisfies S11 is not a low-profile design, and it does not raise the
    gain across UWB.
@@ -144,18 +145,25 @@ The broadside nulls at 5 and 9 GHz are where the metasurface ground is λ/2 and 
 
 ### 5.3 Rings vs a plain copper-backed board
 
-At h = 30 mm a plain copper-backed FR-4 board (same size, no rings) gives almost the same S11 as the SRR
-metasurface: 0.76 dB rms difference over 2–15 GHz, with the largest differences (≤ 4 dB) confined to narrow
-ring-resonance lines.
+Control runs used the same FR-4 board and copper ground, with no rings.
 
-| f (GHz) | 2.0 | 2.2 | 3.0 | 3.6 | 6.0 | 12.0 |
-|---|---|---|---|---|---|---|
-| SRR metasurface, h = 30 mm | −14.4 | −27.4 | −16.0 | −18.3 | −20.4 | −9.2 |
-| Plain copper-backed board, h = 30 mm | −13.7 | −24.8 | −14.8 | −20.8 | −21.0 | −9.1 |
+| f (GHz) | 2.0 | 2.2 | 2.5 | 3.0 | 3.3 | 3.6 | 6.0 | 12.0 | Fails (2–15 GHz) |
+|---|---|---|---|---|---|---|---|---|---|
+| SRR metasurface, h = 20 mm | −5.9 | −8.9 | −12.5 | −10.2 | −9.4 | −10.8 | −17.6 | −9.0 | 2.00–2.26, 3.03–3.49, 11.11–13.04 |
+| Plain copper board, h = 20 mm | −8.3 | −12.5 | −19.9 | −15.2 | −13.4 | −12.8 | −19.6 | −9.1 | 2.00–2.08, 11.05–13.05 |
+| SRR metasurface, h = 30 mm | −14.4 | −27.4 | −17.6 | −16.0 | −20.9 | −18.3 | −20.4 | −9.2 | 11.04–12.98 |
+| Plain copper board, h = 30 mm | −13.7 | −24.8 | −17.2 | −14.8 | −17.0 | −20.8 | −21.0 | −9.1 | 11.01–13.10 |
 
-**With this cell, the copper ground does the work and the rings are close to irrelevant for matching.** That
-is what the analytical model predicted: the ring fundamentals are too weakly excited at normal incidence to
-give an in-phase band.
+* **At 30 mm the rings are close to irrelevant**: 0.76 dB rms difference from the plain board over 2–15 GHz.
+  The copper ground does the work, as the analytical model predicted: the ring fundamentals are too weakly
+  excited at normal incidence to give an in-phase band.
+* **At 20 mm the rings make it worse.** The plain board fails only at 2.00–2.08 GHz, about the same as the
+  antenna alone. The SRR metasurface fails 2.00–2.26 and 3.03–3.49 GHz (2.3 dB rms, up to 7.5 dB, worse).
+  Close to the antenna, the near field drives the rings' resonances (outer and inner ring modes around
+  2–4 GHz), and those resonances detune the match. The 3–3.7 GHz hole at 15–20 mm and the high-resistance
+  loop near 2.1 GHz at 20–27.5 mm are ring effects, not ground-plane effects.
+
+**For matching, this ring cell is at best neutral and at moderate gaps harmful.**
 
 ### 5.4 Sensitivity: 50 × 50 mm metasurface ("R values are diameters")
 
