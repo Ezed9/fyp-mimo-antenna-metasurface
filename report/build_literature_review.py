@@ -41,9 +41,12 @@ def single_rows(cite: dh.Citer | None) -> list[list[str]]:
              cell(p.band), cell(p.gain)] for p in lit.SINGLE]
     tw = lit.THIS_WORK
     lo, hi = tw["band_ghz"]
+    d_lo, d_hi = tw["dir_range_ghz"]
     rows.append(["**This work**", "CPW-fed decagonal monopole", "FR-4 (ε_{r} 4.3), 1.6 mm", tw["metasurface"],
                  f"{tw['gap_mm']} mm, air ({tw['gap_mm'] / lit.wavelength_mm(lo):.3f}λ_{{L}})",
-                 f"{lo:.2f}–{hi:.2f} (no MS)", f"{tw['gain_ieee_uwb']} (IEEE, 3.1–10.6 GHz, no MS) → pending"])
+                 f"{lo:.2f}–{hi:.2f} (no MS)",
+                 f"{tw['gain_ieee_uwb']} (IEEE, 3.1–10.6 GHz, no MS); with MS: peak directivity "
+                 f"{tw['dir_peak_alone'][0]:.1f} → {tw['dir_peak_ms'][0]:.1f} dBi (φ = 0° plane, {d_lo:g}–{d_hi:g} GHz)"])
     return rows
 
 
@@ -99,7 +102,9 @@ def build_docx() -> Path:
     dh.caption(doc, "Table 1.", "Single wideband antennas with a metasurface, AMC or FSS reflector.", above=True)
     dh.table(doc, SINGLE_HEAD, single_rows(cite), SINGLE_W, size=8.5, cite=cite, highlight_last=True)
     dh.para(doc, "λ_{L}: free-space wavelength at the lowest operating frequency. “No MS → MS”: without → with the "
-                 "reflector. “n/r”: not reported; “unverified”: not confirmed in the accessible text.", size=9)
+                 "reflector. “n/r”: not reported; “unverified”: not confirmed in the accessible text. This work, with MS: "
+                 "CST directivity (gain before losses and mismatch), the highest value in the φ = 0° plane; realized "
+                 "gain over the whole band is still to be simulated.", size=9)
     dh.caption(doc, "Table 2.", "MIMO antennas that use a metasurface (background for Phase II).", above=True)
     dh.table(doc, MIMO_HEAD, mimo_rows(cite), MIMO_W, size=8.5, cite=cite)
 

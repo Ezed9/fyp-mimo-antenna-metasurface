@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Interactive version of figures/fig_directivity_compare.png (data: exports/*_directivity_digitized.csv).
+     Open in any browser; works offline (fonts fall back to Cambria/Calibri). -->
+<style>:root{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Metasurface Directivity Comparison</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caladea:wght@400;700&family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+/* Layout: one reading column — headline, three result tiles, the two linked charts, then the table and notes.
+   Palette and faces follow the project deck (copper and navy; Cambria/Calibri via their metric twins). */
+:root {
+  --bg: #f5f6f8; --surface: #ffffff; --ink: #1f2328; --ink-2: #4a5361; --muted: #6b7480;
+  --line: #dde1e7; --grid: #e7eaee; --navy: #17324d; --copper: #b8651b; --copper-wash: rgba(184, 101, 27, .17);
+  --alone: #5e6875; --alone-wash: rgba(94, 104, 117, .20); --below: #eef0f3; --good: #2e7d5b; --warn: #c0392b;
+  --good-tint: #e6f2ec; --warn-tint: #f9e7e5; --focus: #3b6ea5;
+  --display: "Caladea", Cambria, Georgia, serif;
+  --body: "Carlito", Calibri, "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e151d; --surface: #152029; --ink: #e9edf2; --ink-2: #b9c2cd; --muted: #8c97a4;
+    --line: #2a3644; --grid: #223040; --navy: #a9c3df; --copper: #e08a3c; --copper-wash: rgba(224, 138, 60, .22);
+    --alone: #a1abb8; --alone-wash: rgba(161, 171, 184, .18); --below: #1a2531; --good: #57b88e; --warn: #e8766a;
+    --good-tint: #18302a; --warn-tint: #36211f; --focus: #8db4e0; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e151d; --surface: #152029; --ink: #e9edf2; --ink-2: #b9c2cd; --muted: #8c97a4;
+  --line: #2a3644; --grid: #223040; --navy: #a9c3df; --copper: #e08a3c; --copper-wash: rgba(224, 138, 60, .22);
+  --alone: #a1abb8; --alone-wash: rgba(161, 171, 184, .18); --below: #1a2531; --good: #57b88e; --warn: #e8766a;
+  --good-tint: #18302a; --warn-tint: #36211f; --focus: #8db4e0; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.5; }
+.page { max-width: 1040px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 48px; display: grid; gap: 22px; }
+.page > * { min-width: 0; }
+header { display: grid; gap: 8px; }
+.eyebrow { font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--copper); }
+h1 { font-family: var(--display); font-weight: 700; font-size: clamp(28px, 4.2vw, 40px); line-height: 1.12; color: var(--navy);
+  margin: 0; text-wrap: balance; }
+.lede { margin: 0; max-width: 68ch; color: var(--ink-2); font-size: 17px; }
+.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: grid;
+  gap: 4px; align-content: start; }
+.tile .label { font-size: 14px; color: var(--muted); }
+.tile .value { font-size: 30px; font-weight: 700; line-height: 1.15; color: var(--ink); }
+.tile .value .unit { font-size: 18px; font-weight: 400; color: var(--ink-2); }
+.tile .sub { font-size: 14px; color: var(--ink-2); }
+.pill { justify-self: start; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700;
+  padding: 2px 9px; border-radius: 999px; }
+.pill svg { width: 13px; height: 13px; }
+.pill.good { background: var(--good-tint); color: var(--good); }
+.pill.warn { background: var(--warn-tint); color: var(--warn); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px 18px 12px; display: grid;
+  gap: 12px; min-width: 0; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; justify-content: space-between; }
+.series { display: flex; flex-wrap: wrap; gap: 8px; }
+.toggle { font: inherit; font-size: 15px; color: var(--ink); background: transparent; border: 1px solid var(--line);
+  border-radius: 999px; padding: 4px 12px 4px 10px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.toggle[aria-pressed="false"] { color: var(--muted); }
+.toggle[aria-pressed="false"] .key { opacity: .3; }
+.toggle:hover { border-color: var(--muted); }
+.key { width: 26px; height: 10px; flex: none; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { font: inherit; font-size: 14px; color: var(--ink-2); background: transparent; border: 0; padding: 5px 12px;
+  cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--navy); color: var(--surface); }
+button:focus-visible, .chart:focus-visible, summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.readout { font-size: 15px; color: var(--ink-2); font-variant-numeric: tabular-nums; min-height: 1.5em; }
+.readout b { color: var(--ink); }
+.readout .sw { display: inline-block; width: 14px; height: 3px; vertical-align: middle; margin-right: 5px; border-radius: 2px; }
+.chart { position: relative; touch-action: pan-y; border-radius: 6px; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart-title { font-size: 14px; font-weight: 700; color: var(--ink-2); margin: 4px 0 -4px; }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+  padding: 7px 10px; font-size: 13.5px; line-height: 1.45; color: var(--ink); box-shadow: 0 4px 14px rgba(0, 0, 0, .12);
+  font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tip .f { font-weight: 700; margin-bottom: 2px; }
+.tip .row { display: flex; align-items: center; gap: 7px; }
+.tip .row span:last-child { margin-left: auto; padding-left: 12px; font-weight: 700; }
+.tip .k { width: 14px; height: 3px; border-radius: 2px; }
+/* svg roles */
+.ax text, .lbl { fill: var(--muted); font-family: var(--body); font-size: 13px; }
+.ax .title { fill: var(--ink-2); font-size: 14px; }
+.gridline { stroke: var(--grid); stroke-width: 1; }
+.baseline { stroke: var(--muted); stroke-width: 1; }
+.below { fill: var(--below); }
+.wash-ms { fill: var(--copper-wash); }
+.wash-al { fill: var(--alone-wash); }
+.ln-ms { fill: none; stroke: var(--copper); stroke-width: 2.6; stroke-linejoin: round; stroke-linecap: round; }
+.ln-al { fill: none; stroke: var(--alone); stroke-width: 2.1; stroke-dasharray: 7 4; stroke-linecap: round; }
+.bar-pos { fill: var(--copper); }
+.bar-neg { fill: var(--alone); }
+.bar-dim { opacity: .35; }
+.cross { stroke: var(--ink-2); stroke-width: 1; }
+.dot-ms { fill: var(--copper); stroke: var(--surface); stroke-width: 2; }
+.dot-al { fill: var(--alone); stroke: var(--surface); stroke-width: 2; }
+.peak { fill: var(--ink); font-family: var(--body); font-size: 14px; font-weight: 700; }
+.below-lbl { fill: var(--muted); font-family: var(--body); font-size: 13px; }
+details { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 18px; }
+summary { cursor: pointer; font-weight: 700; color: var(--ink); }
+.tablewrap { overflow-x: auto; margin-top: 10px; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 14.5px; }
+th, td { text-align: right; padding: 5px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { color: var(--ink-2); font-weight: 700; position: sticky; top: 0; background: var(--surface); }
+tr.neg td:last-child { color: var(--warn); font-weight: 700; }
+tr.pos td:last-child { color: var(--good); }
+.notes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.note { min-width: 0; }
+.note h2 { font-family: var(--display); font-size: 18px; color: var(--navy); margin: 0 0 4px; }
+.note p { margin: 0; font-size: 15px; color: var(--ink-2); }
+footer { font-size: 13px; color: var(--muted); }
+@media (max-width: 760px) {
+  .tiles, .notes { grid-template-columns: minmax(0, 1fr); }
+  .page { padding-inline: 16px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tip { transition: opacity .12s; }
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+  <header>
+    <div class="eyebrow">CST simulation · CPW-fed wideband antenna</div>
+    <h1>Directivity with and without the metasurface</h1>
+    <p class="lede">The 6 × 5 split-ring metasurface 2 mm behind the antenna makes it more directive over most of the matched
+      band: more of the power goes forward, which is what the metasurface was added for.</p>
+  </header>
+
+  <section class="tiles" aria-label="Main results">
+    <div class="tile">
+      <span class="label">Peak directivity, 1–6 GHz</span>
+      <span class="value">3.7 → 8.8 <span class="unit">dBi</span></span>
+      <span class="pill good"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 10l4-4 3 3 3-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>+5.1 dB</span>
+      <span class="sub">alone near 4 GHz, with metasurface at 5.9 GHz</span>
+    </div>
+    <div class="tile">
+      <span class="label">Metasurface higher, 2–6 GHz</span>
+      <span class="value">78 <span class="unit">% of the band</span></span>
+      <span class="pill good"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>average +1.6 dB</span>
+      <span class="sub">mean directivity 2.3 → 3.9 dBi</span>
+    </div>
+    <div class="tile">
+      <span class="label">Metasurface lower</span>
+      <span class="value">2 <span class="unit">narrow dips</span></span>
+      <span class="pill warn"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5l6 11H2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 7v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>worst −3.1 dB at 3.0 GHz</span>
+      <span class="sub">about 2.9–3.1 GHz and 3.3–4.0 GHz</span>
+    </div>
+  </section>
+
+  <section class="card" aria-label="Directivity charts">
+    <div class="toolbar">
+      <div class="series" role="group" aria-label="Show curves">
+        <button class="toggle" id="t-ms" aria-pressed="true" type="button">
+          <svg class="key" viewBox="0 0 26 10" aria-hidden="true"><line x1="1" y1="5" x2="25" y2="5" class="ln-ms"/></svg>With metasurface</button>
+        <button class="toggle" id="t-al" aria-pressed="true" type="button">
+          <svg class="key" viewBox="0 0 26 10" aria-hidden="true"><line x1="1" y1="5" x2="25" y2="5" class="ln-al"/></svg>Antenna alone</button>
+      </div>
+      <div class="seg" role="group" aria-label="Frequency range">
+        <button type="button" id="r-all" aria-pressed="true">1–6 GHz</button>
+        <button type="button" id="r-band" aria-pressed="false">2–6 GHz (matched)</button>
+      </div>
+    </div>
+    <div class="readout" id="readout" aria-live="polite"></div>
+    <div class="chart" id="main" tabindex="0" role="img"
+         aria-label="Directivity versus frequency, 1 to 6 GHz. With the metasurface the peak is 8.8 dBi at 5.9 GHz; the antenna alone peaks at 3.7 dBi near 4 GHz. Use the left and right arrow keys to move the readout."></div>
+    <div class="chart-title">Difference: with metasurface minus antenna alone, at each CST sample</div>
+    <div class="chart" id="diff" role="img"
+         aria-label="Difference in directivity at each 0.1 GHz sample: positive over most of 2 to 6 GHz, up to 7.3 dB at 5.9 GHz; negative near 3.0 GHz and from 3.3 to 4.0 GHz."></div>
+  </section>
+
+  <details>
+    <summary>Data table (CST samples every 0.1 GHz)</summary>
+    <div class="tablewrap"><table id="table">
+      <thead><tr><th scope="col">Frequency (GHz)</th><th scope="col">Antenna alone (dBi)</th>
+        <th scope="col">With metasurface (dBi)</th><th scope="col">Difference (dB)</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+  </details>
+
+  <section class="notes" aria-label="Notes">
+    <div class="note">
+      <h2>What is plotted</h2>
+      <p>CST's “Directivity, Phi = 0, Max. Value”: the highest directivity in the φ = 0° plane at each frequency.
+        Directivity is the gain the antenna would have with no losses. Realized gain, which also counts the FR-4 losses and
+        the mismatch, is the next simulation.</p>
+    </div>
+    <div class="note">
+      <h2>Where the data comes from</h2>
+      <p>Digitised from the two CST screenshots to about ±0.05 dB. The metasurface run has farfield samples every 0.1 GHz
+        from 1 to 6 GHz, so the comparison stops at 6 GHz. Below 2 GHz neither antenna is matched.</p>
+    </div>
+    <div class="note">
+      <h2>Reading the 5–6 GHz gap</h2>
+      <p>The largest difference, +7.3 dB at 5.9 GHz, is partly because the antenna alone points its beam out of this plane
+        near 5.5 GHz. The fair headline is the peak, 3.7 → 8.8 dBi, and the 78 % of the band where the metasurface is higher.</p>
+    </div>
+  </section>
+  <footer>B.Tech project, Dept. of ECE, NIT Silchar · Wideband MIMO Antenna with Metasurface · CST Studio Suite 2019</footer>
+</div>
+
+<script>
+(() => {
+  // Digitised CST curves: [GHz, dBi]. Metasurface: CST's own samples (0.1 GHz). Antenna alone: smooth curve, 0.05 GHz.
+  const MS = [[1.0,-1.66],[1.1,-1.12],[1.2,-0.62],[1.3,-0.05],[1.4,0.31],[1.5,0.97],[1.6,0.64],[1.7,0.65],[1.8,2.39],[1.9,2.51],[2.0,2.5],[2.1,2.49],[2.2,2.47],[2.3,2.35],[2.4,2.89],[2.5,3.57],[2.6,4.49],[2.7,5.5],[2.8,5.72],[2.9,0.65],[3.0,-0.18],[3.1,5.49],[3.2,4.67],[3.3,3.25],[3.4,2.24],[3.5,2.12],[3.6,2.21],[3.7,1.99],[3.8,1.53],[3.9,2.83],[4.0,4.04],[4.1,4.96],[4.2,5.12],[4.3,4.15],[4.4,3.54],[4.5,3.87],[4.6,4.81],[4.7,4.5],[4.8,3.35],[4.9,3.29],[5.0,3.45],[5.1,4.16],[5.2,4.59],[5.3,5.15],[5.4,4.96],[5.5,4.35],[5.6,4.47],[5.7,5.51],[5.8,7.79],[5.9,8.82],[6.0,7.74]];
+  const AL = [[1.0,-3.27],[1.05,-2.96],[1.1,-2.62],[1.15,-2.35],[1.2,-2.09],[1.25,-1.81],[1.3,-1.52],[1.35,-1.26],[1.4,-1.01],[1.45,-0.78],[1.5,-0.56],[1.55,-0.35],[1.6,-0.15],[1.65,0.01],[1.7,0.17],[1.75,0.33],[1.8,0.49],[1.85,0.66],[1.9,0.8],[1.95,0.94],[2.0,1.09],[2.05,1.22],[2.1,1.34],[2.15,1.44],[2.2,1.54],[2.25,1.64],[2.3,1.76],[2.35,1.87],[2.4,1.97],[2.45,2.07],[2.5,2.16],[2.55,2.26],[2.6,2.35],[2.65,2.41],[2.7,2.48],[2.75,2.56],[2.8,2.64],[2.85,2.71],[2.9,2.78],[2.95,2.85],[3.0,2.92],[3.05,2.98],[3.1,3.05],[3.15,3.11],[3.2,3.17],[3.25,3.23],[3.3,3.29],[3.35,3.34],[3.4,3.39],[3.45,3.44],[3.5,3.49],[3.55,3.53],[3.6,3.56],[3.65,3.61],[3.7,3.64],[3.75,3.67],[3.8,3.68],[3.85,3.71],[3.9,3.73],[3.95,3.73],[4.0,3.72],[4.05,3.71],[4.1,3.71],[4.15,3.68],[4.2,3.65],[4.25,3.6],[4.3,3.57],[4.35,3.5],[4.4,3.42],[4.45,3.34],[4.5,3.25],[4.55,3.13],[4.6,2.99],[4.65,2.84],[4.7,2.69],[4.75,2.5],[4.8,2.3],[4.85,2.09],[4.9,1.86],[4.95,1.65],[5.0,1.44],[5.05,1.2],[5.1,0.95],[5.15,0.73],[5.2,0.53],[5.25,0.36],[5.3,0.23],[5.35,0.15],[5.4,0.08],[5.45,0.06],[5.5,0.05],[5.55,0.09],[5.6,0.15],[5.65,0.31],[5.7,0.51],[5.75,0.76],[5.8,1.02],[5.85,1.29],[5.9,1.52],[5.95,1.71],[6.0,1.87]];
+  const BAND = 2.0;
+  const interp = (d, f) => {
+    if (f <= d[0][0]) return d[0][1];
+    for (let i = 1; i < d.length; i++) if (f <= d[i][0]) {
+      const [f0, v0] = d[i - 1], [f1, v1] = d[i];
+      return v0 + (v1 - v0) * (f - f0) / (f1 - f0);
+    }
+    return d[d.length - 1][1];
+  };
+  const fmt = (v, n = 2) => (v < 0 ? "−" : "") + Math.abs(v).toFixed(n);
+  const sgn = (v, n = 2) => (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(n);
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs = {}, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+
+  const state = { ms: true, al: true, lo: 1.0, hi: 6.0, f: 5.9 };
+  const mainBox = document.getElementById("main"), diffBox = document.getElementById("diff");
+  const readout = document.getElementById("readout");
+  let views = [];
+
+  function frame(box, height, yLo, yHi, yStep, yTitle) {
+    const W = Math.max(320, box.clientWidth), narrow = W < 560;
+    const pad = { l: narrow ? 40 : 52, r: 12, t: 12, b: yTitle ? (narrow ? 40 : 46) : 24 };
+    const H = height;
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H });
+    const x = (f) => pad.l + (f - state.lo) / (state.hi - state.lo) * (W - pad.l - pad.r);
+    const y = (v) => pad.t + (yHi - v) / (yHi - yLo) * (H - pad.t - pad.b);
+    const ax = el("g", { class: "ax" }, svg);
+    for (let v = yLo; v <= yHi + 1e-9; v += yStep) {
+      el("line", { x1: pad.l, x2: W - pad.r, y1: y(v), y2: y(v), class: v === 0 && yTitle === null ? "baseline" : "gridline" }, ax);
+      const t = el("text", { x: pad.l - 8, y: y(v) + 4, "text-anchor": "end" }, ax);
+      t.textContent = fmt(v, 0);
+    }
+    const step = (state.hi - state.lo) > 4 ? (narrow ? 1 : 0.5) : 0.5;
+    for (let f = state.lo; f <= state.hi + 1e-9; f += step) {
+      el("line", { x1: x(f), x2: x(f), y1: pad.t, y2: H - pad.b, class: "gridline" }, ax);
+      const t = el("text", { x: x(f), y: H - pad.b + 17, "text-anchor": "middle" }, ax);
+      t.textContent = String(+f.toFixed(1));
+    }
+    if (yTitle) {
+      const t = el("text", { x: (pad.l + W - pad.r) / 2, y: H - 6, "text-anchor": "middle", class: "title" }, ax);
+      t.textContent = "Frequency (GHz)";
+      const yt = el("text", { transform: `translate(13 ${(pad.t + H - pad.b) / 2}) rotate(-90)`, "text-anchor": "middle", class: "title" }, ax);
+      yt.textContent = yTitle;
+    }
+    return { svg, x, y, W, H, pad };
+  }
+
+  function path(fn, d) {
+    return d.filter(([f]) => f >= state.lo - 1e-9 && f <= state.hi + 1e-9)
+      .map(([f, v], i) => `${i ? "L" : "M"}${fn.x(f).toFixed(1)},${fn.y(v).toFixed(1)}`).join("");
+  }
+
+  function washes(fn, g) {
+    // polygons between the curves, split where they cross; only inside the matched band
+    const lo = Math.max(state.lo, BAND), step = 0.002, pts = [];
+    for (let f = lo; f <= state.hi + 1e-9; f += step) pts.push([f, interp(MS, f), interp(AL, f)]);
+    let run = [], sign = null;
+    const flush = () => {
+      if (run.length < 2) return;
+      const top = run.map(([f, m]) => `${fn.x(f).toFixed(1)},${fn.y(m).toFixed(1)}`);
+      const bot = run.slice().reverse().map(([f, , a]) => `${fn.x(f).toFixed(1)},${fn.y(a).toFixed(1)}`);
+      el("polygon", { points: top.concat(bot).join(" "), class: sign ? "wash-ms" : "wash-al" }, g);
+    };
+    for (let i = 0; i < pts.length; i++) {
+      const s = pts[i][1] >= pts[i][2];
+      if (sign === null) sign = s;
+      if (s !== sign) {
+        const [f0, m0, a0] = pts[i - 1], [f1, m1, a1] = pts[i];
+        const t = (m0 - a0) / ((m0 - a0) - (m1 - a1)), fc = f0 + t * (f1 - f0), vc = m0 + t * (m1 - m0);
+        run.push([fc, vc, vc]); flush(); run = [[fc, vc, vc]]; sign = s;
+      }
+      run.push(pts[i]);
+    }
+    flush();
+  }
+
+  function drawMain() {
+    const narrow = mainBox.clientWidth < 560;
+    const fn = frame(mainBox, narrow ? 300 : 380, -4, 10, 2, "Directivity (dBi)");
+    const back = el("g", {}, fn.svg);
+    if (state.lo < BAND) {
+      el("rect", { x: fn.x(state.lo), y: fn.pad.t, width: fn.x(BAND) - fn.x(state.lo), height: fn.H - fn.pad.t - fn.pad.b, class: "below" }, back);
+      const t = el("text", { x: (fn.x(state.lo) + fn.x(BAND)) / 2, y: fn.y(9.0), "text-anchor": "middle", class: "below-lbl" }, back);
+      t.textContent = narrow ? "below band" : "below the matched band";
+    }
+    fn.svg.insertBefore(back, fn.svg.firstChild.nextSibling);
+    if (state.ms && state.al) washes(fn, el("g", {}, fn.svg));
+    if (state.al) el("path", { d: path(fn, AL), class: "ln-al" }, fn.svg);
+    if (state.ms) el("path", { d: path(fn, MS), class: "ln-ms" }, fn.svg);
+    // peak labels
+    const peaks = [];
+    if (state.ms) peaks.push([5.9, 8.82, "8.8 dBi", "dot-ms", -10, 5, "end"]);
+    if (state.al) peaks.push([3.95, 3.73, "3.7 dBi", "dot-al", -4, -12, "end"]);
+    for (const [f, v, s, cls, dx, dy, anchor] of peaks) {
+      if (f < state.lo || f > state.hi) continue;
+      el("circle", { cx: fn.x(f), cy: fn.y(v), r: 5, class: cls }, fn.svg);
+      const t = el("text", { x: fn.x(f) + dx, y: fn.y(v) + dy, "text-anchor": anchor, class: "peak" }, fn.svg);
+      t.textContent = s;
+    }
+    const hover = el("g", {}, fn.svg);
+    return { ...fn, box: mainBox, hover, kind: "main" };
+  }
+
+  function drawDiff() {
+    const narrow = diffBox.clientWidth < 560;
+    const fn = frame(diffBox, narrow ? 150 : 170, -4, 8, 4, null);
+    const samples = MS.filter(([f]) => f >= state.lo - 1e-9 && f <= state.hi + 1e-9);
+    const slot = (fn.x(state.lo + 0.1) - fn.x(state.lo));
+    const bw = Math.max(2, Math.min(18, slot - 3)), r = Math.min(3, bw / 2);
+    const g = el("g", {}, fn.svg);
+    const bars = [];
+    for (const [f, m] of samples) {
+      const d = m - interp(AL, f), x0 = fn.x(f) - bw / 2, y0 = fn.y(0), y1 = fn.y(d);
+      const h = Math.abs(y1 - y0), rr = Math.min(r, h);
+      const p = d >= 0
+        ? `M${x0},${y0}V${y1 + rr}Q${x0},${y1} ${x0 + rr},${y1}H${x0 + bw - rr}Q${x0 + bw},${y1} ${x0 + bw},${y1 + rr}V${y0}Z`
+        : `M${x0},${y0}V${y1 - rr}Q${x0},${y1} ${x0 + rr},${y1}H${x0 + bw - rr}Q${x0 + bw},${y1} ${x0 + bw},${y1 - rr}V${y0}Z`;
+      const b = el("path", { d: p, class: (d >= 0 ? "bar-pos" : "bar-neg") + (f < BAND ? " bar-dim" : "") }, g);
+      bars.push([f, b]);
+    }
+    el("line", { x1: fn.pad.l, x2: fn.W - fn.pad.r, y1: fn.y(0), y2: fn.y(0), class: "baseline" }, fn.svg);
+    const lab = el("text", { x: fn.pad.l + 6, y: fn.y(8) + 13, class: "lbl" }, fn.svg);
+    lab.textContent = "dB";
+    const hover = el("g", {}, fn.svg);
+    return { ...fn, box: diffBox, hover, bars, kind: "diff" };
+  }
+
+  function setReadout(f) {
+    const m = interp(MS, f), a = interp(AL, f), parts = [];
+    if (state.ms) parts.push(`<span class="sw" style="background:var(--copper)"></span>with metasurface <b>${fmt(m)} dBi</b>`);
+    if (state.al) parts.push(`<span class="sw" style="background:var(--alone)"></span>alone <b>${fmt(a)} dBi</b>`);
+    if (state.ms && state.al) parts.push(`difference <b>${sgn(m - a)} dB</b>${f < BAND ? " (below the matched band)" : ""}`);
+    readout.innerHTML = `At <b>${f.toFixed(2)} GHz</b>: ` + parts.join(" &nbsp;·&nbsp; ");
+  }
+
+  let tip = null;
+  function showHover(f, withTip) {
+    state.f = f;
+    for (const v of views) {
+      v.hover.replaceChildren();
+      const xx = v.x(f);
+      el("line", { x1: xx, x2: xx, y1: v.pad.t, y2: v.H - v.pad.b, class: "cross" }, v.hover);
+      if (v.kind === "main") {
+        if (state.al) el("circle", { cx: xx, cy: v.y(interp(AL, f)), r: 4.5, class: "dot-al" }, v.hover);
+        if (state.ms) el("circle", { cx: xx, cy: v.y(interp(MS, f)), r: 4.5, class: "dot-ms" }, v.hover);
+      } else {
+        for (const [bf, b] of v.bars) b.style.opacity = Math.abs(bf - f) < 0.05 ? "1" : "";
+      }
+    }
+    setReadout(f);
+    if (tip) { tip.remove(); tip = null; }
+    if (!withTip) return;
+    const v = views[0], m = interp(MS, f), a = interp(AL, f);
+    tip = document.createElement("div");
+    tip.className = "tip";
+    tip.innerHTML = `<div class="f">${f.toFixed(2)} GHz</div>` +
+      (state.ms ? `<div class="row"><span class="k" style="background:var(--copper)"></span><span>With metasurface</span><span>${fmt(m)} dBi</span></div>` : "") +
+      (state.al ? `<div class="row"><span class="k" style="background:var(--alone)"></span><span>Antenna alone</span><span>${fmt(a)} dBi</span></div>` : "") +
+      (state.ms && state.al ? `<div class="row"><span class="k"></span><span>Difference</span><span>${sgn(m - a)} dB</span></div>` : "");
+    mainBox.appendChild(tip);
+    const scale = mainBox.clientWidth / v.W, px = v.x(f) * scale, tw = tip.offsetWidth;
+    tip.style.left = `${px + 14 + tw > mainBox.clientWidth ? px - 14 - tw : px + 14}px`;
+    tip.style.top = `${v.pad.t * scale + 6}px`;
+  }
+
+  function render() {
+    mainBox.replaceChildren(); diffBox.replaceChildren(); tip = null;
+    const a = drawMain(), b = drawDiff();
+    mainBox.appendChild(a.svg); diffBox.appendChild(b.svg);
+    views = [a, b];
+    state.f = Math.min(state.hi, Math.max(state.lo, state.f));
+    showHover(state.f, false);
+  }
+
+  function freqAt(evt, box) {
+    const v = views[0], rect = box.getBoundingClientRect(), sx = (evt.clientX - rect.left) * v.W / rect.width;
+    const f = state.lo + (sx - v.pad.l) / (v.W - v.pad.l - v.pad.r) * (state.hi - state.lo);
+    return Math.round(Math.min(state.hi, Math.max(state.lo, f)) * 100) / 100;
+  }
+  for (const box of [mainBox, diffBox]) {
+    box.addEventListener("pointermove", (e) => showHover(freqAt(e, box), true));
+    box.addEventListener("pointerdown", (e) => showHover(freqAt(e, box), true));
+    box.addEventListener("pointerleave", () => { if (tip) { tip.remove(); tip = null; } });
+  }
+  mainBox.addEventListener("keydown", (e) => {
+    const step = e.shiftKey ? 0.5 : 0.1;
+    let f = state.f;
+    if (e.key === "ArrowRight") f += step; else if (e.key === "ArrowLeft") f -= step;
+    else if (e.key === "Home") f = state.lo; else if (e.key === "End") f = state.hi; else return;
+    e.preventDefault();
+    showHover(Math.round(Math.min(state.hi, Math.max(state.lo, f)) * 100) / 100, true);
+  });
+  mainBox.addEventListener("blur", () => { if (tip) { tip.remove(); tip = null; } });
+
+  const toggle = (id, key) => document.getElementById(id).addEventListener("click", (e) => {
+    const other = key === "ms" ? "al" : "ms";
+    if (state[key] && !state[other]) return;          // keep at least one curve on
+    state[key] = !state[key];
+    e.currentTarget.setAttribute("aria-pressed", String(state[key]));
+    render();
+  });
+  toggle("t-ms", "ms"); toggle("t-al", "al");
+  const rAll = document.getElementById("r-all"), rBand = document.getElementById("r-band");
+  const setRange = (lo) => {
+    state.lo = lo;
+    rAll.setAttribute("aria-pressed", String(lo === 1.0));
+    rBand.setAttribute("aria-pressed", String(lo === BAND));
+    try { localStorage.setItem("dir-range", String(lo)); } catch (_) { /* storage unavailable */ }
+    render();
+  };
+  rAll.addEventListener("click", () => setRange(1.0));
+  rBand.addEventListener("click", () => setRange(BAND));
+  try { if (localStorage.getItem("dir-range") === String(BAND)) { state.lo = BAND; rAll.setAttribute("aria-pressed", "false"); rBand.setAttribute("aria-pressed", "true"); } } catch (_) { /* ignore */ }
+
+  // data table (CST samples)
+  const tb = document.querySelector("#table tbody");
+  for (const [f, m] of MS) {
+    const a = interp(AL, f), d = m - a, tr = document.createElement("tr");
+    if (f >= BAND) tr.className = d < 0 ? "neg" : "pos";
+    tr.innerHTML = `<td>${f.toFixed(1)}</td><td>${fmt(a)}</td><td>${fmt(m)}</td><td>${sgn(d)}</td>`;
+    tb.appendChild(tr);
+  }
+
+  render();
+  let t;
+  new ResizeObserver(() => { clearTimeout(t); t = setTimeout(render, 60); }).observe(mainBox);
+})();
+</script>
+</body>
+</html>

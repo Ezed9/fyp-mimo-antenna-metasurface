@@ -1,10 +1,11 @@
-// Builds presentation/FYP_Presentation.pptx — mid-semester checkpoint 1 deck (15 slides, 16:9).
+// Builds presentation/FYP_Presentation.pptx — mid-semester checkpoint 1 deck (16 slides, 16:9).
 //
 //   cd presentation/deck && npm install && node build_deck.js
 //   (first, once: uv run presentation/deck/make_concepts.py  — writes the concept sketches into figures/)
 //
 // Story: antenna basics → how an antenna is judged → our structure (CPW-fed monopole) → metasurface idea →
-// objectives → literature → method → work done (CST results) → next steps → conclusion.
+// objectives → literature → method → work done (CST results: S11, then the directivity with and without the
+// metasurface) → next steps → conclusion.
 // The slides carry visuals and keywords; the spoken detail is in presentation/SPEAKER_SCRIPT.md.
 // CST screenshots are cropped into .cache/ at build time; files in figures/ are never modified.
 "use strict";
@@ -55,6 +56,14 @@ const F = {
   gap: "2\u00A0mm",
   msBand: "about 2.0 → 18 GHz",
   msGaps: [[3.0, 3.4, "−6.6 dB"], [4.5, 4.7, "−9.7 dB"], [5.1, 5.6, "−8.8 dB"]],
+  // CST "Directivity, Phi=0.0, Max. Value (Subrange)": the highest directivity in the φ = 0° plane — directivity, not
+  // gain (no losses, no mismatch). Antenna alone vs with the metasurface; the metasurface run covers 1–6 GHz only.
+  // Kept in step with report/literature.py THIS_WORK dir_*; plot: figures/fig_directivity_compare_deck.png.
+  dir: {
+    alone: "3.7", aloneAt: "4 GHz", ms: "8.8", msAt: "5.9 GHz", peakGain: "+5.1 dB",
+    span: "2–6 GHz", higher: "78\u00A0%", meanAlone: "2.3", meanMs: "3.9", meanGain: "+1.6 dB",
+    dips: "≈ 2.9–3.1 and 3.3–4.0 GHz", worst: "−3.1 dB at 3.0 GHz", run: "1–6 GHz",
+  },
 };
 
 // References in the order the slides cite them (IEEE style). Kept in step with report/literature.py.
@@ -248,7 +257,9 @@ function chip(slide, label, x, y, w, h, o = {}) {
 function contentSlide(kicker, title, notes) {
   const s = pres.addSlide({ masterName: "CONTENT" });
   if (kicker) s.addText(kicker.toUpperCase(), { placeholder: "kicker" });
-  s.addText(runs(title), { placeholder: "title" });
+  // the head font's "→" is thin and sits high, so arrows in titles take the body font
+  s.addText(runs(title).flatMap((r) => r.text.split(/(→)/).filter(Boolean)
+    .map((t) => ({ text: t, options: { ...r.options, ...(t === "→" ? { fontFace: BODY } : {}) } }))), { placeholder: "title" });
   if (notes) s.addNotes(notes.replace(/\s+/g, " ").trim());
   return s;
 }
@@ -458,7 +469,7 @@ async function sMetasurface() {
     a ring with a small cut behaves like a tiny resonant circuit, and two rings of different size give two resonances.
     The board has solid copper on the back and sits only 2 millimetres behind the antenna. The copper reflects the
     backward wave and the rings shift how it reflects, so that it can add to the forward wave instead of cancelling it.
-    Whether the gain really rises is what our next simulation will show.`);
+    The CST directivity result on slide 14 shows that it does: the peak rises from 3.7 to 8.8 dBi.`);
   // array + cell zoom
   rect(s, MX, TOP, 6.0, 4.15, C.card);
   const arr = await image(s, "cst_metasurface_top.png", MX + 0.25, TOP + 0.25, 3.45, 3.3);
@@ -505,8 +516,9 @@ async function sMetasurface() {
     text(s, t, vx + 0.65, py - 0.02, vw - 0.65, 0.55, { size: 15, valign: "middle" });
     py += 0.62;
   }
-  chip(s, "Goal: send the backward wave forward → **more gain** (to be confirmed by the gain simulation)",
-    MX, TOP + 4.35, 6.0, 0.8, { fill: C.copperTint, size: 15 });
+  chip(s, [{ t: "Goal: send the backward wave forward → **more gain**", after: 0 },
+    { t: `CST: peak directivity **${F.dir.alone} → ${F.dir.ms} dBi** (slide 14)`, after: 0 }],
+  MX, TOP + 4.35, 6.0, 0.8, { fill: C.copperTint, size: 15 });
   text(s, "[5], [6]", W - MX - 1.5, BOTTOM + 0.0, 1.5, 0.22, { size: 10, color: C.grey, align: "right" });
 }
 
@@ -538,7 +550,8 @@ async function sLiterature() {
   const s = contentSlide("Literature review", "Reflectors add gain, but sit 9–20 mm away",
     `We reviewed ten papers; here are the closest five. Reflectors behind wideband antennas raise the gain by about 4 to
     6 dB. But as the chart shows, most of them sit 9 to 20 millimetres behind the antenna. Our metasurface sits only 2
-    millimetres behind. A gap this thin over a band as wide as 2 to 15 GHz is rarely reported — that is our research gap.`);
+    millimetres behind. In our row the number is the CST directivity, not yet the realized gain: the peak rises from 3.7
+    to 8.8 dBi. A gap this thin over a band as wide as 2 to 15 GHz is rarely reported — that is our research gap.`);
   const hdr = (t) => ({ text: t, options: { bold: true, color: C.white, fill: { color: C.navy }, align: "left" } });
   const row = (cells, hl) => cells.map((t, j) => ({ text: t, options: {
     bold: hl || j === 0, color: hl ? C.copper : C.ink, fill: { color: hl ? C.copperTint : C.white } } }));
@@ -549,12 +562,12 @@ async function sLiterature() {
     row(["Hammache 2024 [9]", "7 × 7 FSS", "20 mm", "2.2 → 8.4 dBi"]),
     row(["Sen 2017 [10]", "double split-ring metasurface", "—", "≈ +5.5 dB"]),
     row(["Hasan 2022 [11]", "10 × 10 split-ring MS (MIMO)", "12 mm", "5.4 → 8.3 dBi"]),
-    row(["This work", "6 × 5 double split-ring MS", F.gap, "being simulated"], true),
+    row(["This work", "6 × 5 double split-ring MS", F.gap, `${F.dir.alone} → ${F.dir.ms} dBi†`], true),
   ];
   s.addTable(rows, { x: MX, y: TOP, w: 7.35, colW: [1.95, 2.85, 0.9, 1.65], fontFace: BODY, fontSize: 14,
     rowH: 0.5, valign: "middle", margin: [0, 0.08, 0, 0.08], border: { type: "solid", pt: 0.75, color: C.line } });
-  text(s, "FSS = frequency selective surface · MS = metasurface · * total height · — not given in the abstract",
-    MX, TOP + 3.6, 7.35, 0.3, { size: 11, color: C.grey });
+  text(s, [{ t: "FSS = frequency selective surface · MS = metasurface · * total height · — not given in the abstract", after: 0 },
+    { t: "† directivity, φ = 0° plane (CST)", after: 0 }], MX, TOP + 3.6, 7.35, 0.4, { size: 11, color: C.grey });
   // gap chart
   const labels = ["This work", "Hussain 2023", "Al-Gburi 2022*", "Hasan 2022", "Hammache 2024"];
   const values = [2, 9, 10, 12, 20];
@@ -577,15 +590,16 @@ async function sLiterature() {
 }
 
 async function sMethod() {
-  const s = contentSlide("Proposed methodology", "Eight steps — six done, two to go",
-    `We work in eight steps. Steps one to six are done: the initial antenna, the ground sweep, the patch-size sweep, the
-    optimised antenna, the metasurface design and the S11 with the metasurface. Step seven, the gain plots, is what
-    remains in this phase; step eight is Phase II. All simulations run in CST Studio Suite 2019, and we change one
-    dimension at a time and keep the value with the best S11.`);
+  const s = contentSlide("Proposed methodology", "Eight steps — seven done",
+    `We work in eight steps. Steps one to seven are done: the initial antenna, the ground sweep, the patch-size sweep,
+    the optimised antenna, the metasurface design, the S11 with the metasurface, and step seven, the directivity with
+    and without the metasurface. Realized gain over the whole band and tuning still remain in this phase. Step eight is
+    Phase II. All simulations run in CST Studio Suite 2019, and we change one dimension at a time and keep the value
+    with the best S11.`);
   const steps = [
     ["Initial antenna\nin CST", "done"], ["Ground position\nsweep", "done"], ["Patch size\nsweep", "done"],
     ["Optimised\nantenna", "done"], ["Metasurface\ndesign", "done"], ["Antenna +\nmetasurface", "done"],
-    ["Gain vs\nfrequency", "doing"], ["Phase II: MIMO\n& testing", "planned"],
+    ["Directivity vs\nfrequency", "done"], ["Phase II: MIMO\n& testing", "planned"],
   ];
   const n = steps.length, d = 0.72, y = TOP + 0.45;
   const x0 = MX + 0.45, dx = (W - 2 * MX - 0.9 - d) / (n - 1);
@@ -599,15 +613,18 @@ async function sMethod() {
     text(s, steps[i][0], x + d / 2 - 0.74, y + d + 0.15, 1.48, 0.95,
       { size: 14, align: "center", color: st === "planned" ? C.muted : C.ink, bold: st === "doing" });
   }
-  // legend
+  // legend: only the states some step is in, centred (label widths measured at 14 pt)
   const ly = y + d + 1.25;
-  const leg = [["Done", C.navy, null], ["Remaining (this phase)", C.copper, null], ["Planned (Phase II)", C.white, C.grey]];
-  let lx = MX + 2.4;
-  for (const [lab, fill, ln] of leg) {
+  const leg = [["done", "Done", C.navy, null, 0.42], ["doing", "Remaining (this phase)", C.copper, null, 1.8],
+    ["planned", "Planned (Phase II)", C.white, C.grey, 1.41]].filter(([st]) => steps.some((p) => p[1] === st));
+  const legGap = 1.4, entryW = (e) => 0.38 + e[4];
+  let lx = (W - leg.reduce((t, e) => t + entryW(e), 0) - legGap * (leg.length - 1)) / 2;
+  for (const e of leg) {
+    const [, lab, fill, ln, lw] = e;
     s.addShape(pres.shapes.OVAL, { x: lx, y: ly + 0.05, w: 0.26, h: 0.26, fill: { color: fill },
       line: ln ? { color: ln, width: 1.25, dashType: "dash" } : { type: "none" } });
-    text(s, lab, lx + 0.38, ly, 2.6, 0.36, { size: 14, valign: "middle" });
-    lx += 3.1;
+    text(s, lab, lx + 0.38, ly, lw + 0.3, 0.36, { size: 14, valign: "middle" });
+    lx += entryW(e) + legGap;
   }
   // tools
   const tools = [
@@ -711,7 +728,7 @@ async function sMsResult() {
     frequency axis. The band now starts lower, at about 2 GHz, and stays matched up to 18 GHz — the end of our
     simulation. But there are three narrow regions, shaded red, where S11 rises above minus 10 dB, the worst being minus
     6.6 dB near 3.1 GHz. At such a small gap the metasurface also changes the antenna's input match, so it needs tuning.
-    We do not have the gain result yet; that is the next simulation.`);
+    The next slide shows what it does to the directivity.`);
   const pw = 6.75, ph = 2.25;
   text(s, "Antenna alone", MX, TOP - 0.1, pw, 0.32, { size: 15, bold: true, color: C.navy });
   const a = await cstPlot(s, "cst_single_final_s11.png", MX, TOP + 0.22, pw, ph, { align: "left", valign: "top" });
@@ -736,17 +753,52 @@ async function sMsResult() {
     text(s, body, x + 1.05, ry + 0.65, w - 1.2, 0.8, { size: 15 });
     ry += 1.65;
   }
-  text(s, "18 GHz is the end of the simulated range · gain not simulated yet", x, ry + 0.02, w, 0.3,
+  text(s, "18 GHz is the end of the simulated range · gain: next slide", x, ry + 0.02, w, 0.3,
     { size: 12, color: C.grey });
+}
+
+async function sDirectivity() {
+  const d = F.dir;
+  const s = contentSlide("Gain comparison", `Metasurface raises the directivity: ${d.alone} → ${d.ms} dBi`,
+    `This CST plot compares the antenna alone, the grey dashed line, with the antenna plus the metasurface, the copper
+    line. It shows directivity — the gain the antenna would have with no losses — taking the highest value in the
+    phi equals zero degree plane at each frequency. With the metasurface the peak rises from 3.7 dBi near 4 GHz to 8.8
+    dBi at 5.9 GHz, and from 2 to 6 GHz the directivity is higher over 78 percent of the band: 3.9 instead of 2.3 dBi
+    on average. That is what we wanted: the copper-backed metasurface reflects the backward wave forward, so more of the
+    power goes to the front. There are two dips, near 3 GHz and from 3.3 to 4 GHz, where the antenna alone is up to
+    about 3 dB higher; the first sits right next to the S11 gap at 3 GHz, so tuning should help. The metasurface run
+    covers only 1 to 6 GHz so far, so next we simulate the realized gain over the whole band, which also counts the
+    losses and the mismatch.`);
+  // plot (transparent PNG drawn at deck scale), height-limited
+  const fig = await image(s, "fig_directivity_compare_deck.png", MX, TOP - 0.05, 8.1, 5.2, { align: "left", valign: "top" });
+  // findings — same cards as the S11 slide, narrower
+  const x = fig.x + fig.w + 0.35, w = W - MX - x;
+  const rows = [
+    ["MdTrendingUp", C.green, `Peak ${d.alone} → ${d.ms} dBi`, `${d.peakGain} with the metasurface\n(peak now at ${d.msAt})`, C.greenTint],
+    ["MdEqualizer", C.copper, `Higher on ${d.higher} of ${d.span}`, `average ${d.meanAlone} → ${d.meanMs} dBi (${d.meanGain})`, C.copperTint],
+    ["MdWarningAmber", C.red, "Two dips", `${d.dips}\n(worst ${d.worst})`, C.redTint],
+  ];
+  let ry = TOP;
+  for (const [ic, col, head, body, tint] of rows) {
+    rect(s, x, ry, w, 1.42, tint);
+    await badge(s, ic, x + 0.22, ry + 0.2, 0.56, col);
+    text(s, head, x + 0.92, ry + 0.18, w - 0.97, 0.6, { size: 18, bold: true, color: col, valign: "middle" });
+    text(s, body, x + 0.92, ry + 0.8, w - 0.97, 0.55, { size: 15 });
+    ry += 1.55;
+  }
+  text(s, [{ t: "CST directivity, maximum in the φ = 0° plane", after: 0 }, { t: `Metasurface run covers ${d.run}`, after: 0 },
+    { t: "Directivity = gain without losses; realized gain is next", after: 0 }], x, ry - 0.05, w, 0.6,
+  { size: 11, color: C.grey });
 }
 
 async function sNext() {
   const s = contentSlide("Challenges & future work", "What were the challenges, and what comes next",
     `Our challenges: long simulation times for the full model; a few glitches in the sweep curves near 4 and 6 GHz from
-    too few frequency points, which we will re-run; a thin matching margin near 6.5 and 12.2 GHz; and the mismatch gaps
-    the metasurface introduced. Next, in this phase: the gain-versus-frequency plots with and without the metasurface,
-    and tuning. Then Phase II: a four-port MIMO antenna with the metasurface, isolation and correlation checks,
-    fabrication and measurement.`);
+    too few frequency points, which we will re-run; a thin matching margin near 6.5 and 12.2 GHz; and the metasurface
+    detuning — three narrow mismatch gaps and two directivity dips near 3 to 4 GHz. The directivity comparison with and
+    without the metasurface is done. Next, in this phase: the realized gain over the whole 2 to 15 GHz band, tuning the
+    metasurface to close the gaps and the dips, and radiation patterns at a few frequencies. Then Phase II: a four-port
+    MIMO antenna with the metasurface, isolation and correlation checks, fabrication and measurement.`);
   // challenges
   const cx = MX, cw = 5.3;
   text(s, "Challenges", cx, TOP - 0.05, cw, 0.4, { size: 20, bold: true, color: C.navy });
@@ -754,7 +806,7 @@ async function sNext() {
     ["MdTimer", "Long run times", "antenna + metasurface needs a large mesh"],
     ["MdShowChart", "Sweep glitches", "jumps near 4 and 6 GHz from too few frequency points → re-run"],
     ["MdStraighten", "Thin margin", "only just below −10 dB near 6.5 and 12.2 GHz"],
-    ["MdWarningAmber", "Metasurface detuning", "three narrow mismatch gaps, 3.0–5.6 GHz"],
+    ["MdWarningAmber", "Metasurface detuning", "three narrow S_{11} gaps (3.0–5.6 GHz) and two directivity dips near 3–4 GHz"],
   ];
   let y = TOP + 0.5;
   for (const [ic, head, body] of ch) {
@@ -766,7 +818,8 @@ async function sNext() {
   // future
   const fx = MX + 5.75, fw = W - MX - fx, colw = (fw - 0.3) / 2;
   const groups = [
-    ["Remaining in this phase", C.copper, C.copperTint, ["Gain vs frequency: antenna alone", "Gain vs frequency: antenna + metasurface", "Tune the metasurface to close the gaps"]],
+    ["Remaining in this phase", C.copper, C.copperTint, ["Realized gain over the whole 2–15 GHz band",
+      "Tune the metasurface: close the S_{11} gaps and the directivity dips", "Radiation patterns at a few frequencies"]],
     ["Phase II", C.navy, C.navyTint, ["4-port MIMO (elements turned 90°) + metasurface", "Isolation and correlation (ECC) between ports", "Fabricate on FR-4 and measure"]],
   ];
   for (let g = 0; g < 2; g++) {
@@ -792,13 +845,14 @@ async function sNext() {
 async function sConclusion() {
   const s = contentSlide("Conclusion", "Conclusion",
     `To conclude: the single wideband antenna is designed and matched from 2.16 to 15.73 GHz. The split-ring
-    metasurface is designed and simulated with it: the band widens, with three narrow gaps that need tuning. Next come
-    the gain plots with and without the metasurface, and then the MIMO antenna. Thank you — we are happy to take
-    questions.`);
+    metasurface is designed and simulated with it: the band widens, with three narrow gaps that need tuning, and the
+    peak directivity rises from 3.7 to 8.8 dBi, higher over most of 2 to 6 GHz. Next come the realized gain over the
+    whole band and the tuning, and then the MIMO antenna. Thank you — we are happy to take questions.`);
   const cards = [
     ["MdCheckCircle", C.green, "Antenna done", "CPW-fed decagon matched from **2.16–15.73 GHz**"],
-    ["MdGridOn", C.copper, "Metasurface added", `6 × 5 split rings, ${F.gap} behind: wider band, 3 gaps to tune`],
-    ["MdEast", C.navy, "Next", "Gain plots with and without the metasurface → MIMO antenna"],
+    ["MdGridOn", C.copper, "Metasurface added",
+      `6 × 5 split rings, ${F.gap} behind: wider band, **peak directivity ${F.dir.alone} → ${F.dir.ms} dBi**`],
+    ["MdEast", C.navy, "Next", "Realized gain and tuning\n→ MIMO antenna"],
   ];
   const cw = (W - 2 * MX - 0.6) / 3;
   for (let i = 0; i < 3; i++) {
@@ -831,7 +885,7 @@ async function applyThemeColors(file) {
 async function main() {
   fs.mkdirSync(CACHE, { recursive: true });
   const slides = [sTitle, sAntenna, sJudge, sIntro, sOurAntenna, sMetasurface, sObjectives, sLiterature, sMethod,
-    sInitial, sOptimise, sOptimised, sMsResult, sNext, sConclusion];
+    sInitial, sOptimise, sOptimised, sMsResult, sDirectivity, sNext, sConclusion];
   for (const fn of slides) await fn();
   await pres.writeFile({ fileName: OUT });
   await applyThemeColors(OUT);

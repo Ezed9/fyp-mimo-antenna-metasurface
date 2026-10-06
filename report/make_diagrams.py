@@ -69,7 +69,7 @@ def design_flow() -> Path:
              ("4. Optimised\nantenna (S$_{11}$)", "done"),
              ("5. Metasurface\ndesign (6 × 5 SRR)", "done"),
              ("6. Antenna +\nmetasurface (S$_{11}$)", "done"),
-             ("7. Gain vs\nfrequency plots", "doing"),
+             ("7. Directivity vs\nfrequency plots", "done"),
              ("8. Phase II: MIMO,\nfabrication, testing", "planned")]
     fig, ax = plt.subplots(figsize=(6.0, 2.3))
     w, h, gx = 1.30, 0.54, 0.22
@@ -82,8 +82,7 @@ def design_flow() -> Path:
         _arrow(ax, (xs[k] + w, y1 + h / 2), (xs[k + 1], y1 + h / 2))
         _arrow(ax, (xs[3 - k], y2 + h / 2), (xs[2 - k] + w, y2 + h / 2))
     _arrow(ax, (xs[3] + w / 2, y1), (xs[3] + w / 2, y2 + h))
-    for k, (lab, st) in enumerate([("Done", "done"), ("Remaining (Phase I)", "doing"), ("Planned (Phase II)", "planned")]):
-        x0 = 0.4 + k * 1.8
+    for x0, lab, st in ((1.54, "Done", "done"), (2.94, "Planned (Phase II)", "planned")):  # centred under the flow
         _box(ax, x0, 0.02, 0.26, 0.18, "", st)
         ax.text(x0 + 0.34, 0.11, lab, va="center", fontsize=8.0, color=INK)
     ax.set_xlim(-0.05, xs[3] + w + 0.05)
