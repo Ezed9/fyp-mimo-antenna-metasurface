@@ -9,6 +9,7 @@ Text mini-markup: **bold**, *italic*, _{subscript}, ^{superscript}; citations [@
 from __future__ import annotations
 
 import copy
+import io
 import re
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
@@ -181,12 +182,12 @@ def start(first_line: str, title: str, subtitle: str | None, students: list[str]
     _set_text(p0, first_line)
     p0.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p0.paragraph_format.space_before = Pt(0)
-    p0.paragraph_format.space_after = Pt(24)
+    p0.paragraph_format.space_after = Pt(36)
 
     t = _find(doc, "TITLE OF PROJECT")
     _set_text(t, title.upper())
     t.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    t.paragraph_format.space_before = Pt(12)
+    t.paragraph_format.space_before = Pt(24)
     t.paragraph_format.space_after = Pt(6)
     for r in t.runs:
         style_run(r, size=15, bold=True)
@@ -205,12 +206,12 @@ def start(first_line: str, title: str, subtitle: str | None, students: list[str]
     if logo_path and Path(logo_path).exists():
         logo_p = _clone_after(prev_el, "")
         logo_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        logo_p.paragraph_format.space_before = Pt(12)
-        logo_p.paragraph_format.space_after = Pt(20)
+        logo_p.paragraph_format.space_before = Pt(24)
+        logo_p.paragraph_format.space_after = Pt(36)
         for r in list(logo_p.runs):
             r._r.getparent().remove(r._r)
         r = logo_p.add_run()
-        r.add_picture(str(logo_path), width=Inches(1.35))
+        r.add_picture(str(logo_path), width=Inches(1.75))
 
     sub_by = _find(doc, "Submitted by:")
     sub_by.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -231,7 +232,7 @@ def start(first_line: str, title: str, subtitle: str | None, students: list[str]
         last_st.paragraph_format.space_after = Pt(3)
         for r in last_st.runs:
             style_run(r, size=10.5, bold=True)
-    last_st.paragraph_format.space_after = Pt(20)
+    last_st.paragraph_format.space_after = Pt(30)
 
     sup_hdr = _find(doc, "SUPERVISOR NAME")
     _set_text(sup_hdr, "Under the Guidance of")
@@ -247,7 +248,7 @@ def start(first_line: str, title: str, subtitle: str | None, students: list[str]
         last_sup.paragraph_format.space_after = Pt(3)
         for r in last_sup.runs:
             style_run(r, size=10.5, bold=True)
-    last_sup.paragraph_format.space_after = Pt(28)
+    last_sup.paragraph_format.space_after = Pt(84)
 
     # Remove SUPERVISOR'S SIGNATURE placeholder
     try:
@@ -333,7 +334,10 @@ def _shade(cell, fill_hex: str) -> None:
     shd.set(qn("w:val"), "clear")
     shd.set(qn("w:color"), "auto")
     shd.set(qn("w:fill"), fill_hex)
-    cell._tc.get_or_add_tcPr().append(shd)
+    # w:shd must precede w:vAlign and the rest (OOXML order): Word checks this, LibreOffice does not.
+    cell._tc.get_or_add_tcPr().insert_element_before(
+        shd, "w:noWrap", "w:tcMar", "w:textDirection", "w:tcFitText", "w:vAlign", "w:hideMark",
+        "w:headers", "w:cellIns", "w:cellDel", "w:cellMerge", "w:tcPrChange")
 
 
 def table(doc: DocxDocument, header: list[str], rows: list[list[str]], widths: list[float], size: float = 9,
@@ -494,8 +498,27 @@ def seq_caption(doc: DocxDocument, kind: str, n: int, text: str, cite: Citer | N
     return p
 
 
-def image(doc: DocxDocument, path: Path, width: float) -> Paragraph:
-    doc.add_picture(str(path), width=Inches(width))
+Crop = tuple[int, int, int, int]
+
+
+def _picture(path: Path, crop: Crop | None = None):
+    """add_picture source: the file, or an in-memory PNG of crop = (left, top, right, bottom) in source pixels.
+
+    Cropping at build time leaves the PNGs in figures/ untouched.
+    """
+    if crop is None:
+        return str(path)
+    from PIL import Image  # only crops need Pillow, so build_literature_review.py runs without it
+
+    buf = io.BytesIO()
+    with Image.open(path) as im:
+        im.crop(crop).save(buf, format="PNG")
+    buf.seek(0)
+    return buf
+
+
+def image(doc: DocxDocument, path: Path, width: float, crop: Crop | None = None) -> Paragraph:
+    doc.add_picture(_picture(path, crop), width=Inches(width))
     pic = doc.paragraphs[-1]
     pic.alignment = CENTER
     pic.paragraph_format.keep_with_next = True
@@ -505,50 +528,52 @@ def image(doc: DocxDocument, path: Path, width: float) -> Paragraph:
 
 def two_images(doc: DocxDocument, path1: Path, path2: Path, width1: float = 2.85,
                width2: float | None = None, width: float | None = None,
-               subcap1: str = "(a)", subcap2: str = "(b)") -> None:
+               subcap1: str = "(a)", subcap2: str = "(b)",
+               crop1: Crop | None = None, crop2: Crop | None = None, gap: float = 0.12) -> None:
+    """Two pictures side by side with their subcaptions, in a borderless 2 × 2 table.
+
+    Each column is its picture's width plus `gap` and the cell padding is zero, so the row is centred and
+    each subcaption sits under its own picture. Widths are inches; crop boxes are source pixels.
+    """
     w1 = width if width is not None else width1
     w2 = width if width is not None else (width2 if width2 is not None else width1)
+    cols = (w1 + gap, w2 + gap)
+    assert sum(cols) <= TEXT_W + 1e-6, f"figure row is {sum(cols):.2f} in, wider than the {TEXT_W} in text block"
     t = doc.add_table(rows=2, cols=2)
     t.alignment = WD_TABLE_ALIGNMENT.CENTER
+    t.autofit = False
     tblPr = t._tbl.tblPr
-    tblBorders = OxmlElement("w:tblBorders")
+    tblW = tblPr.find(qn("w:tblW"))
+    tblW.set(qn("w:w"), str(round(sum(cols) * 1440)))
+    tblW.set(qn("w:type"), "dxa")
+    borders = OxmlElement("w:tblBorders")
     for b in ("top", "left", "bottom", "right", "insideH", "insideV"):
-        border = OxmlElement(f"w:{b}")
-        border.set(qn("w:val"), "none")
-        tblBorders.append(border)
-    tblPr.append(tblBorders)
+        e = OxmlElement(f"w:{b}")
+        e.set(qn("w:val"), "none")
+        borders.append(e)
+    margins = OxmlElement("w:tblCellMar")
+    for side in ("left", "right"):
+        e = OxmlElement(f"w:{side}")
+        e.set(qn("w:w"), "0")
+        e.set(qn("w:type"), "dxa")
+        margins.append(e)
+    # OOXML order inside w:tblPr (… tblBorders, shd, tblLayout, tblCellMar, tblLook …): Word checks it.
+    tblPr.insert_element_before(borders, "w:shd", "w:tblLayout", "w:tblCellMar", "w:tblLook",
+                                "w:tblCaption", "w:tblDescription", "w:tblPrChange")
+    tblPr.insert_element_before(margins, "w:tblLook", "w:tblCaption", "w:tblDescription", "w:tblPrChange")
 
-    c0 = t.cell(0, 0)
-    p0 = c0.paragraphs[0]
-    p0.alignment = CENTER
-    p0.paragraph_format.space_before = Pt(0)
-    p0.paragraph_format.space_after = Pt(0)
-    p0.paragraph_format.keep_with_next = True
-    r0 = p0.add_run()
-    r0.add_picture(str(path1), width=Inches(w1))
-
-    c1 = t.cell(0, 1)
-    p1 = c1.paragraphs[0]
-    p1.alignment = CENTER
-    p1.paragraph_format.space_before = Pt(0)
-    p1.paragraph_format.space_after = Pt(0)
-    p1.paragraph_format.keep_with_next = True
-    r1 = p1.add_run()
-    r1.add_picture(str(path2), width=Inches(w2))
-
-    p0_sub = t.cell(1, 0).paragraphs[0]
-    p0_sub.alignment = CENTER
-    p0_sub.paragraph_format.space_before = Pt(0)
-    p0_sub.paragraph_format.space_after = Pt(0)
-    p0_sub.paragraph_format.keep_with_next = True
-    add_runs(p0_sub, subcap1, 8.5)
-
-    p1_sub = t.cell(1, 1).paragraphs[0]
-    p1_sub.alignment = CENTER
-    p1_sub.paragraph_format.space_before = Pt(0)
-    p1_sub.paragraph_format.space_after = Pt(0)
-    p1_sub.paragraph_format.keep_with_next = True
-    add_runs(p1_sub, subcap2, 8.5)
+    for j, (path, w, crop, sub) in enumerate(((path1, w1, crop1, subcap1), (path2, w2, crop2, subcap2))):
+        t.columns[j].width = Inches(cols[j])
+        for i in range(2):
+            c = t.cell(i, j)
+            c.width = Inches(cols[j])
+            p = c.paragraphs[0]
+            p.alignment = CENTER
+            p.paragraph_format.space_before = Pt(0)
+            p.paragraph_format.space_after = Pt(0)
+            p.paragraph_format.keep_with_next = True
+        t.cell(0, j).paragraphs[0].add_run().add_picture(_picture(path, crop), width=Inches(w))
+        add_runs(t.cell(1, j).paragraphs[0], sub, 8.5)
 
 
 def pending_box(doc: DocxDocument, title: str, detail: str, height: float = 1.6) -> None:
