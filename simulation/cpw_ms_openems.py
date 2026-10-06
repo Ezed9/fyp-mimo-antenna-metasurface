@@ -59,9 +59,16 @@ MS_H = 1.6
 # feed axis keep the x = 0 mirror symmetry (ASSUMED orientation and width).
 RINGS = [(7.0, 7.5, 270.0), (5.0, 5.5, 90.0)]
 SPLIT = 0.5
+if os.environ.get('MS_VARIANT', '') == 'small':
+    # Alternative reading of the given ring sizes: they are DIAMETERS and the metasurface is a
+    # 50 x 50 mm board like the antenna (6 x 5 cells -> 8.33 x 10 mm pitch, 7.5 mm outer rings).
+    MS_X, MS_Y = 50.0, 50.0
+    RINGS = [(3.5, 3.75, 270.0), (2.5, 2.75, 90.0)]
+    SPLIT = 0.25
+X0 = SPLIT / 2       # half model: first x cell is [-X0, X0] so the PMC wall sits exactly on x = 0
 
 
-KEEP_LINES = [0.25, -0.25, W_FEED / 2, W_FEED / 2 + GAP, -W_FEED / 2, -W_FEED / 2 - GAP,
+KEEP_LINES = [X0, -X0, W_FEED / 2, W_FEED / 2 + GAP, -W_FEED / 2, -W_FEED / 2 - GAP,
               Y_GND_TOP, Y_PATCH_BOT, -HALF_BOARD, -HALF_BOARD + 0.5]
 
 
@@ -218,7 +225,7 @@ def build(case, h, model, sim_path, f_lo=1.0e9, f_hi=16.0e9, fine=0.5, coarse=2.
     x_dom, y_dom = ext_x + margin, ext_y + margin
     trans = 1.5     # graded transition band between the 0.25 mm and 0.5 mm regions
 
-    xa = [W_FEED / 2, W_FEED / 2 + GAP / 2, W_FEED / 2 + GAP, 0.25,
+    xa = [W_FEED / 2, W_FEED / 2 + GAP / 2, W_FEED / 2 + GAP, X0,
           R_PATCH * np.cos(np.deg2rad(36)), R_PATCH * np.cos(np.deg2rad(72)), R_PATCH]
     xa = xa + [-v for v in xa]
     ya = [-HALF_BOARD + port_len, Y_GND_TOP, Y_PATCH_BOT, YC_PATCH,
@@ -228,7 +235,7 @@ def build(case, h, model, sim_path, f_lo=1.0e9, f_hi=16.0e9, fine=0.5, coarse=2.
     def axis(keys_ant, keys_ms, lo, dom, ext):
         ant = region_lines(keys_ant + keys_ms, max(lo, -HALF_BOARD), HALF_BOARD, fine_ant)
         if model == 'half' and lo > -HALF_BOARD:
-            ant = ant[np.abs(ant) > 1e-6]     # keep the first cell [-0.25, 0.25]: PMC wall exactly at x = 0
+            ant = ant[np.abs(ant) > 1e-6]     # keep the first cell [-X0, X0]: PMC wall exactly at x = 0
         lines = list(ant)
         if has_ms:
             lines += list(region_lines(keys_ms + [ext], HALF_BOARD + trans, ext, fine))
@@ -241,7 +248,7 @@ def build(case, h, model, sim_path, f_lo=1.0e9, f_hi=16.0e9, fine=0.5, coarse=2.
                 lines = bridge(lines, -HALF_BOARD - trans, -HALF_BOARD)
         return SmoothMeshLines(lines, coarse, 1.3, check_symmetry=False)
 
-    x_lo = -0.25 if model == 'half' else -x_dom
+    x_lo = -X0 if model == 'half' else -x_dom
     x_lines = axis(xa, ring_x, x_lo, x_dom, ext_x)
     y_lines = axis(ya, ring_y, -y_dom, y_dom, ext_y)
 
