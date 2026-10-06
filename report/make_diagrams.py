@@ -63,15 +63,18 @@ def _arrow(ax, p, q):
 
 
 def design_flow() -> Path:
-    steps = [("1. CPW-fed planar\nmonopole model", "done"), ("2. Ground-edge\nsweep ($L_g$)", "done"),
-             ("3. Patch-radius\nsweep ($R$)", "done"), ("4. Optimised\nantenna: $|S_{11}|$, gain", "done"),
-             ("5. SRR unit cell:\nreflection phase", "doing"),
-             (f"6. Antenna + SRR\nmetasurface at\n$h$ = {lit.GAP_MM} mm", "doing"),
-             ("7. Phase II: 2/4-port\nMIMO + metasurface", "planned"), ("8. Fabrication and\nmeasurement", "planned")]
-    fig, ax = plt.subplots(figsize=(6.4, 2.75))
-    w, h, gx = 1.38, 0.62, 0.27
+    steps = [("1. CST Setup &\nInitial Antenna", "done"),
+             ("2. Ground Sweep\n($L_g$: −20 to −7 mm)", "done"),
+             ("3. Patch Radius\nSweep ($R$: 4–15 mm)", "done"),
+             ("4. Optimised\nMonopole ($|S_{11}|$, G)", "done"),
+             ("5. Metasurface\nSRR Unit Cell", "doing"),
+             (f"6. Metasurface\nLoaded $S_{{11}}$ ({lit.GAP_MM} mm)", "doing"),
+             ("7. Phase II: 4-Port\nMIMO Integration", "planned"),
+             ("8. Fabrication &\nMeasurement", "planned")]
+    fig, ax = plt.subplots(figsize=(6.0, 2.3))
+    w, h, gx = 1.30, 0.54, 0.22
     xs = [k * (w + gx) for k in range(4)]
-    y1, y2 = 1.45, 0.45
+    y1, y2 = 1.25, 0.38
     for k in range(4):
         _box(ax, xs[k], y1, w, h, *steps[k])
         _box(ax, xs[3 - k], y2, w, h, *steps[4 + k])
@@ -80,9 +83,9 @@ def design_flow() -> Path:
         _arrow(ax, (xs[3 - k], y2 + h / 2), (xs[2 - k] + w, y2 + h / 2))
     _arrow(ax, (xs[3] + w / 2, y1), (xs[3] + w / 2, y2 + h))
     for k, (lab, st) in enumerate([("Done", "done"), ("In progress", "doing"), ("Planned (Phase II)", "planned")]):
-        x0 = 0.5 + k * 1.9
-        _box(ax, x0, 0.02, 0.28, 0.2, "", st)
-        ax.text(x0 + 0.36, 0.12, lab, va="center", fontsize=8.5, color=INK)
+        x0 = 0.4 + k * 1.8
+        _box(ax, x0, 0.02, 0.26, 0.18, "", st)
+        ax.text(x0 + 0.34, 0.11, lab, va="center", fontsize=8.0, color=INK)
     ax.set_xlim(-0.05, xs[3] + w + 0.05)
     ax.set_ylim(0, y1 + h + 0.05)
     ax.axis("off")

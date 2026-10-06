@@ -25,7 +25,7 @@ from docx.text.paragraph import Paragraph
 
 TEMPLATE = Path(__file__).resolve().parent / "UG_Project_Report_Template.docx"
 FONT = "Times New Roman"
-BODY = 12
+BODY = 10.5
 TEXT_W = 6.0  # inches between the template's margins (8.5 − 2 × 1.25)
 JUSTIFY = WD_ALIGN_PARAGRAPH.JUSTIFY
 CENTER = WD_ALIGN_PARAGRAPH.CENTER
@@ -163,57 +163,147 @@ def _drop_empty_after(p: Paragraph, n: int) -> None:
 
 
 def start(first_line: str, title: str, subtitle: str | None, students: list[str],
-          supervisors: list[str], keep_body: bool = False) -> DocxDocument:
-    """Open the template and fill its title page.
-
-    keep_body=False removes the template's placeholder sections (the caller writes its own);
-    keep_body=True keeps them and only drops the blank lines that pushed "Abstract" to page 2.
-    Each extra student/supervisor line replaces one of the template's blank lines, so the page layout is unchanged.
-    """
+          supervisors: list[str], logo_path: Path | None = None, keep_body: bool = False) -> DocxDocument:
+    """Open the template and fill its title page with college logo and balanced layout."""
     doc = Document(str(TEMPLATE))
-    body = doc.element.body
-    inst = _find(doc, "NATIONAL INSTITUTE OF TECHNOLOGY SILCHAR")
-    el = inst._p.getnext()
-    while el is not None and el.tag != qn("w:sectPr"):
-        nxt = el.getnext()
-        if keep_body and el_text(el).strip():
-            break
-        body.remove(el)
-        el = nxt
 
-    _set_text(doc.paragraphs[0], first_line)
+    # Clean body if keep_body=False
+    if not keep_body:
+        body = doc.element.body
+        inst = _find(doc, "NATIONAL INSTITUTE OF TECHNOLOGY SILCHAR")
+        el = inst._p.getnext()
+        while el is not None and el.tag != qn("w:sectPr"):
+            nxt = el.getnext()
+            body.remove(el)
+            el = nxt
+
+    p0 = doc.paragraphs[0]
+    _set_text(p0, first_line)
+    p0.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p0.paragraph_format.space_before = Pt(0)
+    p0.paragraph_format.space_after = Pt(24)
+
     t = _find(doc, "TITLE OF PROJECT")
     _set_text(t, title.upper())
+    t.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    t.paragraph_format.space_before = Pt(12)
+    t.paragraph_format.space_after = Pt(6)
+    for r in t.runs:
+        style_run(r, size=15, bold=True)
+
+    prev_el = t
     if subtitle:
         sub = Paragraph(t._p.getnext(), t._parent)
         _set_text(sub, subtitle)
-    for placeholder, lines in (("NAME OF THE STUDENTS", students), ("SUPERVISOR NAME", supervisors)):
-        last = _find(doc, placeholder)
-        _set_text(last, lines[0])
-        for line in lines[1:]:
-            last = _clone_after(last, line)
-        _drop_empty_after(last, len(lines) - 1)
+        sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        sub.paragraph_format.space_after = Pt(16)
+        for r in sub.runs:
+            style_run(r, size=11, italic=True)
+        prev_el = sub
+
+    # Insert College Logo centered between Title/Subtitle and 'Submitted by:'
+    if logo_path and Path(logo_path).exists():
+        logo_p = _clone_after(prev_el, "")
+        logo_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        logo_p.paragraph_format.space_before = Pt(12)
+        logo_p.paragraph_format.space_after = Pt(20)
+        for r in list(logo_p.runs):
+            r._r.getparent().remove(r._r)
+        r = logo_p.add_run()
+        r.add_picture(str(logo_path), width=Inches(1.35))
+
+    sub_by = _find(doc, "Submitted by:")
+    sub_by.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    sub_by.paragraph_format.space_before = Pt(0)
+    sub_by.paragraph_format.space_after = Pt(6)
+    for r in sub_by.runs:
+        style_run(r, size=10.5)
+
+    last_st = _find(doc, "NAME OF THE STUDENTS")
+    _set_text(last_st, students[0])
+    last_st.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    last_st.paragraph_format.space_after = Pt(3)
+    for r in last_st.runs:
+        style_run(r, size=10.5, bold=True)
+    for line in students[1:]:
+        last_st = _clone_after(last_st, line)
+        last_st.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        last_st.paragraph_format.space_after = Pt(3)
+        for r in last_st.runs:
+            style_run(r, size=10.5, bold=True)
+    last_st.paragraph_format.space_after = Pt(20)
+
+    sup_hdr = _find(doc, "SUPERVISOR NAME")
+    _set_text(sup_hdr, "Under the Guidance of")
+    sup_hdr.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    sup_hdr.paragraph_format.space_before = Pt(0)
+    sup_hdr.paragraph_format.space_after = Pt(6)
+    for r in sup_hdr.runs:
+        style_run(r, size=10.5, italic=True)
+    last_sup = sup_hdr
+    for line in supervisors:
+        last_sup = _clone_after(last_sup, line)
+        last_sup.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        last_sup.paragraph_format.space_after = Pt(3)
+        for r in last_sup.runs:
+            style_run(r, size=10.5, bold=True)
+    last_sup.paragraph_format.space_after = Pt(28)
+
+    # Remove SUPERVISOR'S SIGNATURE placeholder
+    try:
+        sig = _find(doc, "SUPERVISOR’S SIGNATURE")
+        sig._p.getparent().remove(sig._p)
+    except StopIteration:
+        pass
+
+    dept = _find(doc, "DEPARTMENT OF ELECTRONICS")
+    dept.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    dept.paragraph_format.space_before = Pt(0)
+    dept.paragraph_format.space_after = Pt(4)
+    for r in dept.runs:
+        style_run(r, size=10.5, bold=True)
+
+    inst = _find(doc, "NATIONAL INSTITUTE OF TECHNOLOGY SILCHAR")
+    inst.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    inst.paragraph_format.space_before = Pt(0)
+    inst.paragraph_format.space_after = Pt(0)
+    inst.paragraph_format.line_spacing = 1.2
+    _set_text(inst, "NATIONAL INSTITUTE OF TECHNOLOGY SILCHAR, ASSAM (INDIA)-788010\nOCTOBER 2026")
+    for r in inst.runs:
+        style_run(r, size=10.5, bold=True)
+
+    # Remove unused empty paragraphs on the title page
+    p = doc.paragraphs[0]._p.getnext()
+    while p is not None and p != inst._p:
+        nxt = p.getnext()
+        if p.tag == qn("w:p") and not el_text(p).strip() and not p.findall(".//" + qn("w:drawing")):
+            p.getparent().remove(p)
+        p = nxt
+
     return doc
 
 
 # ----------------------------------------------------------------------------- body blocks
 def heading(doc: DocxDocument, text: str, level: int = 1, page_break: bool = False) -> Paragraph:
     p = doc.add_paragraph(style="Heading 1" if level == 1 else "Heading 2")
-    _mark_font(p)
-    add_runs(p, text, BODY, italic=True if level == 2 else None)
+    _mark_font(p, 12 if level == 1 else 11)
+    add_runs(p, text, 12 if level == 1 else 11, italic=True if level == 2 else None, bold=True)
+    p.paragraph_format.space_before = Pt(3.5 if level == 2 else 6)
+    p.paragraph_format.space_after = Pt(1.5 if level == 2 else 2)
+    p.paragraph_format.keep_with_next = True
     if page_break:
         p.paragraph_format.page_break_before = True
     return p
 
 
 def para(doc: DocxDocument, text: str, cite: Citer | None = None, size: float = BODY, align=JUSTIFY,
-         space_after: float | None = None, keep_next: bool = False) -> Paragraph:
+         space_after: float | None = 2.0, keep_next: bool = False) -> Paragraph:
     p = doc.add_paragraph()
     if align is not None:
         p.alignment = align
     add_runs(p, cite.render(text) if cite else text, size)
-    if space_after is not None:
-        p.paragraph_format.space_after = Pt(space_after)
+    p.paragraph_format.space_after = Pt(2.0 if space_after is None else space_after)
+    p.paragraph_format.line_spacing = 1.12
     if keep_next:
         p.paragraph_format.keep_with_next = True
     return p
@@ -223,16 +313,18 @@ def bullets(doc: DocxDocument, items: list[str], cite: Citer | None = None, size
     for it in items:
         p = doc.add_paragraph(style="List Bullet")
         p.alignment = JUSTIFY
-        p.paragraph_format.space_after = Pt(3)
+        p.paragraph_format.space_after = Pt(1.5)
+        p.paragraph_format.line_spacing = 1.12
         add_runs(p, cite.render(it) if cite else it, size)
 
 
 def caption(doc: DocxDocument, label: str, text: str, cite: Citer | None = None, above: bool = False) -> Paragraph:
     p = doc.add_paragraph()
     p.alignment = CENTER
-    p.paragraph_format.space_after = Pt(4 if above else 10)
+    p.paragraph_format.space_before = Pt(2)
+    p.paragraph_format.space_after = Pt(3 if above else 4)
     p.paragraph_format.keep_with_next = above
-    add_runs(p, f"**{label}** " + (cite.render(text) if cite else text), 10)
+    add_runs(p, f"**{label}** " + (cite.render(text) if cite else text), 9.0)
     return p
 
 
@@ -354,15 +446,15 @@ def equation(doc: DocxDocument, nodes: list, number: int) -> Paragraph:
 
 
 # ----------------------------------------------------------------------------- references
-def references(doc: DocxDocument, cite: Citer, size: float = BODY) -> None:
+def references(doc: DocxDocument, cite: Citer, size: float = 8.5) -> None:
     for n, key in enumerate(cite.order, 1):
         p = doc.add_paragraph()
         p.alignment = JUSTIFY
         pf = p.paragraph_format
-        pf.left_indent = Inches(0.45)
-        pf.first_line_indent = Inches(-0.45)
-        pf.tab_stops.add_tab_stop(Inches(0.45))
-        pf.space_after = Pt(4)
+        pf.left_indent = Inches(0.35)
+        pf.first_line_indent = Inches(-0.35)
+        pf.tab_stops.add_tab_stop(Inches(0.35))
+        pf.space_after = Pt(1.5)
         pf.line_spacing = 1.0
         add_runs(p, f"[{n}]\t{cite.lookup(key)}", size)
 
@@ -392,12 +484,13 @@ def seq_caption(doc: DocxDocument, kind: str, n: int, text: str, cite: Citer | N
     p = doc.add_paragraph()
     p.alignment = CENTER
     pf = p.paragraph_format
-    pf.space_after = Pt(4 if above else 10)
+    pf.space_before = Pt(1)
+    pf.space_after = Pt(2 if above else 2)
     pf.keep_with_next = above
-    style_run(p.add_run(f"{kind} "), 10, True)
-    field(p, f"SEQ {'Figure' if kind.startswith('Fig') else 'Table'} \\* ARABIC", str(n), 10, True)
-    style_run(p.add_run(". "), 10, True)
-    add_runs(p, cite.render(text) if cite else text, 10)
+    style_run(p.add_run(f"{kind} "), 9.0, True)
+    field(p, f"SEQ {'Figure' if kind.startswith('Fig') else 'Table'} \\* ARABIC", str(n), 9.0, True)
+    style_run(p.add_run(". "), 9.0, True)
+    add_runs(p, cite.render(text) if cite else text, 9.0)
     return p
 
 
@@ -406,8 +499,56 @@ def image(doc: DocxDocument, path: Path, width: float) -> Paragraph:
     pic = doc.paragraphs[-1]
     pic.alignment = CENTER
     pic.paragraph_format.keep_with_next = True
-    pic.paragraph_format.space_after = Pt(2)
+    pic.paragraph_format.space_after = Pt(1)
     return pic
+
+
+def two_images(doc: DocxDocument, path1: Path, path2: Path, width1: float = 2.85,
+               width2: float | None = None, width: float | None = None,
+               subcap1: str = "(a)", subcap2: str = "(b)") -> None:
+    w1 = width if width is not None else width1
+    w2 = width if width is not None else (width2 if width2 is not None else width1)
+    t = doc.add_table(rows=2, cols=2)
+    t.alignment = WD_TABLE_ALIGNMENT.CENTER
+    tblPr = t._tbl.tblPr
+    tblBorders = OxmlElement("w:tblBorders")
+    for b in ("top", "left", "bottom", "right", "insideH", "insideV"):
+        border = OxmlElement(f"w:{b}")
+        border.set(qn("w:val"), "none")
+        tblBorders.append(border)
+    tblPr.append(tblBorders)
+
+    c0 = t.cell(0, 0)
+    p0 = c0.paragraphs[0]
+    p0.alignment = CENTER
+    p0.paragraph_format.space_before = Pt(0)
+    p0.paragraph_format.space_after = Pt(0)
+    p0.paragraph_format.keep_with_next = True
+    r0 = p0.add_run()
+    r0.add_picture(str(path1), width=Inches(w1))
+
+    c1 = t.cell(0, 1)
+    p1 = c1.paragraphs[0]
+    p1.alignment = CENTER
+    p1.paragraph_format.space_before = Pt(0)
+    p1.paragraph_format.space_after = Pt(0)
+    p1.paragraph_format.keep_with_next = True
+    r1 = p1.add_run()
+    r1.add_picture(str(path2), width=Inches(w2))
+
+    p0_sub = t.cell(1, 0).paragraphs[0]
+    p0_sub.alignment = CENTER
+    p0_sub.paragraph_format.space_before = Pt(0)
+    p0_sub.paragraph_format.space_after = Pt(0)
+    p0_sub.paragraph_format.keep_with_next = True
+    add_runs(p0_sub, subcap1, 8.5)
+
+    p1_sub = t.cell(1, 1).paragraphs[0]
+    p1_sub.alignment = CENTER
+    p1_sub.paragraph_format.space_before = Pt(0)
+    p1_sub.paragraph_format.space_after = Pt(0)
+    p1_sub.paragraph_format.keep_with_next = True
+    add_runs(p1_sub, subcap2, 8.5)
 
 
 def pending_box(doc: DocxDocument, title: str, detail: str, height: float = 1.6) -> None:
