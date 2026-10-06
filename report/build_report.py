@@ -7,15 +7,20 @@
 The report must be exactly 7 pages, structured as:
   Page 1: Title page (template format: NIT Silchar, students, guide/co-guide)
   Page 2: Abstract & Introduction (Fig. 1: proposed structure, side view + metasurface top view)
-  Page 3: Literature Review (narrative, Table 1, Research Gap)
-  Page 4: Methodology / Proposed Work, subsections 1-4 (workflow, setup, initial antenna, sweep text; Figs. 2-3)
-  Page 5: Methodology cont. (Fig. 4 sweeps; subsections 5-7: optimised antenna, metasurface, antenna +
-          metasurface; Figs. 5-6)
-  Page 6: Work Done Till Mid-Semester (Table 2, challenges) & Work Plan for Next Phase
-  Page 7: Expected Outcomes & References
+  Page 3: Literature Review (narrative, Table 1, Research Gap); Methodology / Proposed Work begins with
+          subsection 1 (simulation setup, text only), which fills the page
+  Page 4: Methodology cont., subsections 2-4 (design workflow, initial antenna, sweeps; Figs. 2-4)
+  Page 5: Methodology cont., subsections 5-8 (optimised antenna, metasurface, antenna + metasurface; Figs. 5-6;
+          then the directivity text of subsection 8)
+  Page 6: Fig. 7 (directivity, antenna alone vs with the metasurface); Work Done Till Mid-Semester (Table 2,
+          challenges); Work Plan for Next Phase begins
+  Page 7: Work Plan cont., Expected Outcomes & References
+Only Abstract and Literature Review start a new page; from the Methodology on, the sections flow, so this plan rests
+on the text lengths and figure widths. Pages 2-6 are full.
 
 Writing rules for this checkpoint: plain English and short sentences; "wideband", never "UWB"; no equations and no
-wavelength fractions; no gain numbers (gain plots are still pending). Only CST results that exist are reported.
+wavelength fractions. Directivity numbers come only from the CST comparison (Fig. 7) and are always called
+directivity (gain without losses); no other gain claims for this work. Only CST results that exist are reported.
 Re-check the page count after any change to text or figure widths.
 """
 from __future__ import annotations
@@ -42,6 +47,16 @@ OUT = ROOT / "report" / "MidSem_Report.docx"
 GAP = lit.GAP_MM  # air gap between the antenna and the metasurface, mm
 FIG_IDEA = 1  # stack-up sketch + metasurface top view: the first figure (Introduction)
 
+# Directivity, antenna alone vs with the metasurface: CST "Directivity,Phi=0.0,Max. Value (Subrange)", i.e. the highest
+# directivity in the φ = 0° plane (no losses, no mismatch: not gain), 1–6 GHz only; digitised from the CST plots by
+# analysis/plot_directivity.py (figures/fig_directivity_compare.png).
+D_ALONE, F_ALONE = lit.THIS_WORK["dir_peak_alone"]   # peak, antenna alone: 3.7 dBi near 4 GHz
+D_MS, F_MS = lit.THIS_WORK["dir_peak_ms"]            # peak, with the metasurface: 8.8 dBi at 5.9 GHz
+D_MEAN = lit.THIS_WORK["dir_mean_2_6"]               # mean over 2–6 GHz, alone and with the metasurface (dBi)
+D_PCT = lit.THIS_WORK["dir_ms_higher_pct"]           # % of 2–6 GHz where the metasurface is higher
+D_LOWER = lit.THIS_WORK["dir_ms_lower_ghz"]          # bands where the antenna alone is higher (GHz)
+D_DROP = lit.THIS_WORK["dir_worst_drop"][0]          # largest drop with the metasurface (dB), next to the S11 gap
+
 # Build-time crops (left, top, right, bottom) in source pixels; the PNGs in figures/ are not modified.
 # CST 1D plots are 2288 × 959 px: every crop drops the plot title (rows 42–56). The sweep plots also drop the
 # legend right of the frame (the caption names the highlighted curve); the single-curve plots drop the one-entry
@@ -54,6 +69,7 @@ CROP_S11_BANDWIDTH = (8, 64, 2177, 959)   # keeps the band-edge marker labels at
 CROP_INITIAL_ANTENNA = (0, 44, 955, 954)  # white strip above the patch
 CROP_FLOW = (14, 15, 1440, 580)           # white margins
 CROP_STACKUP = (25, 37, 1380, 645)        # white margins
+CROP_DIRECTIVITY = (15, 28, 1412, 814)    # white margins (1427 × 829 px; ink spans x 30–1396, y 43–798)
 
 
 _UNIT = re.compile(r"(\d) (GHz|dBic|dBi|dB|mm|Ω)(?![\w])")
@@ -118,6 +134,7 @@ class Ctx:
         self.tab_n += 1
         dh.seq_caption(self.doc, "Table", self.tab_n, caption, self.cite, above=True)
         dh.table(self.doc, header, [[nb(v) for v in r] for r in rows], widths, cite=self.cite, **kw)
+        self.doc.paragraphs[-1].paragraph_format.line_spacing = Pt(4)  # the empty paragraph after it: a thin spacer
         self.tabs.append((self.tab_n, caption))
         return self.tab_n
 
@@ -131,8 +148,10 @@ def abstract(c: Ctx) -> None:
         "A coplanar waveguide (CPW) fed decagonal monopole was designed on a 50 × 50 × 1.6 mm FR-4 board in CST "
         "Studio Suite 2019. Moving the ground closer to the patch and using a 15 mm patch radius gave S_{11} below "
         f"−10 dB from 2.16 to 15.73 GHz. A 6 × 5 split-ring metasurface was placed {GAP} mm behind the antenna. "
-        "The match holds over most of the band, but three narrow mismatch gaps appear between 3.0 and 5.6 GHz. Gain "
-        "plots, metasurface tuning and a MIMO version are the next steps.")
+        "The match holds over most of the band, but three narrow mismatch gaps appear between 3.0 and 5.6 GHz. "
+        f"With the metasurface, the peak directivity rises from {D_ALONE} to {D_MS} dBi, and the directivity is higher "
+        f"over about {D_PCT}\u00a0% of 2–6 GHz. Realized gain over the whole band, metasurface tuning and a MIMO "
+        "version are the next steps.")
 
 
 def introduction(c: Ctx) -> None:
@@ -169,9 +188,9 @@ def introduction(c: Ctx) -> None:
 def literature_review(c: Ctx) -> None:
     n_tab = c.next_tab()
     c.p("Several groups have placed a reflector behind a wideband printed antenna to raise its gain. Table "
-        f"{n_tab} lists the works closest to this project.")
-    c.p("Sen et al. [@sen2017] placed a metasurface of double split rings behind a circular monopole. The split "
-        "angle changes from column to column, and the gain rose by about 5.5 dB. Al-Gburi et al. [@algburi2022] "
+        f"{n_tab} lists the works closest to this project. Sen et al. [@sen2017] placed a metasurface of double split "
+        "rings behind a circular monopole. The split angle changes from column to column, and the gain rose by about "
+        "5.5 dB. Al-Gburi et al. [@algburi2022] "
         "placed a CPW-fed ring monopole over a 19 × 19 loop frequency selective surface (FSS) with a ground plane. "
         "The peak gain rose from 6.7 to 11.5 dBi, and the whole structure is 10 mm thick. Hussain et al. [@hussain2023] "
         "put a 5 × 5 FSS 9 mm behind a CPW-fed hexagonal patch, and the peak gain rose from 6.5 to 10.5 dBi. "
@@ -202,7 +221,8 @@ def literature_review(c: Ctx) -> None:
                  "10 × 10 copper-backed split-ring metasurface", "12 mm",
                  "5.4 → 8.3 dBi; isolation > 15.5 dB"],
                 ["**This work**", "CPW-fed decagonal monopole",
-                 "6 × 5 double split-ring metasurface, copper-backed", f"**{GAP} mm**", "Under simulation"],
+                 "6 × 5 double split-ring metasurface, copper-backed", f"**{GAP} mm**",
+                 f"{D_ALONE} → {D_MS} dBi\n(directivity,\n1–6 GHz)"],
             ],
             [1.25, 1.2, 1.55, 0.8, 1.2], size=9.0, highlight_last=True)
     c.h2("Research Gap")
@@ -216,18 +236,19 @@ def literature_review(c: Ctx) -> None:
 def methodology(c: Ctx) -> None:
     lo, hi = lit.THIS_WORK["band_ghz"]
 
-    c.h2("1. Design Workflow")
-    n = c.next_fig()
-    c.p(f"Fig. {n} shows the design steps. Steps 1–6 are done, step 7 remains, and step 8 is Phase II.")
-    c.fig(["fig_design_flow.png"], "Design workflow (dark: done; light: remaining in Phase I; dashed: Phase II).",
-          width=4.4, crop=CROP_FLOW)
-
-    c.h2("2. Simulation Setup")
+    # The setup (text only) comes first: it fills the end of the Literature Review page, so the workflow figure
+    # starts page 4 (see the page plan in the module docstring).
+    c.h2("1. Simulation Setup")
     c.p("All simulations use CST Studio Suite 2019 (frequency-domain solver, 0–18 GHz). The antenna is printed in "
         "copper on a 50 × 50 × 1.6 mm FR-4 board. The radiator is a decagonal (10-sided) patch of circumradius R, "
         "with its centre fixed at 8 mm on the feed axis. The CPW feed has a 3.0 mm signal strip and 0.5 mm slots, "
         "and a waveguide port referenced to 50 Ω excites it. L_{g} is the position of the ground edge: −20 mm puts "
         "the ground far from the patch, and −7 mm brings it close.")
+
+    c.h2("2. Design Workflow")
+    n = c.next_fig()
+    c.p(f"Fig. {n} shows the design steps. Steps 1–7 are done, and step 8 is Phase II.")
+    c.fig(["fig_design_flow.png"], "Design workflow (dark: done; dashed: Phase II).", width=4.4, crop=CROP_FLOW)
 
     c.h2("3. Initial Antenna")
     n = c.next_fig()
@@ -275,18 +296,36 @@ def methodology(c: Ctx) -> None:
         "except in three narrow gaps: 3.0–3.4 GHz (worst −6.6 dB near 3.14 GHz), 4.5–4.7 GHz (worst −9.7 dB) and "
         f"5.1–5.6 GHz (worst −8.8 dB near 5.34 GHz) (Fig. {n}). At such a small gap, the metasurface loads the "
         "antenna and changes its input match. The gap, ring size and ground position will be tuned to remove these "
-        "gaps. The effect on gain is not yet known.")
+        "gaps. Subsection 8 shows how the metasurface changes the directivity.")
     c.fig_two("cst_single_final_s11.png", "cst_single_ms_s11.png",
               f"Simulated S_{{11}}: (a) antenna alone and (b) antenna with the metasurface {GAP} mm behind it.",
               width1=2.85, width2=2.85, crop1=CROP_S11_SINGLE, crop2=CROP_S11_SINGLE,
               subcap1="(a) Antenna alone", subcap2="(b) Antenna + metasurface")
 
+    c.h2("8. Directivity with and without the Metasurface")
+    n = c.next_fig()
+    (lo1, hi1), (lo2, hi2) = D_LOWER
+    c.p(f"Fig. {n} compares the directivity of the antenna alone and with the metasurface, taken as the highest value "
+        "in the φ = 0° plane. Directivity is the gain without losses. The metasurface run covers only 1 to 6 GHz, so "
+        f"nothing is known above 6 GHz yet. With the metasurface, the peak directivity rises from {D_ALONE} dBi near "
+        f"{F_ALONE:g} GHz to {D_MS} dBi at {F_MS} GHz. Over 2–6 GHz (below 2 GHz the antenna is not matched), the "
+        f"directivity with the metasurface is higher on about {D_PCT}\u00a0% of the band, and its average rises from "
+        f"{D_MEAN[0]} to {D_MEAN[1]} dBi (+{D_MEAN[1] - D_MEAN[0]:.1f} dB).")
+    c.p(f"The antenna alone is higher in only two narrow bands: about {lo1}–{hi1} GHz (by up to {D_DROP} dB, next to "
+        f"the first mismatch gap) and {lo2}–{hi2} GHz. Overall, the metasurface makes the antenna more directive. Its "
+        "copper back reflects the backward wave forward, so more power goes forward. This is why it was added. "
+        "Realized gain, which also counts losses and mismatch, is the next step.")
+    c.fig(["fig_directivity_compare.png"],
+          "Simulated directivity (highest value in the φ = 0° plane) of the antenna alone and with the metasurface "
+          f"{GAP} mm behind it, redrawn from the CST plots. Shading marks where each case is higher.",
+          width=5.0, crop=CROP_DIRECTIVITY)
+
 
 def work_done(c: Ctx) -> None:
     n_tab = c.next_tab()
-    c.p("In Phase I so far, the single antenna was designed and optimised in CST, and the split-ring metasurface "
-        f"was designed and simulated together with the antenna. Table {n_tab} gives the status of each Phase I task "
-        "and its main result.")
+    c.p("In Phase I so far, the single antenna was designed and optimised in CST, the split-ring metasurface was "
+        "designed and simulated with it, and the directivity with and without the metasurface was compared. Table "
+        f"{n_tab} gives the status of each Phase I task and its main result.")
     c.table("Status of Phase I.",
             ["Task", "Status", "Main result"],
             [
@@ -297,36 +336,37 @@ def work_done(c: Ctx) -> None:
                 ["Metasurface design (6 × 5 double split rings)", "Done", f"Placed {GAP} mm behind the antenna"],
                 ["Antenna + metasurface, S_{11}", "Done",
                  "Below −10 dB from about 2.0 to 18 GHz, except 3.0–3.4, 4.5–4.7 and 5.1–5.6 GHz"],
-                ["Gain vs frequency, antenna alone", "Remaining", "—"],
-                ["Gain vs frequency, antenna + metasurface", "Remaining", "—"],
+                ["Directivity vs frequency, antenna alone", "Done", f"Peak {D_ALONE} dBi near {F_ALONE:g} GHz"],
+                ["Directivity vs frequency, antenna + metasurface", "Done",
+                 f"Peak {D_MS} dBi; higher over {D_PCT}\u00a0% of 2–6 GHz"],
+                ["Realized gain vs frequency (whole band)", "Remaining", "—"],
                 ["Metasurface tuning to remove the mismatch gaps", "Remaining", "—"],
             ],
             [2.75, 0.75, 2.5], size=9.0)
     c.h2("Challenges")
     c.bullets([
-        "**Long run times:** the parametric sweeps and the antenna + metasurface model take a long time to "
-        "simulate.",
-        "**Sweep artefacts:** some sweep curves show sudden jumps near 4.0 and 6.2 GHz, and one curve goes above "
-        "0 dB, which is not physical. They come from too few frequency samples, not from the mesh. These sweeps "
-        "will be re-run with more samples.",
+        "**Long run times:** the sweeps and the antenna + metasurface model are slow to simulate.",
+        "**Sweep artefacts:** some sweep curves jump near 4.0 and 6.2 GHz, and one goes above 0 dB, which is not "
+        "physical. They come from too few frequency samples, not from the mesh.",
         "**Thin match margin:** the optimised antenna is only just matched near 6.45 GHz (−10.3 dB) and 12.2 GHz "
         "(−10.5 dB), so small fabrication errors could push these points above −10 dB.",
-        f"**Metasurface detuning:** at a {GAP} mm gap the metasurface changes the input match and opens three "
-        "narrow mismatch gaps between 3.0 and 5.6 GHz.",
+        f"**Metasurface detuning:** at a {GAP} mm gap the metasurface changes the input match (three narrow "
+        "mismatch gaps between 3.0 and 5.6 GHz) and lowers the directivity in two narrow bands between "
+        f"{D_LOWER[0][0]} and {D_LOWER[-1][1]} GHz.",
     ])
 
 
 def work_plan(c: Ctx) -> None:
-    c.p("The remaining Phase I work comes first:")
+    c.p("The remaining Phase I work comes first:", keep_next=True)
     c.bullets([
-        "Plot gain vs frequency for the antenna alone.",
-        "Plot gain vs frequency for the antenna with the metasurface, and compare the two plots.",
-        "Tune the metasurface (gap and ring size) and the ground position to remove the three mismatch gaps, and "
-        "re-run the sweeps with more frequency samples.",
+        "Plot realized gain (losses and mismatch included) vs frequency for both cases over the whole band, from 2 to "
+        "15 GHz, not only 1–6 GHz.",
+        "Tune the metasurface (gap, ring size) and the ground position to remove the mismatch gaps and the "
+        f"directivity dips between {D_LOWER[0][0]} and {D_LOWER[-1][1]} GHz, and re-run the sweeps with more samples.",
     ])
-    c.p("Phase II will then cover the MIMO antenna and the hardware:")
+    c.p("Phase II will then cover the MIMO antenna and the hardware:", keep_next=True)
     c.bullets([
-        "Build a 4-port MIMO antenna from four copies of the antenna, each rotated by 90°, backed by the metasurface.",
+        "Build a 4-port MIMO antenna from four copies, each rotated by 90°, backed by the metasurface.",
         "Check the isolation between ports and the envelope correlation coefficient (ECC).",
         "Fabricate the antenna and the metasurface on FR-4, and measure them with a vector network analyser (VNA) "
         "and in an anechoic chamber.",
@@ -335,10 +375,10 @@ def work_plan(c: Ctx) -> None:
 
 def outcomes(c: Ctx) -> None:
     c.bullets([
-        "A simulated CPW-fed wideband antenna covering about 2.2–15 GHz, with gain vs frequency plots with and "
-        "without the metasurface.",
-        f"A tuned split-ring metasurface close behind the antenna ({GAP} mm) that keeps the antenna matched across "
-        "the band. How much it raises the gain will be known from the gain plots.",
+        "A simulated CPW-fed wideband antenna covering about 2.2–15 GHz, with realized gain vs frequency plots with "
+        "and without the metasurface.",
+        f"A tuned split-ring metasurface {GAP} mm behind the antenna that keeps it matched across the band. The peak "
+        f"directivity already rises from {D_ALONE} to {D_MS} dBi; realized gain will confirm the increase.",
         "A 4-port MIMO version of the antenna with the metasurface, checked for isolation and ECC.",
         "A fabricated prototype whose measured S-parameters and radiation patterns are compared with simulation.",
     ])
@@ -402,14 +442,14 @@ def build() -> tuple[Path, Ctx]:
 
     # Page breaks that fix the 7-page layout (see the module docstring)
     for h, brk in (("Abstract", True), ("Introduction", False), ("Literature Review", True),
-                   ("Methodology / Proposed Work", True), ("Work Done Till Mid-Semester", True),
-                   ("Work Plan for Next Phase", False), ("Expected Outcomes", True), ("References", False)):
+                   ("Methodology / Proposed Work", False), ("Work Done Till Mid-Semester", False),
+                   ("Work Plan for Next Phase", False), ("Expected Outcomes", False), ("References", False)):
         _heading_par(doc, h).paragraph_format.page_break_before = brk
 
-    for h in ("Abstract", "Literature Review", "Methodology / Proposed Work", "Work Done Till Mid-Semester",
-              "Expected Outcomes"):
+    for h in ("Abstract", "Literature Review"):
         _heading_par(doc, h).paragraph_format.space_before = Pt(0)
-    for h in ("Introduction", "Work Plan for Next Phase", "References"):
+    for h in ("Introduction", "Methodology / Proposed Work", "Work Done Till Mid-Semester", "Work Plan for Next Phase",
+              "Expected Outcomes", "References"):
         _heading_par(doc, h).paragraph_format.space_before = Pt(10)
 
     dh.page_number_footer(doc)
