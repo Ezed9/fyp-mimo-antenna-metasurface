@@ -63,14 +63,14 @@ def _arrow(ax, p, q):
 
 
 def design_flow() -> Path:
-    steps = [("1. CST Setup &\nInitial Antenna", "done"),
-             ("2. Ground Sweep\n($L_g$: −20 to −7 mm)", "done"),
-             ("3. Patch Radius\nSweep ($R$: 4–15 mm)", "done"),
-             ("4. Optimised\nMonopole ($|S_{11}|$, G)", "done"),
-             ("5. Metasurface\nSRR Unit Cell", "doing"),
-             (f"6. Metasurface\nLoaded $S_{{11}}$ ({lit.GAP_MM} mm)", "doing"),
-             ("7. Phase II: 4-Port\nMIMO Integration", "planned"),
-             ("8. Fabrication &\nMeasurement", "planned")]
+    steps = [("1. Initial antenna\nin CST", "done"),
+             ("2. Ground position\nsweep", "done"),
+             ("3. Patch size\nsweep", "done"),
+             ("4. Optimised\nantenna (S$_{11}$)", "done"),
+             ("5. Metasurface\ndesign (6 × 5 SRR)", "done"),
+             ("6. Antenna +\nmetasurface (S$_{11}$)", "done"),
+             ("7. Gain vs\nfrequency plots", "doing"),
+             ("8. Phase II: MIMO,\nfabrication, testing", "planned")]
     fig, ax = plt.subplots(figsize=(6.0, 2.3))
     w, h, gx = 1.30, 0.54, 0.22
     xs = [k * (w + gx) for k in range(4)]
@@ -82,7 +82,7 @@ def design_flow() -> Path:
         _arrow(ax, (xs[k] + w, y1 + h / 2), (xs[k + 1], y1 + h / 2))
         _arrow(ax, (xs[3 - k], y2 + h / 2), (xs[2 - k] + w, y2 + h / 2))
     _arrow(ax, (xs[3] + w / 2, y1), (xs[3] + w / 2, y2 + h))
-    for k, (lab, st) in enumerate([("Done", "done"), ("In progress", "doing"), ("Planned (Phase II)", "planned")]):
+    for k, (lab, st) in enumerate([("Done", "done"), ("Remaining (Phase I)", "doing"), ("Planned (Phase II)", "planned")]):
         x0 = 0.4 + k * 1.8
         _box(ax, x0, 0.02, 0.26, 0.18, "", st)
         ax.text(x0 + 0.34, 0.11, lab, va="center", fontsize=8.0, color=INK)
@@ -114,7 +114,7 @@ def stackup() -> Path:
     # gap dimension
     xd = x0 + wd + 0.25
     ax.annotate("", (xd, ya), (xd, ym + tm + 0.05), arrowprops=dict(arrowstyle="<->", color=INK, lw=0.8))
-    ax.text(xd + 0.1, (ya + ym + tm) / 2, f"air gap\n$h$ = {lit.GAP_MM} mm", va="center", fontsize=8.5)
+    ax.text(xd + 0.1, (ya + ym + tm) / 2, f"air gap\n{lit.GAP_MM} mm", va="center", fontsize=8.5)
     # waves
     xa = x0 + 3.0
     ax.add_patch(FancyArrowPatch((xa - 0.35, ya + 0.35), (xa - 0.35, ya + 0.95), arrowstyle="-|>",
@@ -124,14 +124,14 @@ def stackup() -> Path:
     ax.add_patch(FancyArrowPatch((xa + 0.5, ym + tm + 0.12), (xa + 0.5, ya + 0.95), arrowstyle="-|>",
                                  mutation_scale=10, lw=1.4, color=BLUE, ls="--"))
     ax.text(xa - 0.45, ya + 0.75, "forward wave", ha="right", va="center", fontsize=8.5, color=INK)
-    ax.text(xa + 0.6, ya + 0.75, "reflected wave adds\nif $\\varphi_R \\approx 2k_0h$", ha="left", va="center",
+    ax.text(xa + 0.6, ya + 0.75, "reflected wave adds\nto the forward wave", ha="left", va="center",
             fontsize=8.5, color=INK)
     ax.text(xa + 0.05, (ya + ym + tm) / 2, "backward\nwave", ha="right", va="center", fontsize=8.5, color=INK)
     lab = dict(fontsize=8.5, color=INK, va="center")
     ax.text(x0 - 0.1, ya + ta / 2, "antenna substrate", ha="right", **lab)
     ax.text(x0 + 1.85, ya + ta + 0.2, "CPW-fed monopole (copper)", ha="right", **lab)
     ax.text(x0 - 0.1, ym + tm / 2, "metasurface substrate", ha="right", **lab)
-    ax.text(x0 + 0.1, ym + tm + 0.2, "SRR cells", ha="left", **lab)
+    ax.text(x0 + 0.1, ym + tm + 0.2, "split-ring cells", ha="left", **lab)
     ax.text(x0 - 0.1, ym - 0.22, {True: "copper ground", False: "no ground plane",
                                   None: "ground plane: to be confirmed"}[ground], ha="right", **lab)
     ax.text(x0 + wd, 0.25, "schematic, not to scale", ha="right", fontsize=7.5, color=MUTED, style="italic")
