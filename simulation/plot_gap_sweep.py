@@ -91,7 +91,7 @@ def main(res, figdir):
               f"worst3.1-10.6={r['worst_31_106']:6.2f}  below-10 {100*r['frac_2_15']:5.1f}%  fails: {r['fail']}"
               f"  | MS breaks: {r['breaks']}  | MS fixes: {r['fixes']}")
 
-    if not ms:
+    if len(ms) < 2:
         return
 
     # ---- 1. heat map: gap vs frequency ----
