@@ -1,0 +1,122 @@
+--- a/b/FDTD/extensions/engine_ext_debyematerial.h	2026-10-06 08:07:50.785540827 +0000
++++ b/FDTD/extensions/engine_ext_debyematerial.h	2026-10-06 08:07:50.812559043 +0000
+@@ -60,12 +60,23 @@
+ 	virtual void DoPreVoltageUpdates();
+ 	virtual void DoPostVoltageUpdates();
+ 
++	//! multithreaded variants: every cell is independent, so each thread takes a contiguous slice
++	virtual void DoPreVoltageUpdates(int threadID);
++	virtual void DoPostVoltageUpdates(int threadID);
++	using Engine_Ext_Dispersive::Apply2Voltages;
++	virtual void Apply2Voltages(int threadID);
++
+ protected:
+ 	template <typename EngType>
+-	void DoPreVoltageUpdatesImpl(EngType* eng);
++	void DoPreVoltageUpdatesImpl(EngType* eng, unsigned int start, unsigned int stop);
++
++	template <typename EngType>
++	void DoPostVoltageUpdatesImpl(EngType* eng, unsigned int start, unsigned int stop);
+ 
+ 	template <typename EngType>
+-	void DoPostVoltageUpdatesImpl(EngType* eng);
++	void Apply2VoltagesRangeImpl(EngType* eng, unsigned int start, unsigned int stop);
++
++	void ThreadRange(int threadID, unsigned int &start, unsigned int &stop) const;
+ 
+ 	Operator_Ext_DebyeMaterial* m_Op_Ext_Deb;
+ 
+--- a/b/FDTD/extensions/engine_ext_debyematerial.cpp	2026-10-06 08:07:50.787333406 +0000
++++ b/FDTD/extensions/engine_ext_debyematerial.cpp	2026-10-06 08:07:50.813053901 +0000
+@@ -16,6 +16,7 @@
+ */
+ 
+ #include "engine_ext_debyematerial.h"
++#include <algorithm>
+ #include "operator_ext_debyematerial.h"
+ #include "FDTD/engine_sse.h"
+ 
+@@ -67,13 +68,22 @@
+ 	volt_pre_ADE = NULL;
+ }
+ 
++void Engine_Ext_DebyeMaterial::ThreadRange(int threadID, unsigned int &start, unsigned int &stop) const
++{
++	unsigned int count = m_Op_Ext_Deb->m_LM_Count.at(0);
++	unsigned int nThreads = m_NrThreads>0 ? (unsigned int)m_NrThreads : 1;
++	unsigned int chunk = (count + nThreads - 1) / nThreads;
++	start = std::min(count, chunk*(unsigned int)threadID);
++	stop  = std::min(count, start + chunk);
++}
++
+ template <typename EngType>
+-void Engine_Ext_DebyeMaterial::DoPreVoltageUpdatesImpl(EngType* eng)
++void Engine_Ext_DebyeMaterial::DoPreVoltageUpdatesImpl(EngType* eng, unsigned int start, unsigned int stop)
+ {
+ 	unsigned int **pos = m_Op_Ext_Deb->m_LM_pos[0];
+ 	int poles = m_Op_Ext_Deb->m_PoleCount;
+ 
+-	for (unsigned int i=0; i<m_Op_Ext_Deb->m_LM_Count.at(0); ++i)
++	for (unsigned int i=start; i<stop; ++i)
+ 	{
+ 		for (int n=0; n<3; ++n)
+ 		{
+@@ -94,16 +104,23 @@
+ 
+ void Engine_Ext_DebyeMaterial::DoPreVoltageUpdates()
+ {
+-	ENG_DISPATCH(DoPreVoltageUpdatesImpl);
++	ENG_DISPATCH_ARGS(DoPreVoltageUpdatesImpl, 0u, m_Op_Ext_Deb->m_LM_Count.at(0));
++}
++
++void Engine_Ext_DebyeMaterial::DoPreVoltageUpdates(int threadID)
++{
++	unsigned int start, stop;
++	ThreadRange(threadID, start, stop);
++	ENG_DISPATCH_ARGS(DoPreVoltageUpdatesImpl, start, stop);
+ }
+ 
+ template <typename EngType>
+-void Engine_Ext_DebyeMaterial::DoPostVoltageUpdatesImpl(EngType* eng)
++void Engine_Ext_DebyeMaterial::DoPostVoltageUpdatesImpl(EngType* eng, unsigned int start, unsigned int stop)
+ {
+ 	unsigned int **pos = m_Op_Ext_Deb->m_LM_pos[0];
+ 	int poles = m_Op_Ext_Deb->m_PoleCount;
+ 
+-	for (unsigned int i=0; i<m_Op_Ext_Deb->m_LM_Count.at(0); ++i)
++	for (unsigned int i=start; i<stop; ++i)
+ 	{
+ 		for (int n=0; n<3; ++n)
+ 		{
+@@ -120,5 +137,30 @@
+ 
+ void Engine_Ext_DebyeMaterial::DoPostVoltageUpdates()
+ {
+-	ENG_DISPATCH(DoPostVoltageUpdatesImpl);
++	ENG_DISPATCH_ARGS(DoPostVoltageUpdatesImpl, 0u, m_Op_Ext_Deb->m_LM_Count.at(0));
++}
++
++void Engine_Ext_DebyeMaterial::DoPostVoltageUpdates(int threadID)
++{
++	unsigned int start, stop;
++	ThreadRange(threadID, start, stop);
++	ENG_DISPATCH_ARGS(DoPostVoltageUpdatesImpl, start, stop);
++}
++
++template <typename EngType>
++void Engine_Ext_DebyeMaterial::Apply2VoltagesRangeImpl(EngType* eng, unsigned int start, unsigned int stop)
++{
++	// same as Engine_Ext_Dispersive::Apply2VoltagesImpl for the single (joint) order the Debye operator uses
++	unsigned int **pos = m_Op_Ext_Deb->m_LM_pos[0];
++	for (unsigned int i=start; i<stop; ++i)
++		for (int n=0; n<3; ++n)
++			eng->EngType::SetVolt(n,pos[0][i],pos[1][i],pos[2][i],
++				eng->EngType::GetVolt(n,pos[0][i],pos[1][i],pos[2][i]) - volt_ADE[0][n][i]);
++}
++
++void Engine_Ext_DebyeMaterial::Apply2Voltages(int threadID)
++{
++	unsigned int start, stop;
++	ThreadRange(threadID, start, stop);
++	ENG_DISPATCH_ARGS(Apply2VoltagesRangeImpl, start, stop);
+ }

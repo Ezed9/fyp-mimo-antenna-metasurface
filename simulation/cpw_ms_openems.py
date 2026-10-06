@@ -291,7 +291,7 @@ def run(case, h, model, out_root, threads=4, keep=False, tag='', **kw):
     FDTD, CSX, port, info = build(case, h, model, sim_path, **kw)
     print(json.dumps(info), flush=True)
     t0 = time.time()
-    FDTD.Run(sim_path, cleanup=False, numThreads=threads, verbose=1)
+    FDTD.Run(sim_path, cleanup=False, numThreads=threads, verbose=1, exact_endcriteria=True)
     info['runtime_s'] = time.time() - t0
 
     f = np.linspace(1.0e9, 16.0e9, 1501)

@@ -36,7 +36,7 @@ def run(case, h, out_root, threads=4, tag=''):
     nf = FDTD.CreateNF2FFBox(start=start, stop=stop, frequency=F_GAIN)
     CSX.Write2XML(os.path.join(sim_path, 'geometry.xml'))
     t0 = time.time()
-    FDTD.Run(sim_path, cleanup=False, numThreads=threads, verbose=1)
+    FDTD.Run(sim_path, cleanup=False, numThreads=threads, verbose=1, exact_endcriteria=True)
     info['runtime_s'] = time.time() - t0
 
     port.CalcPort(sim_path, F_GAIN)
