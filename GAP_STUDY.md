@@ -179,7 +179,6 @@ same mesh.
 | 10 | −2.2 dB | 2.00–4.10, 11.04–12.90 | ✗ |
 | 20 | −8.1 dB | 2.00–2.10, 11.63–13.21 | almost: only the bottom 0.1 GHz |
 | 30 | −7.1 dB | 2.00–2.11, 11.46–13.17 | almost: only the bottom 0.1 GHz |
-| 15, 25 | | (queued) | |
 
 What changes with the smaller board:
 
