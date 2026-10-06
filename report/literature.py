@@ -39,7 +39,7 @@ PROJECT = {
 }
 
 # ============================================================================= this work (from the team's CST results)
-GAP_MM = 3.9  # air gap between the antenna substrate and the metasurface (team, 2026-10-05)
+GAP_MM = 2  # air gap between the antenna substrate and the metasurface, mm (team; changed from 3.9 mm)
 
 THIS_WORK = {
     "antenna": "CPW-fed decagonal monopole (R = 15 mm, ground edge L_{g} = −7 mm)",
@@ -179,7 +179,7 @@ PAPERS: list[Paper] = [
                   "radiation efficiency falls from 97 % to 89 % at 9.8 GHz; the total profile is 10 mm.",
           relevance="Closest in geometry to this project (CPW-fed monopole grown from a 15 mm-radius disc on 1.6 mm "
                     "FR-4). It shows that a reflection phase falling with frequency keeps the gain stable over UWB, "
-                    "but it needs about 10 mm of profile, versus 3.9 mm here.",
+                    "but it needs about 10 mm of profile, versus 2 mm here.",
           summary="A CPW-fed ring monopole (15 mm-radius disc origin, FR-4) above a 19 × 19 single-layer FSS with a "
                   "ground plane; measured gain 8.3–11.5 dB over 2.2–11.9 GHz at a 10 mm profile, with efficiency "
                   "falling from 97 % to 89 %.",
@@ -209,8 +209,8 @@ PAPERS: list[Paper] = [
           results="The reflector widens the band from 5–17 GHz to 3–18 GHz and raises the peak gain from 6.5 dBi to "
                   "10.5 dBi (the text also quotes 10.75 dBi and 11 dBi at 8 GHz and 13.5 GHz), with more than 10 dBi "
                   "across the band and radiation efficiency above 78 %. Measured and simulated results agree.",
-          relevance="One reflector layer adds about 4–6 dB over a UWB band, but at a 9 mm gap (0.09λ at 3 GHz), more "
-                    "than twice the 3.9 mm gap of this project, and with a low-loss Rogers substrate.",
+          relevance="One reflector layer adds about 4–6 dB over a UWB band, but at a 9 mm gap (0.09λ at 3 GHz), 4.5 "
+                    "times the 2 mm gap of this project, and with a low-loss Rogers substrate.",
           summary="A CPW-fed stub-loaded hexagonal patch backed by a single-layer 5 × 5 FSS 9 mm below it; the band "
                   "grows from 5–17 to 3–18 GHz and the peak gain from 6.5 to 10.5 dBi, confirmed by measurement.",
           src={"substrate/size": "p. 3", "FSS": "pp. 6, 11", "gap": "abstract; p. 7 (eq. 1, 9 mm Styrofoam)",
@@ -235,7 +235,7 @@ PAPERS: list[Paper] = [
                  "(8 × 8 mm) cells that stops 3–11.5 GHz.",
           results="Realized gain rises from 2.2 dBi to 8.4 dBi and the radiation becomes directional; measurements "
                   "agree with simulation.",
-          relevance="A recent example of the usual price of a reflector: a 20 mm gap, about five times the 3.9 mm "
+          relevance="A recent example of the usual price of a reflector: a 20 mm gap, ten times the 2 mm "
                     "gap of this project.",
           summary="A compact hexagonal CPW-fed UWB antenna 20 mm above a 7 × 7 single-layer FSS; realized gain rises "
                   "from 2.2 to 8.4 dBi with a directional pattern, confirmed by measurement.",
@@ -500,7 +500,7 @@ BACKGROUND_REFLECTOR_AFTER = (
 
 
 def gap_paragraph() -> str:
-    """Position of this work: what the 3.9 mm gap implies (computed from (2), not simulated)."""
+    """Position of this work: what the metasurface gap implies (computed from (2), not simulated)."""
     lo, hi = 3.1, 10.6
     p_lo, p_hi = round_trip_phase_deg(lo, GAP_MM), round_trip_phase_deg(hi, GAP_MM)
     return (
@@ -519,7 +519,7 @@ GAP_POINTS: list[str] = [
     "**Reflector distance.** The single-antenna reflectors reviewed sit 9 mm [@hussain2023], 10 mm (total profile) "
     "[@algburi2022] and 20 mm [@hammache2024] behind the antenna, about 0.07–0.21 of a wavelength at the lowest "
     "operating frequency. The ground-backed AMC of [@aboelhassan2025] sits closer across a small air gap, but its "
-    "band (3.5–6.5 GHz) is far narrower than UWB. Phase I places the metasurface only 3.9 mm (0.04λ at 3.1 GHz) "
+    "band (3.5–6.5 GHz) is far narrower than UWB. Phase I places the metasurface only 2 mm (0.02λ at 3.1 GHz) "
     "behind an antenna that covers 2.16–15.73 GHz: a lower profile, but a harder in-phase condition and stronger "
     "near-field loading.",
     "**Cell type.** Only [@sen2017] uses split-ring cells behind a UWB monopole, varying the split angle across the "
@@ -530,7 +530,7 @@ GAP_POINTS: list[str] = [
     "**Baselines and reporting.** Neither of the two papers read in full compares its reflector with a plain metal "
     "plate at the same gap, and gain is usually quoted as a single peak value, often without saying whether it is "
     "realized gain. This project compares the antenna alone, a metal plate and the SRR metasurface at the same "
-    "3.9 mm gap, reports gain across the band and states which gain is shown.",
+    "2 mm gap, reports gain across the band and states which gain is shown.",
     "**MIMO.** The MIMO papers use metasurfaces for gain [@sehrai2021, hasan2022], for decoupling together with other "
     "structures [@sufian2021, althuwayb2023] and for polarization conversion [@wu2023], but all in bands far narrower "
     "than UWB (3.3–3.87, 3.1–7.7, 5.0–6.6, 4.76–6.77 and 23.5–29.4 GHz). A UWB MIMO antenna with an SRR "

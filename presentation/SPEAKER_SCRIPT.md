@@ -8,13 +8,13 @@
 
 **Time target:** 12–14 minutes for the talk, then questions. At a calm pace this script takes about 13½ minutes.
 
-### Who presents what (suggested — change as you like)
+### Who presents what
 
 | Presenter | Slides | Topic | Time |
 |---|---|---|---|
-| Chanswarang Boro | 1–4 | Title, antenna basics, problem | about 3 min 15 s |
+| Anushka Dam | 1–4 | Title, antenna basics, problem | about 3 min 15 s |
 | Nishit Baishya | 5–8 | Our antenna, our idea, objectives, literature | about 3 min 50 s |
-| Anushka Dam | 9–12 | Method, initial antenna, optimisation, optimised antenna | about 3 min 35 s |
+| Chanswarang Boro | 9–12 | Method, initial antenna, optimisation, optimised antenna | about 3 min 35 s |
 | Sanjana | 13–15 | Metasurface result, challenges, future work, conclusion | about 2 min 50 s |
 
 ### Tips
@@ -34,13 +34,13 @@
 
 ## Slide 1 — Title
 
-**Presenter:** Chanswarang (suggested) · **Time:** ~30 s
+**Presenter:** Anushka · **Time:** ~30 s
 
 **Key points to remember**
 - Say the project title and that this is checkpoint 1.
 - Introduce all four members, then the guide and the co-guide.
 
-> Good morning, respected professors. Our project is called "Wideband MIMO Antenna with Metasurface". This is our first checkpoint. I am Chanswarang Boro. With me are Nishit Baishya, Anushka Dam and Sanjana. Our guide is Dr. Ujjal Chakraborty, and our co-guide is Mr. Sovan Bhattacharya. We thank them both for their support.
+> Good morning, respected professors. Our project is called "Wideband MIMO Antenna with Metasurface". This is our first checkpoint. I am Anushka Dam. With me are Chanswarang Boro, Nishit Baishya and Sanjana. Our guide is Dr. Ujjal Chakraborty, and our co-guide is Mr. Sovan Bhattacharya. We thank them both for their support.
 
 *Transition:* "Let us start with a simple question: what is an antenna?"
 
@@ -48,7 +48,7 @@
 
 ## Slide 2 — What is an antenna?
 
-**Presenter:** Chanswarang (suggested) · **Time:** ~50 s
+**Presenter:** Anushka · **Time:** ~50 s
 
 **Key points to remember**
 - An antenna is a bridge between a cable and open space. It works both ways: transmit and receive.
@@ -63,7 +63,7 @@
 
 ## Slide 3 — How we judge an antenna
 
-**Presenter:** Chanswarang (suggested) · **Time:** ~60 s
+**Presenter:** Anushka · **Time:** ~60 s
 
 **Key points to remember**
 - S11 shows how much power bounces back. Below −10 dB, less than 10 % comes back.
@@ -79,7 +79,7 @@
 
 ## Slide 4 — Introduction & problem statement
 
-**Presenter:** Chanswarang (suggested) · **Time:** ~55 s
+**Presenter:** Anushka · **Time:** ~55 s
 
 **Key points to remember**
 - Wideband: one antenna for many services, about 2–15 GHz.
@@ -95,7 +95,7 @@
 
 ## Slide 5 — Our antenna: CPW-fed printed monopole
 
-**Presenter:** Nishit (suggested) · **Time:** ~60 s
+**Presenter:** Nishit · **Time:** ~60 s
 
 **Key points to remember**
 - FR-4 board, 50 × 50 mm, 1.6 mm thick: cheap, common, easy to make. Drawback: some loss at high frequency.
@@ -111,15 +111,15 @@
 
 ## Slide 6 — Our idea: a metasurface reflector
 
-**Presenter:** Nishit (suggested) · **Time:** ~60 s
+**Presenter:** Nishit · **Time:** ~60 s
 
 **Key points to remember**
 - A metasurface is a thin board with a repeating pattern of small metal cells. Each cell is much smaller than the wavelength. Together they control how a wave reflects.
-- Ours has 6 × 5 cells, two split rings in each, on FR-4 with copper on the back. It sits 3.9 mm behind the antenna.
+- Ours has 6 × 5 cells, two split rings in each, on FR-4 with copper on the back. It sits 2 mm behind the antenna.
 - A plain metal sheet this close would weaken the forward wave over much of the band.
 - The split rings are *meant* to make the reflected wave add to the forward wave. **This is still to be confirmed by the gain simulation.**
 
-> A metasurface is a thin board printed with a repeating pattern of small metal cells. Each cell is much smaller than the wavelength. Together, the cells control how a wave is reflected. Our metasurface has 6 by 5 cells. Each cell has two split rings. It is made on FR-4, with solid copper on the back. We place it only 3.9 millimetres behind the antenna. Why not a plain metal sheet? A metal sheet flips the wave when it reflects it. At such a small distance, the flipped wave comes back almost opposite to the forward wave, and weakens it over much of our band. The split rings are meant to change the reflection, so that the reflected wave adds to the forward wave instead. We still have to confirm this with the gain simulation.
+> A metasurface is a thin board printed with a repeating pattern of small metal cells. Each cell is much smaller than the wavelength. Together, the cells control how a wave is reflected. Our metasurface has 6 by 5 cells. Each cell has two split rings. It is made on FR-4, with solid copper on the back. We place it only 2 millimetres behind the antenna. Why not a plain metal sheet? A metal sheet flips the wave when it reflects it. At such a small distance, the flipped wave comes back almost opposite to the forward wave, and weakens it over much of our band. The split rings are meant to change the reflection, so that the reflected wave adds to the forward wave instead. We still have to confirm this with the gain simulation.
 
 *Transition:* "Let me now state our objectives clearly."
 
@@ -127,7 +127,7 @@
 
 ## Slide 7 — Objectives
 
-**Presenter:** Nishit (suggested) · **Time:** ~40 s
+**Presenter:** Nishit · **Time:** ~40 s
 
 **Key points to remember**
 - (1) Compact CPW-fed wideband antenna, about 2–15 GHz.
@@ -143,23 +143,23 @@
 
 ## Slide 8 — Literature review & research gap
 
-**Presenter:** Nishit (suggested) · **Time:** ~70 s
+**Presenter:** Nishit · **Time:** ~70 s
 
 **Key points to remember**
 - Three papers use a frequency selective surface (FSS) behind the antenna. The gain rises by roughly 4–6 dB, but the total height is 9–20 mm.
 - Sen 2017: double split-ring metasurface, about +5.5 dB. Hasan 2022: 4-port MIMO with a split-ring metasurface, 12 mm.
-- Gap: reflectors usually sit 9–20 mm away. A gap of about 4 mm over 2–15 GHz is rarely reported.
+- Gap: reflectors usually sit 9–20 mm away. A gap of only a few millimetres over 2–15 GHz is rarely reported.
 - Say "in the papers we reviewed". **Never say "first".**
 
-> This table shows five papers close to our work. Three of them place a frequency selective surface behind the antenna. That is a printed pattern that reflects the wave. They raise the gain by roughly 4 to 6 dB. But the whole structure is 9 to 20 millimetres thick. Sen and colleagues used a double split-ring metasurface, like ours, and reported about 5.5 dB more gain. Hasan and colleagues used a split-ring metasurface with a four-port MIMO antenna, at 12 millimetres. So here is the gap. In the papers we reviewed, the reflector usually sits 9 to 20 millimetres away. A gap of about 4 millimetres, over 2 to 15 GHz, is rarely reported. Our aim is 3.9 millimetres, and then MIMO in Phase Two.
+> This table shows five papers close to our work. Three of them place a frequency selective surface behind the antenna. That is a printed pattern that reflects the wave. They raise the gain by roughly 4 to 6 dB. But the whole structure is 9 to 20 millimetres thick. Sen and colleagues used a double split-ring metasurface, like ours, and reported about 5.5 dB more gain. Hasan and colleagues used a split-ring metasurface with a four-port MIMO antenna, at 12 millimetres. So here is the gap. In the papers we reviewed, the reflector usually sits 9 to 20 millimetres away. A gap of only a few millimetres, over 2 to 15 GHz, is rarely reported. Our aim is 2 millimetres, and then MIMO in Phase Two.
 
-*Transition:* "Now Anushka will explain how we did the work."
+*Transition:* "Now Chanswarang will explain how we did the work."
 
 ---
 
 ## Slide 9 — Proposed methodology
 
-**Presenter:** Anushka (suggested) · **Time:** ~50 s
+**Presenter:** Chanswarang · **Time:** ~50 s
 
 **Key points to remember**
 - Eight steps. Steps 1–6 are done. Step 7 (gain plots) remains. Step 8 is Phase II.
@@ -174,7 +174,7 @@
 
 ## Slide 10 — Work done: initial antenna
 
-**Presenter:** Anushka (suggested) · **Time:** ~45 s
+**Presenter:** Chanswarang · **Time:** ~45 s
 
 **Key points to remember**
 - Decagon radius 15 mm. The ground edge was far from the patch, at −20 mm.
@@ -189,7 +189,7 @@
 
 ## Slide 11 — Work done: optimisation
 
-**Presenter:** Anushka (suggested) · **Time:** ~70 s
+**Presenter:** Chanswarang · **Time:** ~70 s
 
 **Key points to remember**
 - Ground sweep: 10 positions from −20 to −7 mm. A closer ground gives stronger coupling and a better low-frequency match. −7 mm is the only position below −10 dB across the band.
@@ -205,7 +205,7 @@
 
 ## Slide 12 — Work done: optimised antenna
 
-**Presenter:** Anushka (suggested) · **Time:** ~50 s
+**Presenter:** Chanswarang · **Time:** ~50 s
 
 **Key points to remember**
 - S11 below −10 dB from 2.16 to 15.73 GHz: one band about 13.6 GHz wide. It covers the 2–15 GHz target.
@@ -220,7 +220,7 @@
 
 ## Slide 13 — Work done: antenna + metasurface S11
 
-**Presenter:** Sanjana (suggested) · **Time:** ~65 s
+**Presenter:** Sanjana · **Time:** ~65 s
 
 **Key points to remember**
 - The band now runs from about 2.0 GHz up to 18 GHz. 18 GHz is only where the simulation stops.
@@ -228,7 +228,7 @@
 - Reason: so close, the metasurface changes the antenna's input match. It needs tuning.
 - **Gain is not simulated yet. Make no gain claim.**
 
-> On top is the antenna alone. Below is the same antenna with the metasurface 3.9 millimetres behind it. The band now starts a little lower, at about 2 GHz. It stays matched up to 18 GHz, which is where our simulation ends. But there are three narrow gaps where S11 rises above minus 10 dB. They are from 3.0 to 3.4 GHz, from 4.5 to 4.7 GHz, and from 5.1 to 5.6 GHz. The worst point is about minus 6.6 dB, near 3 GHz. Why does this happen? The metasurface is very close, so it changes the antenna's input match. We need to tune it. Also, we have not simulated the gain yet, so we make no claim about gain today.
+> On top is the antenna alone. Below is the same antenna with the metasurface 2 millimetres behind it. The band now starts a little lower, at about 2 GHz. It stays matched up to 18 GHz, which is where our simulation ends. But there are three narrow gaps where S11 rises above minus 10 dB. They are from 3.0 to 3.4 GHz, from 4.5 to 4.7 GHz, and from 5.1 to 5.6 GHz. The worst point is about minus 6.6 dB, near 3 GHz. Why does this happen? The metasurface is very close, so it changes the antenna's input match. We need to tune it. Also, we have not simulated the gain yet, so we make no claim about gain today.
 
 *Transition:* "Next, our challenges and the work ahead."
 
@@ -236,7 +236,7 @@
 
 ## Slide 14 — Challenges & future work
 
-**Presenter:** Sanjana (suggested) · **Time:** ~60 s
+**Presenter:** Sanjana · **Time:** ~60 s
 
 **Key points to remember**
 - Challenges: long simulation time; sweep glitches near 4 and 6 GHz from too few frequency points (to be re-run); thin match margin; metasurface detuning.
@@ -252,15 +252,15 @@
 
 ## Slide 15 — Conclusion & references
 
-**Presenter:** Sanjana (suggested) · **Time:** ~45 s
+**Presenter:** Sanjana · **Time:** ~45 s
 
 **Key points to remember**
 - Antenna designed and optimised: matched from 2.16 to 15.73 GHz.
-- Metasurface added at 3.9 mm: about 2–18 GHz, except three narrow gaps that need tuning.
+- Metasurface added at 2 mm: about 2–18 GHz, except three narrow gaps that need tuning.
 - Next: gain plots with and without the metasurface, then MIMO.
 - Thank the panel and invite questions.
 
-> To conclude. We designed a CPW-fed decagon antenna and optimised it in CST. It is matched from about 2.2 to 15.7 GHz. We then placed a split-ring metasurface 3.9 millimetres behind it. Now the match reaches from about 2 to 18 GHz, except for three narrow gaps that need tuning. Our next steps are the gain plots, with and without the metasurface, and then the MIMO antenna. Our main references are listed on this slide. Thank you for listening. We are happy to take your questions.
+> To conclude. We designed a CPW-fed decagon antenna and optimised it in CST. It is matched from about 2.2 to 15.7 GHz. We then placed a split-ring metasurface 2 millimetres behind it. Now the match reaches from about 2 to 18 GHz, except for three narrow gaps that need tuning. Our next steps are the gain plots, with and without the metasurface, and then the MIMO antenna. Our main references are listed on this slide. Thank you for listening. We are happy to take your questions.
 
 ---
 
@@ -355,7 +355,7 @@ It is a small metal ring with a cut in it. The ring acts like a small coil, an i
 Each ring has its own resonance, so two rings of different sizes give two resonances. Close together, they help the cell work over a wider range. The two rings also couple to each other, which adds capacitance and lowers the resonance, so the cell can stay small.
 
 **Q27. Why a metasurface and not a plain metal plate?**
-A metal plate flips the wave when it reflects it. The wave also travels to the plate and back. If the plate is a quarter wavelength away, that trip makes up for the flip, and the two waves add. At only 3.9 mm, the trip is far too short at low frequencies, so the reflected wave comes back almost opposite and cancels the forward wave. The split rings are meant to change the reflection so that it adds instead. The gain simulation will confirm whether, and over which part of the band, this works.
+A metal plate flips the wave when it reflects it. The wave also travels to the plate and back. If the plate is a quarter wavelength away, that trip makes up for the flip, and the two waves add. At only 2 mm, the trip is far too short across our whole band, so the reflected wave comes back almost opposite and cancels the forward wave. The split rings are meant to change the reflection so that it adds instead. The gain simulation will confirm whether, and over which part of the band, this works.
 
 **Q28. Why must a plain metal sheet be about a quarter wavelength away?**
 The reflection flips the wave by half a cycle. Going to the sheet and back adds another half cycle when the sheet is a quarter wavelength away. Together that is one full cycle, so the reflected wave lines up with the forward wave and adds. At the low end of our band, a quarter wavelength is a few centimetres, which is too thick.
@@ -363,7 +363,7 @@ The reflection flips the wave by half a cycle. Going to the sheet and back adds 
 **Q29. Why copper on the back of the metasurface?**
 With copper behind, almost all of the wave is reflected and nothing leaks through. The rings then only change the timing of the reflection. Without copper, a thin sheet of rings would let much of the wave pass, especially at low frequencies, and the reflection would be weak. Where the rings are not resonant, the surface behaves much like the copper sheet behind it.
 
-**Q30. Why 3.9 mm?**
+**Q30. Why 2 mm?**
 We set it as our target to keep the whole antenna thin. It is a small fraction of the wavelength at the low end of our band, and much smaller than the 9–20 mm used in the papers we reviewed. It is our starting value. We may adjust it slightly when we tune the metasurface.
 
 **Q31. What is an FSS, and how is yours different?**
@@ -372,7 +372,7 @@ An FSS, or frequency selective surface, is a printed pattern that reflects some 
 ## Results and honesty points
 
 **Q32. Why did the metasurface create the mismatch gaps, and how will you fix them?**
-At 3.9 mm, the metasurface sits very close to the antenna, in its near field. It couples to the antenna and changes its input impedance, so the match changes at some frequencies. The rings' own resonances may also appear in that range. To fix this, we will tune the gap, the ring sizes and, if needed, the ground position again.
+At 2 mm, the metasurface sits very close to the antenna, in its near field. It couples to the antenna and changes its input impedance, so the match changes at some frequencies. The rings' own resonances may also appear in that range. To fix this, we will tune the gap, the ring sizes and, if needed, the ground position again.
 
 **Q33. Why does the band now go up to 18 GHz? What does that mean?**
 18 GHz is simply where our simulation stops. The curve stays below −10 dB up to the last point we simulated, so we cannot say what happens above 18 GHz. Our target is 2–15 GHz, so the part above 15 GHz is a bonus, not a claim.
@@ -393,10 +393,10 @@ At those frequencies, S11 is only just below −10 dB. A small change in a real 
 Everything is simulation only, with no measurement yet. FR-4 is lossy, which will lower the gain and efficiency. The match margin is thin in two places, a few sweep curves have glitches that we must re-run, and the metasurface has created three mismatch gaps. Also, our optimisation was one dimension at a time, and both best values sit at the edge of the range.
 
 **Q39. What is new in your work?**
-In the papers we reviewed, the reflector usually sits 9–20 mm behind the antenna. We are trying to make it work at 3.9 mm across 2–15 GHz, and then use it with a MIMO antenna. We do not claim to be the first. Our aim is this combination.
+In the papers we reviewed, the reflector usually sits 9–20 mm behind the antenna. We are trying to make it work at 2 mm across 2–15 GHz, and then use it with a MIMO antenna. We do not claim to be the first. Our aim is this combination.
 
 **Q40. Did you compare with a plain metal plate at the same gap?**
-Not yet. It is a fair test: the same plate size at the same 3.9 mm gap. We would like to add it to the gain runs, so that we can show whether the metasurface really does better than a plain plate.
+Not yet. It is a fair test: the same plate size at the same 2 mm gap. We would like to add it to the gain runs, so that we can show whether the metasurface really does better than a plain plate.
 
 ## MIMO and future work
 
@@ -426,7 +426,7 @@ We will use a vector network analyser, or VNA. First we calibrate it with a stan
 **Q48. How will you measure gain and the radiation pattern?**
 In an anechoic chamber, whose walls are covered with absorbers so that there are no reflections. We rotate the antenna and record the received power in each direction to get the pattern. For gain, we compare our antenna with a reference horn of known gain.
 
-**Q49. How will you hold the metasurface at 3.9 mm?**
+**Q49. How will you hold the metasurface at 2 mm?**
 With small spacers made of foam or plastic, which affect the wave very little. Foam is close to air, so it keeps the setup close to the simulation.
 
 **Q50. Will measured results match the simulation?**

@@ -15,7 +15,7 @@ cd presentation/deck && npm install && node build_deck.js
 | 3 | How do we judge an antenna? | S11 below −10 dB = good match; gain and pattern | concept S11 sketch, concept pattern sketch |
 | 4 | Introduction & problem | Wideband + MIMO; monopole radiates front and back → low gain; a metal sheet must be far away | three icon cards, problem and question panels |
 | 5 | Our antenna | CPW-fed decagon on FR-4; why FR-4, why a decagon, why CPW | labelled antenna, CPW cross-section |
-| 6 | Our idea: metasurface | 6 × 5 double split rings, copper back, 3.9 mm behind | array + one-cell close-up, side view |
+| 6 | Our idea: metasurface | 6 × 5 double split rings, copper back, 2 mm behind | array + one-cell close-up, side view |
 | 7 | Objectives | Design, optimise, metasurface, MIMO and testing (Phase II) | four numbered cards |
 | 8 | Literature review | Reflectors add gain but sit 9–20 mm away; research gap | table + gap bar chart |
 | 9 | Methodology | Eight steps: six done, gain plots remaining, Phase II planned | status timeline, tool cards |

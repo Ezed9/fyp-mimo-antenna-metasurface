@@ -52,7 +52,7 @@ const F = {
   band: "2.16 – 15.73 GHz",
   bandWidth: "about 13.6 GHz wide",
   resonances: "2.7 · 4.8 · 9.2 · 14.3 GHz",
-  gap: "3.9 mm",
+  gap: "2\u00A0mm",
   msBand: "about 2.0 → 18 GHz",
   msGaps: [[3.0, 3.4, "−6.6 dB"], [4.5, 4.7, "−9.7 dB"], [5.1, 5.6, "−8.8 dB"]],
 };
@@ -247,7 +247,7 @@ function chip(slide, label, x, y, w, h, o = {}) {
 
 function contentSlide(kicker, title, notes) {
   const s = pres.addSlide({ masterName: "CONTENT" });
-  s.addText(kicker.toUpperCase(), { placeholder: "kicker" });
+  if (kicker) s.addText(kicker.toUpperCase(), { placeholder: "kicker" });
   s.addText(runs(title), { placeholder: "title" });
   if (notes) s.addNotes(notes.replace(/\s+/g, " ").trim());
   return s;
@@ -456,7 +456,7 @@ async function sMetasurface() {
   const s = contentSlide("Our structure", "Our idea: a metasurface reflector",
     `A metasurface is a thin board printed with many small, repeated metal cells. Each of our cells has two split rings:
     a ring with a small cut behaves like a tiny resonant circuit, and two rings of different size give two resonances.
-    The board has solid copper on the back and sits only 3.9 millimetres behind the antenna. The copper reflects the
+    The board has solid copper on the back and sits only 2 millimetres behind the antenna. The copper reflects the
     backward wave and the rings shift how it reflects, so that it can add to the forward wave instead of cancelling it.
     Whether the gain really rises is what our next simulation will show.`);
   // array + cell zoom
@@ -537,7 +537,7 @@ async function sObjectives() {
 async function sLiterature() {
   const s = contentSlide("Literature review", "Reflectors add gain, but sit 9–20 mm away",
     `We reviewed ten papers; here are the closest five. Reflectors behind wideband antennas raise the gain by about 4 to
-    6 dB. But as the chart shows, most of them sit 9 to 20 millimetres behind the antenna. Our metasurface sits only 3.9
+    6 dB. But as the chart shows, most of them sit 9 to 20 millimetres behind the antenna. Our metasurface sits only 2
     millimetres behind. A gap this thin over a band as wide as 2 to 15 GHz is rarely reported — that is our research gap.`);
   const hdr = (t) => ({ text: t, options: { bold: true, color: C.white, fill: { color: C.navy }, align: "left" } });
   const row = (cells, hl) => cells.map((t, j) => ({ text: t, options: {
@@ -549,7 +549,7 @@ async function sLiterature() {
     row(["Hammache 2024 [9]", "7 × 7 FSS", "20 mm", "2.2 → 8.4 dBi"]),
     row(["Sen 2017 [10]", "double split-ring metasurface", "—", "≈ +5.5 dB"]),
     row(["Hasan 2022 [11]", "10 × 10 split-ring MS (MIMO)", "12 mm", "5.4 → 8.3 dBi"]),
-    row(["This work", "6 × 5 double split-ring MS", "3.9 mm", "being simulated"], true),
+    row(["This work", "6 × 5 double split-ring MS", F.gap, "being simulated"], true),
   ];
   s.addTable(rows, { x: MX, y: TOP, w: 7.35, colW: [1.95, 2.85, 0.9, 1.65], fontFace: BODY, fontSize: 14,
     rowH: 0.5, valign: "middle", margin: [0, 0.08, 0, 0.08], border: { type: "solid", pt: 0.75, color: C.line } });
@@ -557,13 +557,13 @@ async function sLiterature() {
     MX, TOP + 3.6, 7.35, 0.3, { size: 11, color: C.grey });
   // gap chart
   const labels = ["This work", "Hussain 2023", "Al-Gburi 2022*", "Hasan 2022", "Hammache 2024"];
-  const values = [3.9, 9, 10, 12, 20];
+  const values = [2, 9, 10, 12, 20];
   s.addChart(pres.charts.BAR, [{ name: "Gap (mm)", labels, values }], {
     x: 8.2, y: TOP - 0.05, w: W - MX - 8.2, h: 3.85, barDir: "bar", catAxisOrientation: "maxMin",
     chartColors: [C.copper, C.grey, C.grey, C.grey, C.grey], barGapWidthPct: 45,
     showTitle: true, title: "Reflector gap behind the antenna (mm)", titleFontFace: BODY, titleFontSize: 14, titleColor: C.navy,
     showValue: true, dataLabelPosition: "outEnd", dataLabelFontFace: BODY, dataLabelFontSize: 13, dataLabelColor: C.ink,
-    dataLabelFormatCode: "0.0", catAxisLabelFontFace: BODY, catAxisLabelFontSize: 13, catAxisLabelColor: C.ink,
+    dataLabelFormatCode: "0", catAxisLabelFontFace: BODY, catAxisLabelFontSize: 13, catAxisLabelColor: C.ink,
     valAxisHidden: true, valGridLine: { style: "none" }, catGridLine: { style: "none" }, showLegend: false,
     valAxisMaxVal: 24, valAxisMinVal: 0,
   });
@@ -572,7 +572,7 @@ async function sLiterature() {
   rect(s, MX, gy, W - 2 * MX, 1.15, C.navy);
   await badge(s, "MdFlag", MX + 0.3, gy + 0.22, 0.7, C.copper);
   text(s, [{ t: "Research gap", bold: true, color: "F3C9A1", size: 15, after: 2 },
-    { t: `A metasurface only about 4 mm behind an antenna that works from about 2 to 15 GHz is rarely reported → our aim: ${F.gap}, then MIMO`, after: 0 }],
+    { t: `A metasurface only a few mm behind an antenna that works from about 2 to 15 GHz is rarely reported → our aim: ${F.gap}, then MIMO`, after: 0 }],
   MX + 1.2, gy + 0.12, W - 2 * MX - 1.45, 0.95, { size: 16, color: C.white, valign: "middle" });
 }
 
@@ -626,7 +626,7 @@ async function sMethod() {
 }
 
 async function sInitial() {
-  const s = contentSlide("Work done · 1", "Starting point: the initial antenna is poorly matched",
+  const s = contentSlide("", "Starting point: the initial antenna is poorly matched",
     `This is where we started: the decagon patch with the ground edge far away, at minus 20 millimetres. The S11 stays
     above minus 10 dB from 2 to 7.7 GHz — shaded red — with only a few narrow dips below the line higher up. So the
     antenna is not usable yet. The first thing to fix is the ground position.`);
@@ -645,7 +645,7 @@ async function sInitial() {
 }
 
 async function sOptimise() {
-  const s = contentSlide("Work done · 2", "Optimisation: ground position first, then patch size",
+  const s = contentSlide("", "Optimisation: ground position first, then patch size",
     `Step one: we moved the ground edge towards the patch in ten steps, from minus 20 to minus 7 millimetres. A closer
     ground couples more strongly to the patch and fixes the low-frequency match; only minus 7 millimetres, the blue
     curve, stays below minus 10 dB across the band. Step two: with the ground fixed, we changed the patch radius from 4
@@ -676,7 +676,7 @@ async function sOptimise() {
 }
 
 async function sOptimised() {
-  const s = contentSlide("Work done · 3", "Optimised antenna: matched from 2.16 to 15.73 GHz",
+  const s = contentSlide("", "Optimised antenna: matched from 2.16 to 15.73 GHz",
     `This is the optimised antenna: the 15 millimetre decagon with the ground edge at minus 7 millimetres. S11 stays
     below minus 10 dB from 2.16 to 15.73 GHz — one band about 13.6 GHz wide, with four resonances. It covers our 2 to 15
     GHz target. One honest note: near 6.5 and 12.2 GHz the curve only just stays below the line.`);
@@ -706,8 +706,8 @@ async function sOptimised() {
 }
 
 async function sMsResult() {
-  const s = contentSlide("Work done · 4", "Metasurface added: wider band, three small gaps",
-    `Top: the antenna alone. Bottom: the same antenna with the metasurface 3.9 millimetres behind it, on the same
+  const s = contentSlide("", "Metasurface added: wider band, three small gaps",
+    `Top: the antenna alone. Bottom: the same antenna with the metasurface 2 millimetres behind it, on the same
     frequency axis. The band now starts lower, at about 2 GHz, and stays matched up to 18 GHz — the end of our
     simulation. But there are three narrow regions, shaded red, where S11 rises above minus 10 dB, the worst being minus
     6.6 dB near 3.1 GHz. At such a small gap the metasurface also changes the antenna's input match, so it needs tuning.
@@ -741,7 +741,7 @@ async function sMsResult() {
 }
 
 async function sNext() {
-  const s = contentSlide("Challenges & future work", "What was hard, and what comes next",
+  const s = contentSlide("Challenges & future work", "What were the challenges, and what comes next",
     `Our challenges: long simulation times for the full model; a few glitches in the sweep curves near 4 and 6 GHz from
     too few frequency points, which we will re-run; a thin matching margin near 6.5 and 12.2 GHz; and the mismatch gaps
     the metasurface introduced. Next, in this phase: the gain-versus-frequency plots with and without the metasurface,

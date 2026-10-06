@@ -169,8 +169,12 @@ def gap_phase() -> Path:
     if UNITCELL.exists():
         uf, ph = _read_two_columns(UNITCELL)
         ax.plot(uf, ph, color=AQUA, lw=2, label="SRR metasurface (CST)")
-    ax.axvline(f_pec, color=MUTED, lw=0.8, ls=":")
-    ax.text(f_pec + 0.15, -60, f"PEC within ±90° only\nabove {f_pec:.1f} GHz", fontsize=8, color=INK, va="bottom")
+    if f_pec <= 16:
+        ax.axvline(f_pec, color=MUTED, lw=0.8, ls=":")
+        ax.text(f_pec + 0.15, -60, f"PEC within ±90° only\nabove {f_pec:.1f} GHz", fontsize=8, color=INK, va="bottom")
+    else:  # small gap: the plate stays out of the window over the whole plotted band
+        ax.text(9.0, -60, f"PEC outside ±90° over all of 2–16 GHz\n(enters only above {f_pec:.1f} GHz)", fontsize=8,
+                color=INK, va="bottom", ha="center")
     ax.text(2.2, need[0] + 98, "±90° window: reflection adds to the forward wave", fontsize=8, color=INK)
     ax.text(15.8, 186, "PEC", ha="right", va="bottom", fontsize=8.5, color=INK)
     ax.text(15.8, need[-1] - 12, "required", ha="right", va="top", fontsize=8.5, color=INK)

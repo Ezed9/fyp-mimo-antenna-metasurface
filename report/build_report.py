@@ -207,7 +207,7 @@ def literature_review(c: Ctx) -> None:
             [1.25, 1.2, 1.55, 0.8, 1.2], size=9.0, highlight_last=True)
     c.h2("Research Gap")
     c.p("In the reviewed works, the reflector usually sits 9–20 mm behind the antenna [@algburi2022, hussain2023, "
-        "hammache2024, hasan2022]. This makes the antenna thick. A much thinner metasurface, about 4 mm behind the "
+        "hammache2024, hasan2022]. This makes the antenna thick. A much thinner metasurface, only a few millimetres behind the "
         "antenna, working over a band as wide as about 2–15 GHz, is rarely reported. The reviewed metasurface MIMO "
         "antennas also cover narrower bands [@hasan2022, wu2023]. This project therefore aims to place a split-ring "
         f"metasurface only {GAP} mm behind a wideband antenna, and then to build a MIMO version of it.")
@@ -337,7 +337,7 @@ def outcomes(c: Ctx) -> None:
     c.bullets([
         "A simulated CPW-fed wideband antenna covering about 2.2–15 GHz, with gain vs frequency plots with and "
         "without the metasurface.",
-        "A tuned split-ring metasurface close behind the antenna (about 4 mm) that keeps the antenna matched across "
+        f"A tuned split-ring metasurface close behind the antenna ({GAP} mm) that keeps the antenna matched across "
         "the band. How much it raises the gain will be known from the gain plots.",
         "A 4-port MIMO version of the antenna with the metasurface, checked for isolation and ECC.",
         "A fabricated prototype whose measured S-parameters and radiation patterns are compared with simulation.",
