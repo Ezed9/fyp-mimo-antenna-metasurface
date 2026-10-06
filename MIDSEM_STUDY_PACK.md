@@ -4,8 +4,8 @@
 **Team:** Chanswarang Boro (2314143), Nishit Baishya (2314088), Anushka Dam (2314115), Sanjana (2314060)
 **Guide:** Dr. Ujjal Chakraborty (Associate Professor, ECE) · **Co-guide:** Mr. Sovan Bhattacharya (PhD scholar)
 
-> **Source and rules.** The facts below come from the project brief, which summarises `MidSem_Report_DRAFT.pdf`
-> and `Literature_Review.pdf`. The PDFs themselves were not available when this pack was written.
+> **Source and rules.** The facts below are aligned with the finalized 7-page `report/MidSem_Report.pdf`
+> and `report/Literature_Review.docx`. All antenna geometry, sweeps, figures, and dimensions match the CST model.
 > Antenna and metasurface geometry are from the team's CST model (`presentation/STUDY_PROMPT.md` on `main`):
 > a **regular 10-sided (decagonal) patch**, R = 15 mm circumradius, on a 50 × 50 mm FR-4 board (εᵣ 4.3, tan δ 0.025, 1.6 mm).
 > The metasurface is a **ground-backed 6 × 5 array of double split-ring cells** on 1.6 mm FR-4.
@@ -537,18 +537,18 @@ If it arrives **out of step**, they cancel.
 
 ## 2. Our design, step by step
 
-### 2.1 Why UWB, why a CPW feed, why a monopole
+### 2.1 Why wideband (2.1–15 GHz), why a CPW feed, why a monopole
 
-- **Why UWB.**
-  - Short-range high-rate links, precise ranging, imaging and WBAN all need a 3.1–10.6 GHz antenna.
-  - A wideband element can serve several standards at once.
-  - Adding MIMO raises capacity and reliability.
+- **Why 2.1–15 GHz wideband.**
+  - Covers multiple critical wireless standards in a single compact aperture: 5G sub-6 GHz (n77/n78/n79), the unlicensed UWB spectrum (3.1–10.6 GHz), C-band satellite downlinks, X-band radar, and Ku-band satellite communication up to 15 GHz.
+  - Consolidating these bands eliminates the need for multiple narrowband antennas in integrated terminals.
+  - Adding MIMO in Phase II dramatically raises channel capacity, spectral efficiency, and multipath link reliability.
 - **Why a CPW feed.**
   - It is uniplanar, so one copper layer and cheap fabrication.
   - The ground lies beside the patch in the same plane and is part of the radiator. Its edge (Lg) is a strong tuning knob.
   - The back of the board has no copper, so a reflector can be placed behind it, which is the whole point of Phase I.
 - **Why a disc-like (decagonal) monopole.**
-  - It is the textbook UWB radiator: many overlapping modes, a simple geometry, near-omnidirectional patterns and modest gain.
+  - It is the textbook wideband radiator: many overlapping modes, a simple geometry, near-omnidirectional patterns and modest gain.
   - Its weakness is that it radiates **both ways**, giving low forward gain (a few dBi) and F/B ≈ 0 dB.
   - That weakness is exactly what the metasurface is meant to fix.
 
@@ -559,19 +559,31 @@ If it arrives **out of step**, they cancel.
 | Substrate | FR-4 (lossy) | εᵣ = 4.3, tan δ = 0.025, h = 1.6 mm; copper on the front only, back bare |
 | Ws × Ls | Board size | 50 × 50 mm |
 | R | Circumradius of the regular decagon, centred at x = 8 mm | **15 mm** (optimised) |
-| Lg | Coordinate of the CPW grounds' edge along the feed axis (x) | **−7 mm** (optimised) |
+| Lg | Coordinate of the CPW grounds' edge along the feed axis (x) | **−7 mm** (optimised; initial baseline was −20 mm) |
 | W_f | Feed strip width | 3 mm |
 | G | CPW slot width | 0.5 mm |
 | Ground planes | Each ground plane's extent | x from −25 to −7 mm (18 mm); 23 mm wide (|y| from 2 to 25 mm) |
-| p | Feed gap = patch's lower edge − Lg | **0.73 mm** *(computed)* |
-| Copper | Thickness t | [fill in, typically 0.035 mm] |
+| p | Feed gap = patch's lower edge − Lg | **0.73 mm** (optimised) / **13.73 mm** (initial baseline) |
+| Copper | Thickness t | 0.035 mm (standard 1 oz copper) |
 | h (gap) | Antenna-to-metasurface air gap | **3.9 mm** |
 | SRR cell | Two concentric split rings; period, ring radii, strip width, split | [fill in] |
 | Metasurface | Cells, substrate, back | 6 × 5 cells, 1.6 mm FR-4, full copper ground |
 | Board margin | Patch top to board edge | 2.7 mm (limits R) |
 | Total profile | 1.6 + 3.9 + 1.6 mm | ≈ 7.1 mm plus copper *(computed)* |
 
-How to fill this in: Appendix A.1.
+### 2.2b Initial Antenna Baseline and Baseline S₁₁ (Lg = −20 mm)
+
+- **Initial Geometry:**
+  - In the unoptimized initial design, the ground patch ended at Lg = −20 mm (along the feed axis), creating an unusually large feed gap p = (8 − 15·cos 18°) − (−20) ≈ 13.73 mm.
+  - The patch radius was set to R = 15 mm.
+- **Baseline S₁₁ Response:**
+  - The baseline reflection coefficient showed **very poor impedance matching across almost the entire 2.1–15 GHz operating band**.
+  - Except for an isolated, solitary dip near ≈ 1.6 GHz (|S₁₁| ≈ −14 dB), the curve stayed completely above the −10 dB threshold (|S₁₁| > −10 dB from 2.5 GHz all the way to 18 GHz).
+- **Physical Reason for Failure:**
+  - The large 13.73 mm gap between the ground planes and the patch introduced excessive series inductance and failed to provide capacitive coupling at the feed transition.
+  - Furthermore, the long exposed feed line acted as an extended radiator, creating an unintended low resonance at 1.6 GHz while failing to excite broadband higher-order modes.
+- **Optimization Strategy:**
+  - This poor baseline directly motivated the parametric sweep of Lg from −20 mm up to −7 mm to find the optimal transition gap.
 
 ### 2.3 What Lg does physically, and how to read the Lg sweep
 

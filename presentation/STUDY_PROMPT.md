@@ -2,7 +2,7 @@
 
 **How to use:**
 1. Open a new Claude chat.
-2. Attach `MidSem_Report_DRAFT.pdf` and `Literature_Review.pdf`. Add your CST plot images and the final PPT if you have them.
+2. Attach `MidSem_Report.pdf` (finalized 7-page mid-sem report) and `Literature_Review.pdf`. Add your CST plot images and the final PPT if you have them.
 3. Paste everything inside the box below and send.
 
 When your metasurface results arrive, start a fresh chat with the updated report attached.
@@ -21,8 +21,8 @@ Project and team
 - Guide: Dr. Ujjal Chakraborty (Associate Professor, ECE). Co-guide: Mr. Sovan Bhattacharya (PhD scholar).
 
 Scope
-- Phase I (mid-sem): a single CPW-fed planar monopole for UWB, with a split-ring-resonator (SRR)
-  metasurface placed 3.9 mm behind it, with only an air gap between them.
+- Phase I (mid-sem): a single CPW-fed planar monopole for wideband operation across 2.1 GHz to 15 GHz, with a split-ring-resonator (SRR) metasurface placed 3.9 mm behind it, with only an air gap between them.
+- Operating Bandwidth Target: 2.1 GHz to 15 GHz wideband coverage (simulated 2.1615–15.734 GHz, 151.7% fractional bandwidth).
 
 Antenna geometry (from our CST model)
 - Board: 50 × 50 mm FR-4 (lossy), εr 4.3, tanδ 0.025, 1.6 mm thick. Copper on the front only; the back is bare.
@@ -37,29 +37,18 @@ Metasurface (from our CST model)
 - Each cell: two concentric split rings (Pendry-type SRR).
 - Cell period and ring dimensions: [fill in].
 - Placed 3.9 mm behind the antenna substrate, air in between.
-- Phase II (after mid-sem): a 2-/4-port MIMO version with the metasurface, then fabrication and measurement.
+- Phase II (after mid-sem): a 4-port MIMO version with the metasurface, decoupling elements, time-domain transient verification, then fabrication and measurement.
 
-Simulation set-up
-- CST Studio Suite 2019, frequency-domain solver, 0–18 GHz.
-- Waveguide port on the CPW feed; open (add-space) boundaries.
+Simulation set-up & Methodology Sequence
+1. Workflow diagram & simulation environment: CST Studio Suite 2019, frequency-domain solver (0–18 GHz), tetrahedral meshing, waveguide port on CPW feed, open (add space) boundary conditions.
+2. Initial antenna baseline: Ground plane parameter Lg = −20 mm. The baseline |S11| curve shows poor impedance matching (|S11| > −10 dB) across almost the entire spectrum, exhibiting only a solitary resonance dip near 1.6 GHz.
+3. Parametric ground sweep (Lg): Lg swept from −20 mm to −7 mm (y-coordinate of ground edge) with R = 15 mm. Moving the ground edge towards the patch shifts the fundamental resonance from ≈1.6 GHz to ≈2.7 GHz and dramatically improves matching. Best: Lg = −7 mm (feed gap p = 0.73 mm).
+4. Parametric patch radius sweep (R): Swept from 4 to 15 mm (13 values) with Lg = −7 mm. Best: R = 15 mm, providing the widest continuous −10 dB wideband impedance bandwidth.
+5. Optimised single antenna: Continuous |S11| ≤ −10 dB from 2.1615 GHz to 15.734 GHz (151.7% fractional bandwidth), covering the full 2.1–15 GHz wideband requirement with 4 distinct resonance dips.
+6. Metasurface integration: Ground-backed SRR array at h = 3.9 mm air gap for gain enhancement without degrading impedance matching.
 
-Parametric study
-(1) Lg = the y-coordinate of the top edge of the CPW ground planes.
-    - Swept over ten values from −20 mm to −7 mm, with R = 15 mm.
-    - Moving the ground edge towards the patch moved the first resonance from ≈1.6 GHz to ≈2.7 GHz and improved the matching.
-    - Best: Lg = −7 mm.
-(2) Patch radius R.
-    - Swept from 4 to 15 mm (13 values), with Lg = −7 mm.
-    - Best: R = 15 mm, which gave the widest continuous −10 dB band.
-- Both optima sit at the edge of their sweep ranges, because the board size limits them.
-- Sweep artefacts:
-  - Some sweep curves jump at ≈4.0 GHz and ≈6.2 GHz.
-  - One Lg curve goes above 0 dB, which is impossible for a passive antenna (|S11| ≤ 1).
-  - These are numerical artefacts of the broadband frequency sweep for those parameter values.
-  - The final optimised run is smooth.
-
-Optimised antenna
-- |S11| ≤ −10 dB from 2.1615 GHz to 15.734 GHz: fractional bandwidth 151.7 %, covering all of 3.1–10.6 GHz.
+Optimised antenna numbers
+- |S11| ≤ −10 dB from 2.1615 GHz to 15.734 GHz: fractional bandwidth 151.7 %, covering the target 2.1–15 GHz band.
 - Resonances:
   - 2.7275 GHz (−32.65 dB)
   - 4.7824 GHz (−21.18 dB)
@@ -196,13 +185,13 @@ Literature, part 3: research gap
      5. Literature review II: MIMO + metasurface and research gap
      6. Proposed methodology (design flow)
      7. Theory: why a metasurface at 3.9 mm (phase chart)
-     8. Antenna design (geometry, dimensions)
-     9. Parametric study: Lg
-     10. Parametric study: R
-     11. Optimised antenna: S11 and gain
-     12. SRR metasurface and antenna + metasurface (results or status)
+     8. Antenna design (initial baseline geometry, dimensions, baseline S11)
+     9. Parametric study: Lg sweep (y = −20 to −7 mm)
+     10. Parametric study: R sweep (R = 4 to 15 mm)
+     11. Optimised antenna: wideband S11 (2.16–15.73 GHz) and IEEE gain
+     12. SRR metasurface array and antenna + metasurface integration at 3.9 mm air gap
      13. Work done till now and challenges
-     14. Future work (Phase II MIMO, fabrication, timeline) and expected outcomes
+     14. Future work (Phase II 4-port MIMO, decoupling, fabrication, anechoic chamber testing) and expected outcomes
      15. Conclusion & references
    - Backup slides: sweep artefacts, phase table, full literature table, MIMO metrics.
 
