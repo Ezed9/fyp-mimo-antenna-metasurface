@@ -54,10 +54,28 @@ def main(res, figdir):
     plate = sorted([v for v in runs.values() if v[0]['case'] == 'plate'], key=lambda v: v[0]['h'])
 
     # ---- summary table ----
+    def spans(mask, f):
+        out, start = [], None
+        for i, m in enumerate(mask):
+            if m and start is None:
+                start = f[i]
+            if (not m or i == len(mask) - 1) and start is not None:
+                out.append(f'{start:.2f}-{f[i - 1 if not m else i]:.2f}')
+                start = None
+        return ';'.join(out)
+
     rows = []
     for name, group in (('bare', [bare] if bare else []), ('ms', ms), ('plate', plate)):
         for info, d in group:
-            rows.append(dict(case=name, h=info['h'],
+            band = (d[:, 0] >= 2.0) & (d[:, 0] <= 15.0)
+            fb = d[band, 0]
+            if bare is not None and name != 'bare':
+                sb = bare[1][band, 1]
+                breaks = spans((d[band, 1] > -10) & (sb <= -10), fb)
+                fixes = spans((d[band, 1] <= -10) & (sb > -10), fb)
+            else:
+                breaks = fixes = ''
+            rows.append(dict(case=name, h=info['h'], breaks=breaks, fixes=fixes,
                              worst_2_15=worst(d), worst_216_15=worst(d, 2.16, 15.0),
                              worst_31_106=worst(d, 3.1, 10.6),
                              frac_2_15=info['frac_below10_2.0_15.0'],
@@ -70,7 +88,8 @@ def main(res, figdir):
             fh.write(','.join(f'{r[k]:.3f}' if isinstance(r[k], float) else str(r[k]) for k in keys) + '\n')
     for r in rows:
         print(f"{r['case']:5s} h={r['h']:5.1f}  worst2-15={r['worst_2_15']:6.2f} dB  "
-              f"worst3.1-10.6={r['worst_31_106']:6.2f}  below-10 {100*r['frac_2_15']:5.1f}%  fails: {r['fail']}")
+              f"worst3.1-10.6={r['worst_31_106']:6.2f}  below-10 {100*r['frac_2_15']:5.1f}%  fails: {r['fail']}"
+              f"  | MS breaks: {r['breaks']}  | MS fixes: {r['fixes']}")
 
     if not ms:
         return
