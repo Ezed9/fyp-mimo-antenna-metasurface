@@ -119,25 +119,28 @@ def main(res, figdir):
     plt.close(fig)
 
     # ---- 2. worst-case |S11| in 2-15 GHz vs gap ----
-    fig, ax = plt.subplots(figsize=(6.4, 3.4), dpi=170)
+    fig, ax = plt.subplots(figsize=(6.4, 3.6), dpi=170)
     ax.plot(hs, [worst(v[1]) for v in ms], color=BLUE, lw=2, marker='o', ms=5,
-            label='Antenna + SRR metasurface (ground-backed)')
+            label='Antenna + SRR metasurface: worst over 2-15 GHz')
+    ax.plot(hs, [worst(v[1], 2.0, 10.9) for v in ms], color=BLUE, lw=1.5, ls=(0, (4, 2)), marker='o', ms=4,
+            mfc='white', label='Antenna + SRR metasurface: worst over 2-10.9 GHz')
     if plate:
         ax.plot([v[0]['h'] for v in plate], [worst(v[1]) for v in plate], color=ORANGE, lw=2,
-                marker='s', ms=5, label='Antenna + plain copper-backed board (no rings)')
+                marker='s', ms=5, label='Antenna + plain copper-backed board (no rings), 2-15 GHz')
     if bare:
-        ax.axhline(worst(bare[1]), color=BARE, lw=1.5, ls=(0, (6, 3)), label='Antenna alone')
+        ax.axhline(worst(bare[1]), color=BARE, lw=1.5, ls=(0, (6, 3)), label='Antenna alone, worst over 2-15 GHz')
     ax.axhline(-10, color=INK, lw=0.8)
-    ax.text(hs[-1], -10.4, '-10 dB target', ha='right', va='top', color=INK2, fontsize=8)
+    ax.text(hs[0], -10.3, '-10 dB target', ha='left', va='top', color=INK2, fontsize=8)
     ax.set_xlabel('Air gap h (mm)')
-    ax.set_ylabel('Worst |S11| over 2-15 GHz (dB)')
-    ax.legend(loc='upper right', fontsize=8)
+    ax.set_ylabel('Worst |S11| in the band (dB)')
+    ax.set_ylim(-16, 0)
+    ax.legend(loc='upper right', fontsize=7.5)
     fig.tight_layout()
     fig.savefig(os.path.join(figdir, 'gap_sweep_worst.png'))
     plt.close(fig)
 
     # ---- 3. small multiples: S11 curves for selected gaps ----
-    pick = [v for v in ms if v[0]['h'] in (3.9, 10.0, 20.0, 25.0, 30.0, 40.0)] or ms
+    pick = [v for v in ms if v[0]['h'] in (3.9, 10.0, 20.0, 27.5, 30.0, 35.0)] or ms
     n = len(pick)
     cols = 2 if n > 1 else 1
     rws = int(np.ceil(n / cols))

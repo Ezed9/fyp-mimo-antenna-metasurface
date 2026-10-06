@@ -17,7 +17,8 @@ a literature review, and an audit of the simulation model.
 2. **About 30 mm of air (antenna copper to metasurface ground ≈ 33 mm) is the smallest gap that keeps the low
    band.** At h = 30 mm the −10 dB band starts at 1.9 GHz (−14.4 dB at 2.0 GHz) and runs to 11.0 GHz; h = 40 mm
    behaves the same. Every gap of 27.5 mm or less loses 2.0–2.15 GHz or more. Gaps of 20 mm or less also open
-   a second hole around 3–3.7 GHz. RESULTS_WINDOW_PLACEHOLDER
+   a second hole around 3–3.7 GHz. **Working window: 30–40 mm. Aim for 32.5–35 mm,** which keeps ≥ 4.8 dB of
+   margin at 2.0 GHz and tolerates ±2.5 mm of spacer error.
 3. **No gap gives |S11| < −10 dB over all of 2–15 GHz in this model.** The remaining failure, 11.0–13.0 GHz
    (−9 dB), belongs to the antenna itself. It is there without the metasurface (CST: −10.5 dB, openEMS: −7.5 to
    −9 dB, i.e. marginal in both), and any gap ≥ 15 mm changes it by less than 0.3 dB. Fix it in the antenna
@@ -102,7 +103,25 @@ The two solvers agree on the shape and the resonance positions. They disagree by
 
 ![heat map](simulation/results/figures/gap_sweep_heatmap.png)
 
-RESULTS_TABLE_PLACEHOLDER
+| Gap h (mm) | Antenna copper → MS ground (mm) | \|S11\| at 2.0 GHz | Fails (2–15 GHz) | Worst 2–10.9 GHz | Verdict |
+|---|---|---|---|---|---|
+| no MS | — | −8.5 dB | 2.00–2.07, 11.02–13.03 | −8.5 dB | antenna alone |
+| 3.9 (current) | 7.1 | −1.5 dB | 2.00–3.29, 3.49–4.32, 10.65–12.25 | −1.5 dB | ✗ low band destroyed |
+| 10 | 13.2 | −3.3 dB | 2.00–3.28, 3.42–4.08, 10.87–12.39 | −3.3 dB | ✗ |
+| 15 | 18.2 | −5.8 dB | 2.00–2.30, 2.97–3.75, 11.08–13.12 | −5.8 dB | ✗ |
+| 20 | 23.2 | −5.9 dB | 2.00–2.26, 3.03–3.49, 11.11–13.04 | −5.9 dB | ✗ |
+| 25 | 28.2 | −6.4 dB | 2.00–2.19, 11.06–12.88 | −6.4 dB | ✗ (bottom edge only) |
+| 27.5 | 30.7 | −6.8 dB | 2.00–2.15, 11.02–12.88 | −6.8 dB | ✗ (bottom edge only) |
+| **30** | 33.2 | −14.4 dB | 11.04–12.98 only | −10.4 dB | ✓ low band |
+| **32.5** | 35.7 | −15.2 dB | 11.04–13.07 only | −10.5 dB | ✓ low band |
+| **35** | 38.2 | −15.3 dB | 11.02–12.85 only | −10.4 dB | ✓ low band |
+| 40 | 43.2 | −14.3 dB | 11.02–12.94 only | −10.4 dB | ✓ low band (weaker near 4 GHz, −11.9 dB) |
+
+![worst case vs gap](simulation/results/figures/gap_sweep_worst.png)
+
+The step between 27.5 and 30 mm is real, not noise. At 20–27.5 mm the metasurface creates a resonance loop
+near 2.1 GHz where the input resistance rises to ≈ 110 Ω (2.0 GHz: 80 + j62 Ω at 25 mm). At 30 mm the loop
+collapses toward 50 Ω (72 + j9 Ω at 2.0 GHz), and at 40 mm the impedance stays at 51–57 Ω from 2 to 2.8 GHz.
 
 ![per-gap curves](simulation/results/figures/gap_sweep_curves.png)
 
@@ -123,7 +142,18 @@ The broadside nulls at 5 and 9 GHz are where the metasurface ground is λ/2 and 
 
 ### 5.3 Rings vs a plain copper-backed board
 
-PLATE_PLACEHOLDER
+At h = 30 mm a plain copper-backed FR-4 board (same size, no rings) gives almost the same S11 as the SRR
+metasurface: 0.76 dB rms difference over 2–15 GHz, with the largest differences (≤ 4 dB) confined to narrow
+ring-resonance lines.
+
+| f (GHz) | 2.0 | 2.2 | 3.0 | 3.6 | 6.0 | 12.0 |
+|---|---|---|---|---|---|---|
+| SRR metasurface, h = 30 mm | −14.4 | −27.4 | −16.0 | −18.3 | −20.4 | −9.2 |
+| Plain copper-backed board, h = 30 mm | −13.7 | −24.8 | −14.8 | −20.8 | −21.0 | −9.1 |
+
+**With this cell, the copper ground does the work and the rings are close to irrelevant for matching.** That
+is what the analytical model predicted: the ring fundamentals are too weakly excited at normal incidence to
+give an in-phase band.
 
 ### 5.4 Sensitivity: 50 × 50 mm metasurface ("R values are diameters")
 
