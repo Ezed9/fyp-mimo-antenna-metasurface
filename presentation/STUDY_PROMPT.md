@@ -21,7 +21,7 @@ Project and team
 - Guide: Dr. Ujjal Chakraborty (Associate Professor, ECE). Co-guide: Mr. Sovan Bhattacharya (PhD scholar).
 
 Scope
-- Phase I (mid-sem): a single CPW-fed planar monopole for wideband operation across 2.1 GHz to 15 GHz, with a split-ring-resonator (SRR) metasurface placed 3.9 mm behind it, with only an air gap between them.
+- Phase I (mid-sem): a single CPW-fed planar monopole for wideband operation across 2.1 GHz to 15 GHz, with a split-ring-resonator (SRR) metasurface placed 2 mm behind it, with only an air gap between them.
 - Operating Bandwidth Target: 2.1 GHz to 15 GHz wideband coverage (simulated 2.1615–15.734 GHz, 151.7% fractional bandwidth).
 
 Antenna geometry (from our CST model)
@@ -36,7 +36,7 @@ Metasurface (from our CST model)
 - 6 × 5 cells on 1.6 mm FR-4 with a FULL COPPER GROUND on the back, i.e. a ground-backed (AMC-type) reflector.
 - Each cell: two concentric split rings (Pendry-type SRR).
 - Cell period and ring dimensions: [fill in].
-- Placed 3.9 mm behind the antenna substrate, air in between.
+- Placed 2 mm behind the antenna substrate, air in between.
 - Phase II (after mid-sem): a 4-port MIMO version with the metasurface, decoupling elements, time-domain transient verification, then fabrication and measurement.
 
 Simulation set-up & Methodology Sequence
@@ -45,7 +45,7 @@ Simulation set-up & Methodology Sequence
 3. Parametric ground sweep (Lg): Lg swept from −20 mm to −7 mm (y-coordinate of ground edge) with R = 15 mm. Moving the ground edge towards the patch shifts the fundamental resonance from ≈1.6 GHz to ≈2.7 GHz and dramatically improves matching. Best: Lg = −7 mm (feed gap p = 0.73 mm).
 4. Parametric patch radius sweep (R): Swept from 4 to 15 mm (13 values) with Lg = −7 mm. Best: R = 15 mm, providing the widest continuous −10 dB wideband impedance bandwidth.
 5. Optimised single antenna: Continuous |S11| ≤ −10 dB from 2.1615 GHz to 15.734 GHz (151.7% fractional bandwidth), covering the full 2.1–15 GHz wideband requirement with 4 distinct resonance dips.
-6. Metasurface integration: Ground-backed SRR array at h = 3.9 mm air gap for gain enhancement without degrading impedance matching.
+6. Metasurface integration: Ground-backed SRR array at h = 2 mm air gap for gain enhancement without degrading impedance matching.
 
 Optimised antenna numbers
 - |S11| ≤ −10 dB from 2.1615 GHz to 15.734 GHz: fractional bandwidth 151.7 %, covering the target 2.1–15 GHz band.
@@ -61,16 +61,16 @@ Optimised antenna numbers
   - Peak ≈5.1 dBi near 13.5 GHz.
   - All gain values read from the plot, ±0.1 dB.
 
-Gap analysis (computed, not simulated), h = 3.9 mm
+Gap analysis (computed, not simulated), h = 2 mm
 - In-phase condition: φR − 2k0·h = 2nπ, with k0 = 2π/λ0.
-- 2k0·h = 20° at 2.16 GHz, 29° at 3.1 GHz, 64° at 6.85 GHz, 99° at 10.6 GHz, 147° at 15.73 GHz.
-- h = 0.040·λ0 at 3.1 GHz.
+- 2k0·h = 10° at 2.16 GHz, 15° at 3.1 GHz, 33° at 6.85 GHz, 51° at 10.6 GHz, 76° at 15.73 GHz.
+- h = 0.021·λ0 at 3.1 GHz.
 - A metal (PEC) plate reflects with φR = 180°, so it needs λ/4 = 24.2 mm at 3.1 GHz.
-  - At 3.9 mm it is 151° out of phase at 3.1 GHz.
-  - It is within ±90° of the requirement only above ≈9.6 GHz.
-  - So it would reduce the forward gain over most of UWB.
+  - At 2 mm it is 165° out of phase at 3.1 GHz.
+  - It stays outside ±90° of the requirement across the whole simulated band (it would enter only above ≈18.7 GHz).
+  - So it would reduce the forward gain across the whole band.
 - A metasurface whose reflection phase stays within ±90° of 2k0·h adds to the forward beam.
-- This ray picture ignores near-field coupling, which is strong at 0.04λ, so the matching must be re-checked with the metasurface in place.
+- This ray picture ignores near-field coupling, which is strong at 0.021λ, so the matching must be re-checked with the metasurface in place.
 - Realized gain: GR = (1 − |S11|²)·G. Inside the −10 dB band, GR is at most 0.46 dB below G.
 
 Band-edge check (computed)
@@ -84,7 +84,7 @@ Still pending (help me answer honestly about these)
 - SRR cell period and ring dimensions [fill in].
 - The SRR unit cell's reflection-phase simulation (unit-cell boundaries + Floquet port).
 - Antenna + metasurface S11 and gain.
-- Metal-plate (PEC) baseline at the same 3.9 mm gap.
+- Metal-plate (PEC) baseline at the same 2 mm gap.
 - Realized gain and radiation patterns.
 If I attach any of these, use them.
 
@@ -115,7 +115,7 @@ Literature, part 2: MIMO with a metasurface
 - Wu 2023: 2-port wearable; polarization-conversion metasurface; 4.76–6.77 GHz; circularly polarized; 7.95 dBic.
 
 Literature, part 3: research gap
-- Our 3.9 mm gap (0.04λ) is far smaller than the 9–20 mm used in the literature.
+- Our 2 mm gap (0.021λ) is far smaller than the 9–20 mm used in the literature.
 - SRR cells behind a full-UWB CPW antenna are rare.
 - Papers rarely compare against a metal plate at the same gap.
 - Every MIMO + metasurface paper reviewed is narrower-band than UWB.
@@ -163,7 +163,7 @@ Literature, part 3: research gap
    - Fractional bandwidth; realized vs IEEE gain.
    - The SRR resonance.
    - The full in-phase gap analysis with our numbers:
-     - why a metal plate fails at 3.9 mm;
+     - why a metal plate fails at 2 mm;
      - what reflection-phase curve our SRR must have;
      - why one SRR resonance cannot cover a 7:1 band, and ways to widen it
        (dual resonance, varying split angle as in Sen 2017, multi-layer, thicker substrate);
@@ -184,12 +184,12 @@ Literature, part 3: research gap
      4. Literature review I: single-antenna reflectors
      5. Literature review II: MIMO + metasurface and research gap
      6. Proposed methodology (design flow)
-     7. Theory: why a metasurface at 3.9 mm (phase chart)
+     7. Theory: why a metasurface at 2 mm (phase chart)
      8. Antenna design (initial baseline geometry, dimensions, baseline S11)
      9. Parametric study: Lg sweep (y = −20 to −7 mm)
      10. Parametric study: R sweep (R = 4 to 15 mm)
      11. Optimised antenna: wideband S11 (2.16–15.73 GHz) and IEEE gain
-     12. SRR metasurface array and antenna + metasurface integration at 3.9 mm air gap
+     12. SRR metasurface array and antenna + metasurface integration at 2 mm air gap
      13. Work done till now and challenges
      14. Future work (Phase II 4-port MIMO, decoupling, fabrication, anechoic chamber testing) and expected outcomes
      15. Conclusion & references
@@ -202,7 +202,7 @@ Literature, part 3: research gap
      - Why is the optimum at the edge of your sweep?
      - Why the frequency-domain solver for UWB, and would time-domain be better?
      - Did you check mesh convergence?
-     - Why 3.9 mm? What if you used a metal plate?
+     - Why 2 mm? What if you used a metal plate?
      - How do you know the SRR reflects in phase?
      - Will the metasurface spoil your bandwidth?
      - Is ≈5 dBi good? IEEE vs realized gain?
