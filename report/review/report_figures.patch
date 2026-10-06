@@ -1,0 +1,99 @@
+diff --git a/analysis/make_figures.py b/analysis/make_figures.py
+index a19d694..04177c7 100644
+--- a/analysis/make_figures.py
++++ b/analysis/make_figures.py
+@@ -427,6 +427,86 @@ def _polar(ff: dict, out: Path, name: str, made: list[str]) -> None:
+     save(fig, out, name, made)
+ 
+ 
++# ---------------------------------------------------------------- report figures (sized for report/build_report.py)
++
++OPERATING = (2.1615, 15.734)  # simulated −10 dB band of the final antenna (GHz)
++REPORT_RC = {"font.size": 7, "axes.labelsize": 7, "xtick.labelsize": 6.5, "ytick.labelsize": 6.5,
++             "legend.fontsize": 6, "lines.linewidth": 1.0, "savefig.bbox": "standard"}
++# Printed width × height (in) of each panel; build_report.py inserts each PNG at exactly this width, so the
++# 7 pt text above prints at 7 pt. Keep these in step with the widths in build_report.py.
++REPORT_SIZE = {"rep_baseline_s11": (3.9, 1.53), "rep_Lg_sweep": (2.85, 1.11), "rep_R_sweep": (2.85, 1.11),
++               "rep_final_s11": (2.9, 1.2), "rep_final_gain": (2.85, 1.16)}
++
++
++def _param(label: str) -> float:
++    return float(label.split("=")[-1])
++
++
++def _pick(curves: list[Curve], values: tuple[float, ...]) -> list[Curve]:
++    """The sweep curves whose parameter is closest to each requested value, labelled by that value (one decimal)."""
++    out = []
++    for v in values:
++        label, f, s = min(curves, key=lambda c: abs(_param(c[0]) - v))
++        out.append((f"{_param(label):.1f}".replace("-", "−"), f, s))
++    return out
++
++
++def _crossings(f: np.ndarray, s: np.ndarray, level: float) -> list[float]:
++    """Frequencies where s crosses level (linear interpolation between samples)."""
++    i = np.where(np.diff(np.sign(s - level)) != 0)[0]
++    return [f[k] + (level - s[k]) * (f[k + 1] - f[k]) / (s[k + 1] - s[k]) for k in i]
++
++
++def _report_panel(name: str, curves: list[Curve], out: Path, made: list[str], ylabel: str = "$|S_{11}|$ (dB)",
++                  ylim: tuple[float, float] = (-40, 0), level: float | None = -10.0, edges: bool = False,
++                  minima: bool = False, legend: dict | None = None) -> None:
++    w, h = REPORT_SIZE[name]
++    with plt.rc_context(REPORT_RC):
++        fig, ax = plt.subplots(figsize=(w, h), layout="constrained")
++        ax.axvspan(*OPERATING, color=BAND, zorder=0, lw=0)
++        if level is not None:
++            ax.axhline(level, color=MUTED, lw=0.7, ls="--", zorder=1)
++        for k, (label, f, s) in enumerate(curves):
++            ax.plot(f, s, color=COLORS[k % 8], ls=STYLES[k % 8], label=label)
++        f, s = curves[0][1], curves[0][2]
++        if edges:  # −10 dB band edges of the (single) curve, read from the data
++            for x in _crossings(f, s, level):
++                ax.axvline(x, color=MUTED, lw=0.6, ls=":")
++        if minima:  # label the resonances (local minima below −15 dB)
++            i = np.where((s[1:-1] < s[:-2]) & (s[1:-1] < s[2:]) & (s[1:-1] < -15))[0] + 1
++            for j in i:
++                ax.annotate(f"{f[j]:.2f}", (f[j], s[j]), xytext=(0, -2), textcoords="offset points",
++                            ha="center", va="top", fontsize=6, color=INK)
++        ax.set(xlim=(0, 18), ylim=ylim, xlabel="Frequency (GHz)", ylabel=ylabel)
++        ax.set_xticks(range(0, 19, 2))
++        if len(curves) > 1:
++            ax.legend(**({"loc": "lower right", "ncol": 2, "handlelength": 1.6, "columnspacing": 0.6,
++                          "borderpad": 0.3, "labelspacing": 0.15, "title_fontsize": 6} | (legend or {})))
++        fig.savefig(out / f"{name}.png", dpi=300)  # standard bbox: the canvas stays exactly w × h
++        plt.close(fig)
++    made.append(name)
++
++
++def fig_report_rows(exp: Path, out: Path, made: list[str], summary: list[str]) -> None:
++    """Report-sized replacements for the CST screenshots in Figs. 2–5 of the mid-semester report."""
++    lg, r = exp / "single_Lg_sweep.txt", exp / "single_R_sweep.txt"
++    if lg.exists():
++        curves = read_cst_ascii(lg)
++        base = _pick(curves, (-20,))
++        _report_panel("rep_baseline_s11", base, out, made, ylim=(-50, 0), minima=True)
++        _report_panel("rep_Lg_sweep", _pick(curves, (-20, -15.7, -11.3, -8.4, -7)), out, made, ylim=(-50, 5),
++                      legend={"title": "$L_g$ (mm)"})
++    if r.exists():
++        _report_panel("rep_R_sweep", _pick(read_cst_ascii(r), (4, 8, 11.3, 13.8, 15)), out, made, ylim=(-45, 0),
++                      legend={"title": "$R$ (mm)"})
++    s11 = exp / "single_final_s11.txt"
++    if s11.exists():
++        _report_panel("rep_final_s11", read_cst_ascii(s11)[:1], out, made, ylim=(-35, 0), edges=True, minima=True)
++    gain = exp / "single_final_gain.txt"
++    if gain.exists():  # label it with what was exported: CST "Gain" is IEEE gain, "Realized Gain" includes mismatch
++        _report_panel("rep_final_gain", read_cst_ascii(gain)[:1], out, made, ylabel="Gain (dBi)",
++                      ylim=(-2, 6), level=None)
++
+ # ---------------------------------------------------------------- demo data
+ 
+ def _write_ascii(path: Path, curves: list[tuple[dict[str, float], np.ndarray, np.ndarray]], ylabel: str) -> None:
+@@ -517,6 +597,7 @@ def run(exp: Path, out: Path) -> list[str]:
+     summary: list[str] = []
+     fig_sweeps(exp, out, made, summary)
+     fig_single_final(exp, out, made, summary)
++    fig_report_rows(exp, out, made, summary)
+     fig_unit_cell(exp, out, made, summary)
+     fig_reflector_compare(exp, out, made, summary)
+     nets = load_mimo(exp)

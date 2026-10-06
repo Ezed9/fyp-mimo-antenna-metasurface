@@ -1,0 +1,246 @@
+diff --git a/report/build_report.py b/report/build_report.py
+index 65d0309..b940bb3 100644
+--- a/report/build_report.py
++++ b/report/build_report.py
+@@ -116,28 +116,30 @@ def abstract(c: Ctx) -> None:
+     c.p("Ultra-wideband (UWB) communication and multiple-input multiple-output (MIMO) technology together support "
+         "high-speed, low-latency wireless links. However, conventional printed planar monopoles radiate bidirectionally, "
+         "yielding low forward gain (~2–4 dBi). This project develops a high-gain, low-profile wideband MIMO antenna integrated with a "
+-        "metasurface reflector. This mid-semester report presents Phase I: design, optimization, and characterization of a single "
+-        "coplanar waveguide (CPW) fed decagonal monopole antenna on a 50 × 50 × 1.6 mm FR-4 substrate backed by a copper-backed "
+-        "split-ring-resonator (SRR) metasurface. Through a two-stage parametric optimization in CST Studio Suite 2019—varying the ground "
+-        f"edge L_{{g}} from y = −20 mm to y = −7 mm and patch circumradius R from 4 mm to 15 mm—the antenna achieves |S_{{11}}| ≤ −10 dB "
+-        f"from {lo:.2f} GHz to {hi:.2f} GHz (fractional bandwidth of {fbw:.1f} %), comprehensively covering the 2.1 GHz to 15 GHz spectrum "
+-        f"with an IEEE gain of 2.9–4.9 dBi. A 6 × 5 double-SRR metasurface placed {lit.GAP_MM} mm behind the antenna provides in-phase reflection "
+-        "to substantially boost forward broadside gain without impedance detuning. Phase II will expand this design into an orthogonal MIMO array.")
++        "metasurface reflector. This mid-semester report presents Phase I: design and optimization of a single coplanar waveguide (CPW) "
++        "fed decagonal monopole on a 50 × 50 × 1.6 mm FR-4 substrate, and modeling of a copper-backed split-ring-resonator (SRR) "
++        "metasurface reflector. Through a two-stage parametric optimization in CST Studio Suite 2019—moving the ground edge L_{g} from "
++        f"−20 mm to −7 mm and sweeping the patch circumradius R from 4 mm to 15 mm—the antenna achieves |S_{{11}}| ≤ −10 dB from {lo:.2f} GHz "
++        f"to {hi:.2f} GHz (fractional bandwidth of {fbw:.1f} %), covering the 2.2–15 GHz target band with an IEEE gain of 1.4–5.1 dBi. "
++        f"A 6 × 5 double-SRR metasurface has been modeled for a {lit.GAP_MM} mm air gap, where a metal plate would reflect out of phase below "
++        "9.6 GHz; its loaded-antenna simulations are in progress. Phase II will expand this design into an orthogonal MIMO array.")
++    c.p("**Keywords:** wideband antenna, CPW-fed monopole, metasurface reflector, split-ring resonator, artificial magnetic "
++        "conductor, MIMO, gain enhancement.")
+ 
+ 
+ def introduction(c: Ctx) -> None:
+     c.h2("Background and Motivation")
+-    c.p("High-speed wireless links for radar, imaging, and sensing demand multi-gigahertz bandwidths covering 2.1 GHz to 15 GHz. "
++    c.p("High-speed wireless links for radar, imaging, and sensing demand multi-gigahertz bandwidths; this project targets 2.2–15 GHz (S- to lower Ku-band). "
+         "MIMO antenna architectures multiply channel capacity without additional transmit power by exploiting multipath scattering [@foschini, telatar]. "
+         "Planar printed monopoles are favored for wideband systems due to their broad impedance bandwidth [@agrawall, ray]. A CPW feed keeps the "
+         "signal strip and ground planes on the same side, eliminating vias and leaving the rear bare [@simons]. However, planar monopoles radiate "
+         "bidirectionally, leading to low forward gain (~2–4 dBi) [@balanis]. While a metal plate requires λ_{0}/4 separation to prevent destructive "
+         f"cancellation, an artificial magnetic conductor (AMC) metasurface achieves in-phase reflection, enabling an ultra-thin profile ({lit.GAP_MM} mm gap) [@sievenpiper, pendry].")
+     c.h2("Problem Statement and Objectives")
+-    c.p(f"The objective is to design a compact CPW-fed planar decagonal monopole operating across 2.1 GHz to 15 GHz, enhance forward broadside gain "
++    c.p(f"The objective is to design a compact CPW-fed planar decagonal monopole operating across 2.2–15 GHz, enhance forward broadside gain "
+         f"using an SRR metasurface reflector at an ultra-thin {lit.GAP_MM} mm air gap, and extend the configuration into a high-isolation multi-port MIMO system [@sharawi].")
+     dh.bullets(c.doc, [
+-        "Design and optimize a CPW-fed decagonal monopole antenna achieving |S_{11}| ≤ −10 dB from 2.1 GHz to 15 GHz.",
++        "Design and optimize a CPW-fed decagonal monopole antenna achieving |S_{11}| ≤ −10 dB from 2.2 GHz to 15 GHz.",
+         "Model and characterize an SRR unit cell to achieve AMC in-phase reflection characteristics near resonance.",
+         f"Integrate a 6 × 5 metasurface array at an ultra-thin {lit.GAP_MM} mm air gap to boost forward gain without detuning matching.",
+         "Develop a 4-port orthogonal MIMO array ensuring high inter-port isolation and low envelope correlation.",
+@@ -147,26 +149,30 @@ def introduction(c: Ctx) -> None:
+ 
+ def literature_review(c: Ctx) -> None:
+     c.p("Recent literature on metasurface-assisted antennas addresses single-element gain enhancement and multi-port MIMO decoupling. In single-element "
+-        "designs, Al-Gburi et al. [@algburi2022] and Hussain et al. [@hussain2023] demonstrated 4.5–6 dB gain boosts using FSS reflectors, but required "
+-        "large air gaps (9–10 mm). In MIMO implementations, Hasan et al. [@hasan2022] used a copper-backed SRR metasurface at a 12 mm air gap to achieve "
++        "designs, Al-Gburi et al. [@algburi2022] and Hussain et al. [@hussain2023] raised the peak gain by 4.8 dB and 4.0 dB with FSS reflectors, but "
++        "at 10 mm (total profile) and 9 mm spacings. Sen et al. [@sen2017] placed a split-ring metasurface behind a UWB monopole (≈ +5.5 dB), "
++        "and Hammache et al. [@hammache2024] needed a 20 mm gap for +6.2 dB. In MIMO implementations, Hasan et al. [@hasan2022] used a copper-backed SRR metasurface at a 12 mm air gap to achieve "
+         "> 15.5 dB isolation and 8.3 dBi gain, but covered only 3.08–7.75 GHz. Wu et al. [@wu2023] integrated a polarization-conversion metasurface for "
+         "5 GHz WBAN MIMO. Table 1 benchmarks representative literature against this work.")
+     c.table("Comparison of recent wideband / MIMO antennas with metasurface reflectors against this work.",
+             ["Reference", "Antenna Type", "Band (GHz)", "Metasurface / Reflector", "Air Gap", "Gain Enhancement", "Isolation"],
+             [
+-                ["Al-Gburi (2022) [@algburi2022]", "1-port CPW ring", "3.08–11.5", "19 × 19 cross-loop FSS", "10 mm (0.10λ_{L})", "6.7 → 11.5 dBi", "—"],
+-                ["Hussain (2023) [@hussain2023]", "1-port UWB disc", "3.4–10.6", "8 × 8 slotted FSS", "9 mm (0.10λ_{L})", "2.2 → 8.4 dBi", "—"],
++                ["Al-Gburi (2022) [@algburi2022]", "1-port CPW ring", "2.2–11.9", "19 × 19 loop FSS, grounded", "10 mm total (0.07λ_{L})", "6.7 → 11.5 dBi", "—"],
++                ["Hussain (2023) [@hussain2023]", "1-port CPW hexagon", "3–18", "5 × 5 ring-frame FSS", "9 mm (0.09λ_{L})", "6.5 → 10.5 dBi", "—"],
++                ["Sen (2017) [@sen2017]", "1-port UWB circular", "UWB (n/r)", "Double-SRR, graded splits", "n/r", "≈ +5.5 dB", "—"],
++                ["Hammache (2024) [@hammache2024]", "1-port CPW hexagon", "UWB (n/r)", "7 × 7 FSS", "20 mm (0.21λ_{L})", "2.2 → 8.4 dBi", "—"],
+                 ["Hasan (2022) [@hasan2022]", "4-port square patch", "3.08–7.75", "10 × 10 SRR AMC (backed)", "12 mm (0.12λ_{L})", "5.4 → 8.3 dBi", "> 15.5 dB"],
+-                ["Wu (2023) [@wu2023]", "2-port CPW monopole", "4.76–6.77", "Polarization-conversion MS", "Integrated", "7.95 dBic", "> 19.8 dB"],
++                ["Wu (2023) [@wu2023]", "2-port (type n/r)", "4.76–6.77", "Polarization-conversion MS", "n/r", "7.95 dBic", "> 19.8 dB"],
+                 ["**This Work**", "1-port decagon (→ MIMO)", f"{lit.THIS_WORK['band_ghz'][0]:.2f}–{lit.THIS_WORK['band_ghz'][1]:.2f}",
+-                 "6 × 5 double-SRR AMC", f"**{lit.GAP_MM} mm (0.03λ_{{L}})**", f"{lit.THIS_WORK['gain_ieee_uwb']} dBi → pending", "> 15 dB (target)"],
++                 "6 × 5 double-SRR AMC", f"**{lit.GAP_MM} mm (0.03λ_{{L}})**", "1.4–5.1 dBi → pending", "> 15 dB (target)"],
+             ],
+             [0.95, 0.9, 0.72, 1.2, 0.78, 0.82, 0.63], size=8.0, highlight_last=True)
+     c.h2("Research Gap")
+-    c.p("Existing literature reveals three principal gaps: (1) reflectors behind UWB monopoles use large gaps (9–20 mm, ~0.10–0.20λ_{0}), with no "
+-        "reported design under a sub-4 mm profile; (2) prior works rarely benchmark metasurface gain against a metal plate at the same spacing; and "
+-        "(3) reported metasurface MIMO antennas cover narrower sub-bands rather than the full 3.1–10.6 GHz UWB standard. This project bridges this "
+-        f"gap with an ultra-thin {lit.GAP_MM} mm profile and full UWB MIMO coverage.")
++    c.p("The reviewed literature leaves three gaps: (1) reflectors behind wideband monopoles sit 9–20 mm away (≈ 0.07–0.21λ_{L}) "
++        "[@algburi2022, hussain2023, hammache2024], and none of the reviewed designs approaches a sub-4 mm gap; (2) neither paper read in full "
++        "[@algburi2022, hussain2023] benchmarks its reflector against a metal plate at the same spacing; and (3) the reviewed metasurface MIMO "
++        "antennas cover at most a 2.5:1 band [@hasan2022], far narrower than the 7.3:1 band of this antenna. This project aims to close these "
++        f"gaps with a {lit.GAP_MM} mm profile and a wideband MIMO extension.")
+ 
+ 
+ def methodology(c: Ctx) -> None:
+@@ -184,51 +190,54 @@ def methodology(c: Ctx) -> None:
+     c.h2("2. CST Microwave Studio Simulation Setup")
+     c.p("Simulations used CST Studio Suite 2019 Frequency-Domain Solver (0–18 GHz) with adaptive tetrahedral meshing. "
+         "The antenna is modeled on 50 × 50 mm FR-4 (ε_{r} = 4.3, tan δ = 0.025, h_{s} = 1.6 mm, 35 µm copper). "
+-        "The 50 Ω CPW feed has a 3.0 mm signal strip and two coplanar grounds separated by 0.5 mm slots, excited by a waveguide port.")
++        "The CPW feed has a 3.0 mm signal strip and two coplanar grounds separated by 0.5 mm slots, excited by a waveguide port referenced to 50 Ω.")
+ 
+     c.h2("3. Initial Antenna Design and Baseline S_{11} Performance")
+-    c.p(f"The initial radiator has a decagonal patch (R = 15 mm, center x_{{p}} = 8 mm) with CPW grounds at y = −20 mm "
+-        f"(L_{{g}} = −20 mm, Fig. {c.next_fig()}(a)), leaving a large 13.73 mm gap to the patch. Weak capacitive coupling across this gap "
+-        f"kept baseline |S_{{11}}| above −10 dB (−3 to −8 dB) across almost the entire spectrum (Fig. {c.next_fig()}(b)), failing wideband requirements.")
++    c.p(f"The initial radiator has a decagonal patch (R = 15 mm, centre at x = 8 mm on the feed axis) with the CPW ground edge at "
++        f"L_{{g}} = −20 mm (Fig. {c.next_fig()}(a)), leaving a 13.73 mm feed gap p. The baseline is unmatched from 2 to 7.7 GHz (|S_{{11}}| "
++        f"between −2.3 and −7.5 dB) and breaks into isolated notches above it (−45 dB at 8.56 GHz), so only ≈ 34 % of 2.16–15.73 GHz "
++        f"meets −10 dB (Fig. {c.next_fig()}(b)).")
+     c.fig_two("cst_initial_antenna.png", "cst_initial_ground_s11.png",
+-              "Initial antenna model: (a) initial CPW decagonal geometry (L_{g} = −20 mm), "
+-              "and (b) simulated baseline reflection coefficient |S_{11}| showing poor matching across 2.1–15 GHz.",
++              "Initial antenna model: (a) CPW decagonal geometry (L_{g} = −20 mm), and (b) simulated baseline |S_{11}|: "
++              "unmatched below 7.7 GHz, with isolated notches above.",
+               width1=1.55, width2=3.9, crop1=CROP_INITIAL_ANTENNA, crop2=CROP_S11_BASELINE,
+               subcap1="(a)", subcap2="(b)")
+ 
+-    c.h2("4. Parametric Optimization of Ground Patch Length (L_{g} Sweep)", page_break=False)
+-    c.p(f"Ground length L_{{g}} was swept from y = −20 mm to y = −7 mm (10 steps, R = 15 mm). Narrowing gap p from 13.73 to {GAP_P:.2f} mm "
++    c.h2("4. Parametric Optimization of Ground-Edge Position (L_{g} Sweep)", page_break=False)
++    c.p(f"The ground edge L_{{g}} was swept from −20 mm to −7 mm (10 values, 1.44 mm steps, R = 15 mm). Narrowing gap p from 13.73 to {GAP_P:.2f} mm "
+         f"strengthens capacitive coupling, shifting the first resonance from 1.6 to 2.73 GHz and deepening it below −30 dB (Fig. {c.next_fig()}(a)). "
+-        f"Only L_{{g}} = −7 mm maintains |S_{{11}}| ≤ −10 dB across the band, establishing L_{{g}} = −7 mm as optimal.")
++        f"Only L_{{g}} = −7 mm keeps |S_{{11}}| ≤ −10 dB across the band; this optimum sits at the geometric limit, since p closes at L_{{g}} = −6.27 mm.")
+ 
+     c.h2("5. Parametric Optimization of Radiating Patch Radius (R Sweep)", page_break=True)
+-    c.p(f"With L_{{g}} = −7 mm, patch circumradius R was swept from 4 to 15 mm (13 values). For R = 4–8 mm, modes resonate above 6 GHz. Increasing "
+-        f"R enlarges electrical volume, shifting the lower cutoff downward as f_{{L}} ≈ 7.2 / (L + r + p) [@agrawall, ray]. At R = 15 mm "
+-        f"(Fig. {c.next_fig()}(b)), multiple resonant modes coalesce into a continuous wideband across 2.1–15 GHz.")
++    c.p(f"With L_{{g}} = −7 mm, R was swept from 4 to 15 mm (13 values). Every R gives a first dip near 2.3–2.7 GHz, but smaller patches "
++        f"leave much of 3–12 GHz between −3 and −9 dB; only R = 15 mm merges the resonances into one band (Fig. {c.next_fig()}(b)). With the "
++        f"patch centre fixed, R also sets the feed gap (p ≈ 11.2 mm at R = 4 mm). For R = 15 mm, f_{{L}} ≈ 7.2/(L + r + p) = 2.19 GHz "
++        f"(L = 2.85 cm patch height, r = 0.37 cm, p = 0.07 cm) [@agrawall, ray], close to the simulated 2.16 GHz.")
+     c.fig_two("cst_single_Lg_sweep.png", "cst_single_R_sweep.png",
+-              "Parametric sweeps: (a) simulated |S_{11}| vs. ground edge L_{g} from y = −20 to −7 mm, "
+-              "and (b) simulated |S_{11}| vs. patch radius R from 4 to 15 mm (optimal: R = 15 mm, L_{g} = −7 mm).",
++              "Parametric sweeps of |S_{11}|: (a) ground edge L_{g} from −20 to −7 mm, and (b) patch radius R from 4 to 15 mm "
++              "(optimum R = 15 mm, L_{g} = −7 mm). Steps near 4.0 and 6.2 GHz are sweep-interpolation artefacts.",
+               width1=2.85, width2=2.85, crop1=CROP_SWEEP, crop2=CROP_SWEEP,
+               subcap1="(a)", subcap2="(b)")
+ 
+     c.h2("6. Optimized Monopole Antenna Performance")
+-    c.p(f"The optimized standalone antenna (R = 15 mm, L_{{g}} = −7 mm, p = {GAP_P:.2f} mm, Fig. {c.next_fig()}(a)) maintains |S_{{11}}| ≤ −10 dB "
+-        f"from {lo:.2f} to {hi:.2f} GHz (FBW = {fbw:.1f} %), fully covering 2.1 GHz to 15 GHz (Fig. {c.next_fig()}(b)). Four distinct resonances "
+-        f"occur at {res_str}, with a peak return loss of 32.65 dB at 2.73 GHz. Simulated IEEE gain is 2.9–4.9 dBi across 3.1–10.6 GHz (peak 5.09 dBi near 13.5 GHz).")
++    c.p(f"The optimized antenna (R = 15 mm, L_{{g}} = −7 mm, p = {GAP_P:.2f} mm, Fig. {c.next_fig()}(a)) keeps |S_{{11}}| ≤ −10 dB from "
++        f"{lo:.2f} to {hi:.2f} GHz (FBW = {fbw:.1f} %, Fig. {c.next_fig()}(b)), with 0.3 dB of margin at its shallowest points (−10.3 dB at "
++        f"6.45 GHz, −10.5 dB at 12.2 GHz). Resonances occur at {res_str} (deepest −32.65 dB). The simulated IEEE gain is "
++        f"1.4–5.1 dBi across the band (≥ 2.8 dBi above 3 GHz).")
+     c.fig_two("cst_single_geometry.png", "cst_single_final_s11_markers.png",
+-              "Optimized decagonal monopole: (a) simulation model geometry with waveguide port, and (b) simulated reflection coefficient "
+-              "|S_{11}| of the optimized antenna with resonance markers over the 2.16–15.73 GHz operating band.",
++              "Optimized decagonal monopole: (a) CST model, front view (the rear face is bare), and (b) simulated |S_{11}| with "
++              "resonance markers; the −10 dB band is 2.16–15.73 GHz.",
+               width1=1.5, width2=2.9, crop1=CROP_GEOMETRY_FRONT, crop2=CROP_S11_MARKERS,
+               subcap1="(a)", subcap2="(b)")
+ 
+-    c.h2("7. Metamaterial (Metasurface) Integration and S_{11} Analysis")
+-    c.p(f"A 6 × 5 double-SRR metasurface on copper-backed 1.6 mm FR-4 is positioned at an air gap of {lit.GAP_MM} mm behind the antenna (Fig. {c.next_fig()}(a)). "
+-        f"While a conventional metal plate at this sub-4 mm spacing causes destructive phase cancellation below 9.6 GHz, the AMC metasurface provides in-phase "
+-        f"reflection (φ_{{R}} − 2k_{{0}}h ≈ 0). Full-wave CST simulations verify that near-field metasurface loading preserves |S_{{11}}| ≤ −10 dB across the "
+-        f"operating band while substantially enhancing forward broadside gain (Fig. {c.next_fig()}(b)).")
++    c.h2("7. Metasurface Reflector Integration (In Progress)")
++    c.p(f"A 6 × 5 double-SRR metasurface on copper-backed 1.6 mm FR-4 has been modeled for placement {lit.GAP_MM} mm behind the antenna "
++        f"(Fig. {c.next_fig()}(a)). At this gap a metal plate reflects more than 90° out of phase below 9.6 GHz (φ_{{R}} − 2k_{{0}}h with "
++        f"φ_{{R}} = 180°), so the SRR surface must supply φ_{{R}} ≈ 2k_{{0}}h (20°–147° across the band). Its unit-cell phase and the loaded "
++        f"|S_{{11}}| and gain runs are in progress; the standalone gain (Fig. {c.next_fig()}(b)) is the baseline.")
+     c.fig_two("cst_ms_array.png", "cst_single_final_gain_ieee.png",
+-              "Metasurface integration: (a) CST model of the 6 × 5 double-SRR metasurface array reflector, and (b) simulated standalone antenna "
+-              "IEEE gain across frequency (2.9–4.9 dBi over 3.1–10.6 GHz, providing the baseline for metasurface gain enhancement).",
++              "Metasurface reflector: (a) CST model of the 6 × 5 double-SRR array, and (b) simulated IEEE gain of the antenna alone "
++              "(1.4–5.1 dBi over 2.16–15.73 GHz), the baseline for the metasurface comparison.",
+               width1=2.65, width2=2.85, crop1=CROP_MS_FRONT_BACK, crop2=CROP_GAIN,
+               subcap1="(a) front (left) and copper back (right)", subcap2="(b)")
+ 
+@@ -237,29 +246,31 @@ def work_done(c: Ctx) -> None:
+     lo, hi = lit.THIS_WORK["band_ghz"]
+     fbw = lit.fractional_bw(lo, hi) * 100
+     c.p("During Phase I, the single-element CPW decagonal monopole antenna was designed, optimized through parametric sweeps, and finalized in "
+-        "CST Studio Suite 2019. The 6 × 5 double-SRR metasurface array was modeled and its loaded S_{11} performance evaluated.")
++        "CST Studio Suite 2019; Table 2 summarizes its simulated performance. The 6 × 5 double-SRR metasurface array has been modeled, "
++        "and its unit-cell and loaded-antenna simulations are in progress.")
+     c.table("Simulated performance summary of the optimized antenna (standalone).",
+             ["Parameter", "Simulated Value", "Project Specification", "Compliance"],
+             [
+-                ["Impedance Bandwidth (|S_{11}| ≤ −10 dB)", f"{lo:.2f}–{hi:.2f} GHz", "2.1–15 GHz wideband", "Exceeds"],
+-                ["Fractional Bandwidth (FBW)", f"{fbw:.1f} %", "≥ 109 %", "Exceeds"],
+-                ["Resonances", "2.73, 4.78, 9.23, 14.32 GHz", "Wideband multi-mode", "Achieved (4 resonances)"],
+-                ["Deepest Return Loss", "32.65 dB (at 2.73 GHz)", "≥ 10 dB", "Exceeds"],
+-                ["IEEE Gain, 3.1–10.6 GHz", "2.9 to 4.9 dBi (peak 5.09 dBi)", "Baseline for AMC enhancement", "Achieved"],
+-                ["Metasurface Profile", f"h = {lit.GAP_MM} mm (0.04λ_{{0}} at 3.1 GHz)", "Low profile (< 5 mm)", "Achieved"],
++                ["Impedance Bandwidth (|S_{11}| ≤ −10 dB)", f"{lo:.2f}–{hi:.2f} GHz", "2.2–15 GHz", "Met"],
++                ["Fractional Bandwidth (FBW)", f"{fbw:.1f} % (7.3:1)", "≥ 148.8 % (2.2–15 GHz)", "Met"],
++                ["Shallowest In-Band |S_{11}|", "−10.3 dB (at 6.45 GHz)", "≤ −10 dB", "Met (0.3 dB margin)"],
++                ["Resonances", "2.73, 4.78, 9.23, 14.32 GHz", "Wideband multi-mode", "4 resonances"],
++                ["IEEE Gain, 2.16–15.73 GHz", "1.4–5.1 dBi (peak at 13.5 GHz)", "Baseline for metasurface", "Reference"],
++                ["Metasurface Air Gap", f"h = {lit.GAP_MM} mm (0.028λ at 2.16 GHz)", "Low profile (< 5 mm)", "Design value"],
+             ],
+             [1.8, 1.6, 1.4, 1.2], size=8.0)
+     c.h2("Challenges Encountered and Addressed")
+     dh.bullets(c.doc, [
+-        "**Broadband Sweep Numerical Artefacts:** Coarse frequency sweeps showed non-physical steps near 4.0 and 6.2 GHz; refined mesh passes resolved these.",
+-        f"**Near-Field Metasurface Loading:** At an ultra-thin spacing of h = {lit.GAP_MM} mm, reactive loading slightly alters impedance; re-tuning L_{{g}} preserves matching.",
+-        "**Simulation Runtimes:** Composite 3D structures require large meshes; unit cells were characterized with Floquet ports prior to full-array verification.",
++        "**Sweep Artefacts:** The parametric sweeps show non-physical steps near 4.0 and 6.2 GHz (one trace exceeds 0 dB) from frequency-sweep interpolation; they are being re-run with more frequency samples.",
++        f"**Near-Field Metasurface Loading:** At h = {lit.GAP_MM} mm the metasurface reactively loads the antenna, so L_{{g}} may need re-tuning once the loaded simulation is complete.",
++        "**Simulation Runtimes:** The antenna-plus-array model needs a large mesh, so the SRR unit cell is being characterized first with unit-cell boundaries and Floquet ports.",
+     ], c.cite)
+ 
+ 
+ def work_plan(c: Ctx) -> None:
+-    c.p("In the next phase of the project, the primary focus will be extending the optimized wideband single-element antenna "
+-        "into a multi-port MIMO configuration and conducting experimental validation. The individual decagonal radiators will be "
++    c.p("The metasurface study will be completed first: the SRR unit-cell reflection phase, the loaded |S_{11}| and gain, and a "
++        "comparison with a metal plate at the same 3.9 mm gap. The next phase will then focus on extending the optimized wideband single-element antenna "
++        "into a 4-port MIMO configuration and conducting experimental validation. The individual decagonal radiators will be "
+         "arranged in an orthogonal orientation on a shared coplanar ground plane to exploit pattern and polarization diversity, "
+         "thereby suppressing mutual coupling between adjacent antenna elements. The split-ring-resonator metasurface array will be "
+         "expanded to serve as a common low-profile reflective backing for the multi-element system, enhancing forward directivity "
+@@ -274,10 +285,10 @@ def work_plan(c: Ctx) -> None:
+ def outcomes(c: Ctx) -> None:
+     dh.bullets(c.doc, [
+         f"A validated CPW-fed decagonal monopole antenna covering 2.16–15.73 GHz ({lit.fractional_bw(*lit.THIS_WORK['band_ghz']) * 100:.1f} % FBW), "
+-        "fully satisfying wideband requirements from 2.1 GHz to 15 GHz with IEEE gain of 2.9–4.9 dBi.",
++        "spanning the full 2.2–15 GHz target band with an IEEE gain of 1.4–5.1 dBi.",
+         f"A low-profile 6 × 5 double-SRR metasurface reflector operating at an air gap of h = {lit.GAP_MM} mm, "
+         "substantially increasing forward broadside gain without impedance detuning.",
+-        "A rigorous comparative benchmark confirming that the AMC metasurface significantly outperforms a metal plate at identical spacing.",
++        "A like-for-like benchmark of the SRR metasurface against a metal plate at the same 3.9 mm spacing.",
+         "A high-performance multi-port orthogonal MIMO antenna array providing high isolation and low envelope correlation across the wide operating band.",
+         "Experimental validation via fabricated prototypes, calibrated VNA S-parameter measurements, and anechoic chamber far-field radiation testing.",
+     ], c.cite)
+diff --git a/report/literature.py b/report/literature.py
+index f57ed9f..004a1ab 100644
+--- a/report/literature.py
++++ b/report/literature.py
+@@ -80,7 +80,7 @@ FOUNDATIONAL: dict[str, str] = {
+     "smith": "D. R. Smith, W. J. Padilla, D. C. Vier, S. C. Nemat-Nasser, and S. Schultz, “Composite medium with "
+              "simultaneously negative permeability and permittivity,” *Phys. Rev. Lett.*, vol. 84, no. 18, "
+              "pp. 4184–4187, May 2000, doi: 10.1103/PhysRevLett.84.4184.",
+-    "sievenpiper": "D. Sievenpiper, L. Zhang, R. F. J. Broas, N. G. Alexópolous, and E. Yablonovitch, “High-impedance "
++    "sievenpiper": "D. Sievenpiper, L. Zhang, R. F. J. Broas, N. G. Alexopolous, and E. Yablonovitch, “High-impedance "
+                    "electromagnetic surfaces with a forbidden frequency band,” *IEEE Trans. Microw. Theory Techn.*, "
+                    "vol. 47, no. 11, pp. 2059–2074, Nov. 1999, doi: 10.1109/22.798001.",
+     "yang": "F. Yang and Y. Rahmat-Samii, “Reflection phase characterizations of the EBG ground plane for low profile "
+@@ -158,7 +158,7 @@ PAPERS: list[Paper] = [
+     Paper("algburi2022", "single", "Al-Gburi et al. (2022)",
+           "A. J. A. Al-Gburi, I. B. M. Ibrahim, Z. Zakaria, B. H. Ahmad, N. A. B. Shairi, and M. Y. Zeain, “High gain "
+           "of UWB planar antenna utilising FSS reflector for UWB applications,” *Comput. Mater. Contin.*, vol. 70, "
+-          "no. 1, pp. 1425–1436, 2022, doi: 10.32604/cmc.2022.019741.",
++          "no. 1, pp. 1419–1436, 2022, doi: 10.32604/cmc.2022.019741.",
+           ref_checked=True, source="full text",
+           antenna="CPW-fed ring monopole with three legs",
+           substrate="FR-4 (ε_{r} 4.5), 1.6 mm",
