@@ -1,0 +1,2 @@
+run_id,reflector,h_mm,p_mm,G_mm,ms_array,excitation,energy_decay_dB,uwb_cover_pct_worst_port,worst_s21_dB,worst_s31_dB,worst_s41_dB,ecc_s_max,ecc_ff_max,dg_min_dB,tarc_max_dB,ccl_max_bpsHz,meg_spread_dB,Grz_5_dBi,Grz_8_dBi,gate_pass,notes
+S6-00,none,,,,,all ports,,,,,,,,,,,,,,,example row: replace values
