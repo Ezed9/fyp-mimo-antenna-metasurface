@@ -1,2 +1,2 @@
-run_id,stage,reflector,h_mm,p_mm,G_mm,Lg_mm,port_Z0_ohm,mesh_cells_per_lambda,energy_decay_dB,f_low_GHz,f_high_GHz,FBW_pct,uwb_cover_pct,worst_s11_inband_dB,f_worst_GHz,Grz_3p5_dBi,Grz_5_dBi,Grz_6p5_dBi,Grz_8_dBi,Grz_10_dBi,dG_min_dB,dG_mean_dB,FB_5_dB,FB_8_dB,eff_tot_min_pct,gate_pass,notes
-S2-05,2,none,,0.73,0.30,,,15,,,,,,,,,,,,,,,,,,,example row: replace values
+run_id,stage,reflector,h_mm,p_mm,G_mm,Lg_mm,port_Z0_ohm,amr_passes,final_deltaS,f_low_GHz,f_high_GHz,FBW_pct,uwb_cover_pct,worst_s11_inband_dB,f_worst_GHz,Grz_3p5_dBi,Grz_5_dBi,Grz_6p5_dBi,Grz_8_dBi,Grz_10_dBi,dG_min_dB,dG_mean_dB,FB_5_dB,FB_8_dB,eff_tot_min_pct,gate_pass,notes
+S2-05,2,none,,0.73,0.30,-7.00,,,,,,,,,,,,,,,,,,,,,example row: replace values

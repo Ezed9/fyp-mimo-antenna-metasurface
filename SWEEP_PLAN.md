@@ -37,10 +37,11 @@ optimising G for S11 would just hide an impedance error inside the "optimum".
 3. **The Lg optimum sat at the end of its range.** Lg = −7 mm was the last value before the parts overlap,
    so the true optimum may be at a smaller p. The p sweep below therefore goes down to 0.2 mm.
 
-4. **Mesh must resolve the gaps.** At 15 cells/λ the cells near 12 GHz are ~0.8 mm in the substrate, larger than
-   p and G. A sweep of p from 0.2 to 2 mm on that mesh mostly measures meshing noise. Add a *local mesh property*
-   on the feed strip, the grounds' top edges and the patch's lower edge, so there are **≥ 3 cells across G and across p**.
-   Keep that local mesh identical in every run.
+4. **Keep the solver you already use, with identical settings in every run.** The existing results are CST 2019,
+   frequency-domain solver, 0–18 GHz. Its tetrahedral adaptive mesh resolves sub-mm gaps on its own, so keep adaptive
+   mesh refinement on and do not change its settings between runs. The real risk is the broadband-sweep artefacts you
+   already saw (jumps near 4.0 and 6.2 GHz, a curve above 0 dB): re-run any point that shows them with more frequency
+   samples before ranking it.
 
 5. **The SRR reflection phase is still unknown.** Sweeping h without the unit-cell phase curve is partly blind:
    the best h is where 2k₀h tracks φ_R(f). Run the unit cell (`CST_GUIDE.md` §4) first. It is one cheap run and it tells you
@@ -55,27 +56,34 @@ optimising G for S11 would just hide an impedance error inside the "optimum".
 
 ## 2. Sweep stages
 
-Sweep settings unless stated: time-domain solver, 15 cells/λ globally plus the local gap mesh, energy decay −40 dB,
-2–12 GHz. Farfield monitors at **3.5, 5, 6.5, 8, 10 GHz** only (needed for gain; skip the 21-monitor set).
+Sweep settings unless stated: frequency-domain solver, 0–18 GHz, adaptive mesh refinement on, same settings as the
+existing Lg and R sweeps. Farfield monitors at **3.5, 5, 6.5, 8, 10 GHz** only (needed for gain; skip the 21-monitor set).
 
 | Stage | Purpose | Variable(s) | Values | Fixed | Runs |
 |---|---|---|---|---|---|
 | 0 | SRR reflection phase | (unit cell) | as built, then tweak if in-phase band misses 4–8 GHz | — | 1–5 |
 | 1 | 50 Ω calibration | G | 0.25, 0.30, 0.35, 0.40, 0.50 mm | p = 0.73, no MS | 5 |
-| 2 | Feed gap, no metasurface | p | 0.2, 0.3, 0.4, 0.5, 0.73, 1.0, 1.5, 2.0 mm | G*, no MS | 8 |
+| 2 | Feed gap, no metasurface | p (set via Lg) | 0.2, 0.3, 0.4, 0.5, 0.73, 1.0, 1.5, 2.0 mm | G*, no MS | 8 |
 | 3 | Air gap, coarse | h × {AMC, PEC} | 3, 3.9, 5, 6, 8, 10, 12 mm | G*, p* | 14 |
 | 4 | Joint refinement | h × p | h* − 1 … h* + 1 step 0.5; p* − 0.2, p*, p* + 0.2 | G* | 15 |
-| 5 | Final single element | none / PEC / AMC | best (h, p); fine mesh 20–25 cells/λ; full monitor set | — | 3 + 1 convergence |
+| 5 | Final single element | none / PEC / AMC | best (h, p); tighter ΔS and more frequency samples; full monitor set | — | 3 + 1 convergence |
 | 6 | 4-port MIMO check | h | h* − 1, h*, h* + 1, plus no-MS | best p, all ports excited | 4 |
 
 About **55 runs** in total. Stages 1–2 are cheap (no metasurface, few monitors). Stage 3 is the expensive one.
 
 Notes per stage:
 
-- **Stage 1.** Pick the G whose port line impedance is 48–52 Ω (expect ≈ 0.30 mm). Check your PCB house can etch it;
+- **Stage 1.** The grounds' inner edges sit at y = ±(W_f/2 + G), so G = 0.30 mm puts them at ±1.80 mm (they are at ±2.00 mm now).
+  Pick the G whose port line impedance is 48–52 Ω (expect ≈ 0.30 mm). Check your PCB house can etch it;
   0.3 mm is fine for most, 0.2 mm is risky. Freeze G = G*.
-- **Stage 2.** Keep R = 15 mm and the patch centre fixed; only the ground edge moves. Record p*. Below ~0.2 mm, fabrication
-  tolerance (±0.05 mm) becomes a large fraction of p, so a p* at 0.2 is a warning, not a win.
+- **Stage 2.** Keep R = 15 mm and the patch centre fixed; only the ground edge moves. The patch's lower flat edge is at
+  x = 8 − 15·cos 18° = −6.27 mm, so Lg = −6.27 − p. Values to type in:
+
+  | p (mm) | 0.2 | 0.3 | 0.4 | 0.5 | 0.73 (now) | 1.0 | 1.5 | 2.0 |
+  |---|---|---|---|---|---|---|---|---|
+  | **Lg (mm)** | −6.47 | −6.57 | −6.67 | −6.77 | −7.00 | −7.27 | −7.77 | −8.27 |
+
+  Record p*. Below ~0.2 mm, fabrication tolerance (±0.05 mm) becomes a large fraction of p, so a p* at 0.2 is a warning, not a win.
 - **Stage 3.** Run the **PEC plate at every h**, same footprint, same port, same mesh. The AMC-minus-PEC gain curve versus h is the
   figure that justifies the metasurface. Extend to 15 mm only if gain is still rising at 12 mm. Use the no-reflector run from
   Stage 2 (at p*) as the reference, with the same five farfield monitors.
@@ -98,14 +106,14 @@ Per single-element run:
 | F/B ratio | at 5 and 8 GHz | Farfield → 0D results |
 | Total efficiency | minimum over the five frequencies | farfield monitors |
 | Port Z₀ | line impedance at port 1 | Port Modes |
-| Energy decay | final level reached | solver log |
+| Mesh convergence | adaptive passes and final ΔS | solver log |
 
 Per MIMO run (Stage 6), from the `.s4p` file and far-fields: worst S21, S31, S41 over 3.1–10.6 GHz; max ECC (from S and from far-field);
 min DG; max TARC; max CCL; MEG spread.
 
 **Ranking rule (decide it now, before seeing the numbers):**
 
-1. **Gate:** UWB coverage = 100 % and energy decay reached −40 dB. Runs that fail are recorded but not ranked.
+1. **Gate:** UWB coverage = 100 %, adaptive mesh converged, and no sweep artefacts (no S11 above 0 dB, no isolated jumps). Runs that fail are recorded but not ranked.
 2. **Primary:** the largest **minimum ΔG** over the five frequencies. This rewards a reflector that helps everywhere and
    punishes one that adds 4 dB at 10 GHz but loses 3 dB at 3.5 GHz.
 3. **Secondary:** mean ΔG.
