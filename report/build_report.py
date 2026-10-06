@@ -1,17 +1,20 @@
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["python-docx>=1.1"]
+# dependencies = ["python-docx>=1.1", "pillow>=10"]
 # ///
 """Build the mid-semester report strictly adhering to the college template.
 
-Enforces a concise <= 7-page total document length, structured as:
+The report must be exactly 7 pages, structured as:
   Page 1: Title Page (Template format: NIT Silchar, students, guide/co-guide)
   Page 2: 1. Abstract & 2. Introduction
-  Page 3: 3. Literature Review (Narrative, Comparison Table, Research Gap)
+  Page 3: 3. Literature Review (Narrative, Comparison Table 1, Research Gap)
   Page 4: 4. Methodology / Proposed Work (Subsections 1-4: Workflow, CST setup, Initial antenna, Lg sweep, Figs 1-2)
-  Page 5: 4. Methodology cont. (Subsections 5-7: R sweep, Optimized antenna, Metasurface integration, Figs 3-4)
-  Page 6: 5. Work Done Till Mid-Semester & 6. Work Plan for Next Phase (Tables 2-3)
+  Page 5: 4. Methodology cont. (Subsections 5-7: R sweep, Optimized antenna, Metasurface integration, Figs 3-5)
+  Page 6: 5. Work Done Till Mid-Semester (Table 2) & 6. Work Plan for Next Phase
   Page 7: 7. Expected Outcomes & 8. References
+
+Slack on the fullest pages is small (about 0.25 in on page 5 with the figure widths below), so re-check the page
+count after any change to text or figure widths.
 """
 from __future__ import annotations
 
@@ -37,6 +40,17 @@ OUT = ROOT / "report" / "MidSem_Report.docx"
 R_MM, N_SIDES, XC_MM, LG_MM = 15.0, 10, 8.0, -7.0
 APOTHEM = R_MM * math.cos(math.pi / N_SIDES)
 GAP_P = XC_MM - APOTHEM - LG_MM
+
+# Build-time crops (left, top, right, bottom) in source pixels; the PNGs in figures/ are not modified.
+# CST 1D plots are 2288 × 959 px: every crop drops the redundant plot title (rows 42–56); single-curve plots
+# also drop the one-entry legend outside the frame, since the caption names the curve.
+CROP_SWEEP = (8, 64, 2288, 950)          # Lg and R sweeps: keep the legend right of the frame
+CROP_S11_BASELINE = (8, 64, 2266, 950)   # its legend sits inside the frame
+CROP_S11_MARKERS = (8, 64, 2180, 959)    # keep the marker table at the bottom edge
+CROP_GAIN = (8, 64, 2181, 950)
+CROP_INITIAL_ANTENNA = (0, 44, 955, 954)  # white strip above the patch
+CROP_GEOMETRY_FRONT = (30, 30, 563, 452)  # front view only: the back face has no metal; drops "(a) Front"
+CROP_MS_FRONT_BACK = (30, 30, 985, 452)   # both views, without the baked-in "(a)/(b)" labels
 
 
 def have(name: str) -> bool:
@@ -67,21 +81,22 @@ class Ctx:
     def next_tab(self) -> int:
         return self.tab_n + 1
 
-    def fig(self, names: list[str], caption: str, width: float = 4.6) -> int:
+    def fig(self, names: list[str], caption: str, width: float = 4.6, crop: dh.Crop | None = None) -> int:
         self.fig_n += 1
         for name in names:
             if have(name):
-                dh.image(self.doc, FIGS / name, width)
+                dh.image(self.doc, FIGS / name, width, crop)
         dh.seq_caption(self.doc, "Fig.", self.fig_n, caption, self.cite)
         self.figs.append((self.fig_n, caption))
         return self.fig_n
 
     def fig_two(self, name1: str, name2: str, caption: str, width1: float = 2.85,
                 width2: float | None = None, width: float | None = None,
-                subcap1: str = "(a)", subcap2: str = "(b)") -> int:
+                subcap1: str = "(a)", subcap2: str = "(b)",
+                crop1: dh.Crop | None = None, crop2: dh.Crop | None = None) -> int:
         self.fig_n += 1
         dh.two_images(self.doc, FIGS / name1, FIGS / name2, width1=width1, width2=width2, width=width,
-                      subcap1=subcap1, subcap2=subcap2)
+                      subcap1=subcap1, subcap2=subcap2, crop1=crop1, crop2=crop2)
         dh.seq_caption(self.doc, "Fig.", self.fig_n, caption, self.cite)
         self.figs.append((self.fig_n, caption))
         return self.fig_n
@@ -146,7 +161,7 @@ def literature_review(c: Ctx) -> None:
                 ["**This Work**", "1-port decagon (→ MIMO)", f"{lit.THIS_WORK['band_ghz'][0]:.2f}–{lit.THIS_WORK['band_ghz'][1]:.2f}",
                  "6 × 5 double-SRR AMC", f"**{lit.GAP_MM} mm (0.03λ_{{L}})**", f"{lit.THIS_WORK['gain_ieee_uwb']} dBi → pending", "> 15 dB (target)"],
             ],
-            [1.0, 0.95, 0.75, 1.35, 0.8, 0.65, 0.5], size=8.0, highlight_last=True)
+            [0.95, 0.9, 0.72, 1.2, 0.78, 0.82, 0.63], size=8.0, highlight_last=True)
     c.h2("Research Gap")
     c.p("Existing literature reveals three principal gaps: (1) reflectors behind UWB monopoles use large gaps (9–20 mm, ~0.10–0.20λ_{0}), with no "
         "reported design under a sub-4 mm profile; (2) prior works rarely benchmark metasurface gain against a metal plate at the same spacing; and "
@@ -164,7 +179,7 @@ def methodology(c: Ctx) -> None:
     c.p(f"The sequential workflow is shown in Fig. {n_flow}: setting up the baseline CPW radiator, "
         f"optimizing ground edge L_{{g}} for matching, sweeping patch radius R for bandwidth, "
         f"synthesizing the optimized monopole, integrating an SRR metasurface at {lit.GAP_MM} mm air gap, and 4-port MIMO extension.")
-    c.fig(["fig_design_flow.png"], "Design and optimization workflow of the wideband antenna and metasurface.", width=3.5)
+    c.fig(["fig_design_flow.png"], "Design and optimization workflow of the wideband antenna and metasurface.", width=4.6)
 
     c.h2("2. CST Microwave Studio Simulation Setup")
     c.p("Simulations used CST Studio Suite 2019 Frequency-Domain Solver (0–18 GHz) with adaptive tetrahedral meshing. "
@@ -178,7 +193,7 @@ def methodology(c: Ctx) -> None:
     c.fig_two("cst_initial_antenna.png", "cst_initial_ground_s11.png",
               "Initial antenna model: (a) initial CPW decagonal geometry (L_{g} = −20 mm), "
               "and (b) simulated baseline reflection coefficient |S_{11}| showing poor matching across 2.1–15 GHz.",
-              width1=1.4, width2=3.0,
+              width1=1.55, width2=3.9, crop1=CROP_INITIAL_ANTENNA, crop2=CROP_S11_BASELINE,
               subcap1="(a)", subcap2="(b)")
 
     c.h2("4. Parametric Optimization of Ground Patch Length (L_{g} Sweep)", page_break=False)
@@ -193,7 +208,7 @@ def methodology(c: Ctx) -> None:
     c.fig_two("cst_single_Lg_sweep.png", "cst_single_R_sweep.png",
               "Parametric sweeps: (a) simulated |S_{11}| vs. ground edge L_{g} from y = −20 to −7 mm, "
               "and (b) simulated |S_{11}| vs. patch radius R from 4 to 15 mm (optimal: R = 15 mm, L_{g} = −7 mm).",
-              width1=2.3, width2=2.3,
+              width1=2.85, width2=2.85, crop1=CROP_SWEEP, crop2=CROP_SWEEP,
               subcap1="(a)", subcap2="(b)")
 
     c.h2("6. Optimized Monopole Antenna Performance")
@@ -203,7 +218,7 @@ def methodology(c: Ctx) -> None:
     c.fig_two("cst_single_geometry.png", "cst_single_final_s11_markers.png",
               "Optimized decagonal monopole: (a) simulation model geometry with waveguide port, and (b) simulated reflection coefficient "
               "|S_{11}| of the optimized antenna with resonance markers over the 2.16–15.73 GHz operating band.",
-              width1=2.0, width2=2.3,
+              width1=1.5, width2=2.9, crop1=CROP_GEOMETRY_FRONT, crop2=CROP_S11_MARKERS,
               subcap1="(a)", subcap2="(b)")
 
     c.h2("7. Metamaterial (Metasurface) Integration and S_{11} Analysis")
@@ -214,8 +229,8 @@ def methodology(c: Ctx) -> None:
     c.fig_two("cst_ms_array.png", "cst_single_final_gain_ieee.png",
               "Metasurface integration: (a) CST model of the 6 × 5 double-SRR metasurface array reflector, and (b) simulated standalone antenna "
               "IEEE gain across frequency (2.9–4.9 dBi over 3.1–10.6 GHz, providing the baseline for metasurface gain enhancement).",
-              width1=1.9, width2=2.3,
-              subcap1="(a)", subcap2="(b)")
+              width1=2.65, width2=2.85, crop1=CROP_MS_FRONT_BACK, crop2=CROP_GAIN,
+              subcap1="(a) front (left) and copper back (right)", subcap2="(b)")
 
 
 def work_done(c: Ctx) -> None:
@@ -374,7 +389,7 @@ if __name__ == "__main__":
         m = re.search(r"Pages:\s+(\d+)", res.stdout)
         pages_count = int(m.group(1)) if m else -1
         print(f"Rendered PDF: {pdf.relative_to(ROOT)} with total pages: {pages_count}")
-        if pages_count > 7:
-            print(f"WARNING: Page count is {pages_count}, target is <= 7 pages!")
+        if pages_count != 7:
+            print(f"WARNING: Page count is {pages_count}; the report must be exactly 7 pages!")
         else:
-            print(f"SUCCESS: Page count {pages_count} meets <= 7 pages requirement!")
+            print("SUCCESS: Page count is exactly 7.")
