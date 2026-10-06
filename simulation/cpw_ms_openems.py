@@ -37,6 +37,9 @@ EPS_R, TAND, F_KAPPA = 4.3, 0.025, float(os.environ.get("F_KAPPA", 6e9))
 KAPPA = 2 * np.pi * F_KAPPA * EPS0 * EPS_R * TAND          # only for loss='kappa'
 DEBYE_EPS_INF, DEBYE_DEPS = 4.048, 0.1136
 DEBYE_TAU = 1.0 / (2 * np.pi * np.array([0.1, 0.5, 2.5, 12.5, 62.5]) * 1e9)
+# cheaper fit (one Debye pole + conductivity): tan d 0.023-0.027, eps' 4.35 -> 4.22 over 2-15 GHz.
+# openEMS updates Debye poles on one thread, so the pole count dominates run time.
+DEBYE1_EPS_INF, DEBYE1_DEPS, DEBYE1_FRELAX, DEBYE1_KAPPA = 4.1651, 0.1864, 10.165e9, 0.0091
 
 # ---- antenna (team's CST geometry) ----
 HALF_BOARD = 25.0
@@ -139,7 +142,7 @@ def region_lines(keys, a, b, step):
 
 def build(case, h, model, sim_path, f_lo=1.0e9, f_hi=16.0e9, fine=0.5, coarse=2.0,
           margin=55.0, margin_below=45.0, end_crit=1e-4, max_ts=250000, zsub=0.2, fine_ant=0.25,
-          loss='debye'):
+          loss='debye1'):
     """case: 'bare' | 'ms' (rings + ground) | 'plate' (substrate + ground, no rings).
 
     Mesh rules (after the red-team audit):
@@ -168,6 +171,11 @@ def build(case, h, model, sim_path, f_lo=1.0e9, f_hi=16.0e9, fine=0.5, coarse=2.
         fr4.SetName('FR4')
         for k, t in enumerate(DEBYE_TAU):
             fr4.SetDispersiveMaterialProperty(k, eps_delta=DEBYE_DEPS, eps_relax=t)
+        CSX.AddProperty(fr4)
+    elif loss == 'debye1':
+        fr4 = CSPropDebyeMaterial(CSX.GetParameterSet(), order=1, epsilon=DEBYE1_EPS_INF, kappa=DEBYE1_KAPPA)
+        fr4.SetName('FR4')
+        fr4.SetDispersiveMaterialProperty(0, eps_delta=DEBYE1_DEPS, eps_relax=1.0 / (2 * np.pi * DEBYE1_FRELAX))
         CSX.AddProperty(fr4)
     else:
         fr4 = CSX.AddMaterial('FR4', epsilon=EPS_R, kappa=KAPPA)
@@ -356,7 +364,7 @@ if __name__ == '__main__':
     ap.add_argument('--zsub', type=float, default=0.2)
     ap.add_argument('--tag', default='')
     ap.add_argument('--fine_ant', type=float, default=0.25)
-    ap.add_argument('--loss', default='debye', choices=['debye', 'kappa'])
+    ap.add_argument('--loss', default='debye1', choices=['debye1', 'debye', 'kappa'])
     ap.add_argument('--margin', type=float, default=55.0)
     ap.add_argument('--dry', action='store_true', help='build and report mesh only')
     a = ap.parse_args()
