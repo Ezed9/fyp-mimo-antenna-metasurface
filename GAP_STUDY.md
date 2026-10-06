@@ -15,12 +15,12 @@ a literature review, and an audit of the simulation model.
    the radiator and shorts out its low band: |S11| is −1.5 dB at 2 GHz and the antenna is unmatched from
    2.0 to 4.3 GHz.
 2. **With the metasurface as described (15 mm rings → ~100 × 100 mm board), about 30 mm of air (antenna copper
-   to metasurface ground ≈ 33 mm) is the smallest gap that keeps the low band.** At h = 30 mm the −10 dB band starts at 1.9 GHz (−14.4 dB at 2.0 GHz) and runs to 11.0 GHz; h = 40 mm
-   behaves the same. Every gap of 27.5 mm or less loses 2.0–2.15 GHz or more. Gaps of 20 mm or less also open
+   to metasurface ground ≈ 33 mm) is the smallest gap that keeps the low band.** At h = 30 mm the −10 dB band
+   starts at 1.9 GHz (−14.4 dB at 2.0 GHz) and runs to 11.0 GHz; 32.5, 35 and 40 mm behave the same. Every gap of 27.5 mm or less loses 2.0–2.15 GHz or more. Gaps of 20 mm or less also open
    a second hole around 3–3.7 GHz. **Working window: 30–40 mm. Aim for 32.5–35 mm,** which keeps ≥ 4.8 dB of
    margin at 2.0 GHz and tolerates ±2.5 mm of spacer error. (If the metasurface is really a 50 × 50 mm board,
-   i.e. the given "R" values are diameters: ≥ 20 mm is needed to keep 2.1–4 GHz, and no gap recovers
-   2.0–2.1 GHz; see §5.4.)
+   i.e. the given "R" values are diameters: ≥ 20 mm is needed to keep 2.1–4 GHz, and neither 20 nor 30 mm
+   recovers 2.0–2.1 GHz; see §5.4.)
 3. **No gap gives |S11| < −10 dB over all of 2–15 GHz in this model.** The remaining failure, 11.0–13.0 GHz
    (−9 dB), belongs to the antenna itself. It is there without the metasurface (CST: −10.5 dB, openEMS: −7.5 to
    −9 dB, i.e. marginal in both), and any gap ≥ 15 mm changes it by less than 0.3 dB. Fix it in the antenna
@@ -73,7 +73,7 @@ A second geometry was also simulated as a sensitivity check: the given numbers r
   2–15 GHz). It agrees with a 5-pole fit within 0.25 dB. Copper is modelled as zero-thickness PEC.
 * **Mesh:** 0.25 mm cells over the antenna, 0.5 mm over the rest of the metasurface and 0.2 mm through both
   substrates, graded elsewhere. The PML is ≥ 55 mm from the structure. Runs use 2.7 M (antenna alone) to
-  7.5 M cells. The end criterion is −40 dB energy, checked deterministically. The ring connectivity of the
+  7.8 M cells. The end criterion is −40 dB energy, checked deterministically. The ring connectivity of the
   staircased mesh was verified for every ring.
 * **Audit:** a red-team review of the first model version found three real problems: the symmetry wall was
   half a cell off the feed axis, the FR-4 model was too lossy at 2 GHz, and the PML was too close. All three
@@ -189,9 +189,10 @@ What changes with the smaller board:
 ## 6. Why: the physics
 
 * **The metasurface is ground-backed, so the antenna sees a mirror.** With these ring sizes, the analytical
-  council member estimates a reflection phase of 150–170° over almost all of 2–15 GHz, i.e. metal-like. The
-  rings only matter in narrow lines (≈3.8, 5.2, 5.6, 7.5 GHz), and their fundamental modes are too weakly
-  excited at normal incidence to create an in-phase (AMC) band at 2–3.6 GHz.
+  council member estimates a reflection phase of ≈ 170° at 2 GHz falling to ≈ 100° at 15 GHz, with |Γ| ≈ 1:
+  metal-like, set mainly by the copper ground behind 1.6 mm of FR-4. The rings only matter in narrow lines
+  (≈ 3.8, 5.2, 5.6, 7.5 GHz), and their fundamental modes are too weakly excited at normal incidence to create
+  an in-phase (AMC) band at 2–3.6 GHz. The plate control in §5.3 confirms it.
 * **A mirror close behind a planar monopole kills its low band.** The image current is opposite and only
   2 × (h + 3.2) mm away, so it cancels the radiating current. At h = 3.9 mm, image theory puts the radiation
   resistance at 2.16 GHz at about 8 % of its free-space value. The full-wave runs show the same: −1.5 dB at
