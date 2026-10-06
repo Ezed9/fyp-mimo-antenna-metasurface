@@ -98,13 +98,10 @@ def main(res, figdir):
     hs = np.array([v[0]['h'] for v in ms])
     f = ms[0][1][:, 0]
     Z = np.array([v[1][:, 1] for v in ms])
-    edges = np.concatenate([[hs[0] - (hs[1] - hs[0]) / 2 if len(hs) > 1 else hs[0] - 1],
-                            0.5 * (hs[1:] + hs[:-1]),
-                            [hs[-1] + (hs[-1] - hs[-2]) / 2 if len(hs) > 1 else hs[0] + 1]])
     fig, ax = plt.subplots(figsize=(7.2, 4.2), dpi=170)
     norm = TwoSlopeNorm(vmin=-30, vcenter=-10, vmax=0)
-    pc = ax.pcolormesh(f, edges, np.clip(Z, -30, 0), cmap=DIVERGING, norm=norm, shading='nearest')
-    ax.contour(f, hs, Z, levels=[-10], colors=INK, linewidths=0.9)
+    pc = ax.pcolormesh(f, hs, np.clip(Z, -30, 0), cmap=DIVERGING, norm=norm, shading='nearest')
+    ax.contour(f, hs, Z, levels=[-10], colors=INK, linewidths=1.1, linestyles='solid')
     for x in (2.0, 15.0):
         ax.axvline(x, color=INK, lw=0.8, ls=(0, (4, 3)))
     ax.set_xlim(1.5, 16)
@@ -115,7 +112,7 @@ def main(res, figdir):
     ax.grid(False)
     cb = fig.colorbar(pc, ax=ax, pad=0.02)
     cb.set_label('|S11| (dB)   blue = matched, red = mismatched')
-    ax.set_title('|S11| with the metasurface vs air gap (black line = -10 dB; dashed = 2 and 15 GHz)',
+    ax.set_title('|S11| with the metasurface vs air gap (solid line = -10 dB contour; dashed = 2 and 15 GHz)',
                  fontsize=9, color=INK, loc='left')
     fig.tight_layout()
     fig.savefig(os.path.join(figdir, 'gap_sweep_heatmap.png'))
@@ -140,7 +137,7 @@ def main(res, figdir):
     plt.close(fig)
 
     # ---- 3. small multiples: S11 curves for selected gaps ----
-    pick = [v for v in ms if v[0]['h'] in (3.9, 6.0, 10.0, 15.0, 20.0, 25.0, 30.0)] or ms
+    pick = [v for v in ms if v[0]['h'] in (3.9, 10.0, 20.0, 25.0, 30.0, 40.0)] or ms
     n = len(pick)
     cols = 2 if n > 1 else 1
     rws = int(np.ceil(n / cols))
