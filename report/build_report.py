@@ -5,20 +5,21 @@
 """Build the mid-semester report strictly adhering to the college template.
 
 The report must be exactly 7 pages, structured as:
-  Page 1: Title Page (Template format: NIT Silchar, students, guide/co-guide)
-  Page 2: 1. Abstract & 2. Introduction
-  Page 3: 3. Literature Review (Narrative, Comparison Table 1, Research Gap)
-  Page 4: 4. Methodology / Proposed Work (Subsections 1-4: Workflow, CST setup, Initial antenna, Lg sweep, Figs 1-2)
-  Page 5: 4. Methodology cont. (Subsections 5-7: R sweep, Optimized antenna, Metasurface integration, Figs 3-5)
-  Page 6: 5. Work Done Till Mid-Semester (Table 2) & 6. Work Plan for Next Phase
-  Page 7: 7. Expected Outcomes & 8. References
+  Page 1: Title page (template format: NIT Silchar, students, guide/co-guide)
+  Page 2: Abstract & Introduction (Fig. 1: proposed structure, side view + metasurface top view)
+  Page 3: Literature Review (narrative, Table 1, Research Gap)
+  Page 4: Methodology / Proposed Work, subsections 1-4 (workflow, setup, initial antenna, sweep text; Figs. 2-3)
+  Page 5: Methodology cont. (Fig. 4 sweeps; subsections 5-7: optimised antenna, metasurface, antenna +
+          metasurface; Figs. 5-6)
+  Page 6: Work Done Till Mid-Semester (Table 2, challenges) & Work Plan for Next Phase
+  Page 7: Expected Outcomes & References
 
-Slack on the fullest pages is small (about 0.25 in on page 5 with the figure widths below), so re-check the page
-count after any change to text or figure widths.
+Writing rules for this checkpoint: plain English and short sentences; "wideband", never "UWB"; no equations and no
+wavelength fractions; no gain numbers (gain plots are still pending). Only CST results that exist are reported.
+Re-check the page count after any change to text or figure widths.
 """
 from __future__ import annotations
 
-import math
 import os
 import re
 import shutil
@@ -30,27 +31,37 @@ from pathlib import Path
 import docx_helpers as dh
 import literature as lit
 from docx.oxml.ns import qn
+from docx.shared import Pt
 from docx.text.paragraph import Paragraph
 
 ROOT = Path(__file__).resolve().parent.parent
 FIGS = ROOT / "figures"
 OUT = ROOT / "report" / "MidSem_Report.docx"
 
-# Design parameters
-R_MM, N_SIDES, XC_MM, LG_MM = 15.0, 10, 8.0, -7.0
-APOTHEM = R_MM * math.cos(math.pi / N_SIDES)
-GAP_P = XC_MM - APOTHEM - LG_MM
+
+GAP = lit.GAP_MM  # air gap between the antenna and the metasurface, mm
+FIG_IDEA = 1  # stack-up sketch + metasurface top view: the first figure (Introduction)
 
 # Build-time crops (left, top, right, bottom) in source pixels; the PNGs in figures/ are not modified.
-# CST 1D plots are 2288 × 959 px: every crop drops the redundant plot title (rows 42–56); single-curve plots
-# also drop the one-entry legend outside the frame, since the caption names the curve.
-CROP_SWEEP = (8, 64, 2288, 950)          # Lg and R sweeps: keep the legend right of the frame
-CROP_S11_BASELINE = (8, 64, 2266, 950)   # its legend sits inside the frame
-CROP_S11_MARKERS = (8, 64, 2180, 959)    # keep the marker table at the bottom edge
-CROP_GAIN = (8, 64, 2181, 950)
+# CST 1D plots are 2288 × 959 px: every crop drops the plot title (rows 42–56). The sweep plots also drop the
+# legend right of the frame (the caption names the highlighted curve); the single-curve plots drop the one-entry
+# "S1,1" legend.
+CROP_S11_BASELINE = (8, 64, 2266, 950)    # its legend sits inside the frame
+CROP_LG_BEST = (8, 64, 2080, 950)         # frame ends at x = 2067, legend starts at 2083
+CROP_R_BEST = (8, 64, 2090, 950)          # frame ends at x = 2078, legend starts at 2094
+CROP_S11_SINGLE = (8, 64, 2180, 950)      # frame ends at x = 2168, legend starts at 2185
+CROP_S11_BANDWIDTH = (8, 64, 2177, 959)   # keeps the band-edge marker labels at the bottom edge
 CROP_INITIAL_ANTENNA = (0, 44, 955, 954)  # white strip above the patch
-CROP_GEOMETRY_FRONT = (30, 30, 563, 452)  # front view only: the back face has no metal; drops "(a) Front"
-CROP_MS_FRONT_BACK = (30, 30, 985, 452)   # both views, without the baked-in "(a)/(b)" labels
+CROP_FLOW = (14, 15, 1440, 580)           # white margins
+CROP_STACKUP = (25, 37, 1380, 645)        # white margins
+
+
+_UNIT = re.compile(r"(\d) (GHz|dBic|dBi|dB|mm|Ω)(?![\w])")
+
+
+def nb(text: str) -> str:
+    """Keep a number and its unit, and "L_g = −7", on the same line (no-break spaces)."""
+    return _UNIT.sub("\\1\u00a0\\2", text).replace(" = ", "\u00a0=\u00a0")
 
 
 def have(name: str) -> bool:
@@ -63,17 +74,19 @@ class Ctx:
     cite: dh.Citer
     fig_n: int = 0
     tab_n: int = 0
-    eq_n: int = 0
     heads: list[tuple[int, str]] = field(default_factory=list)
     figs: list[tuple[int, str]] = field(default_factory=list)
     tabs: list[tuple[int, str]] = field(default_factory=list)
 
     def p(self, text: str, **kw) -> Paragraph:
-        return dh.para(self.doc, text, self.cite, **kw)
+        return dh.para(self.doc, nb(text), self.cite, **kw)
 
     def h2(self, text: str, page_break: bool = False) -> None:
         self.heads.append((2, text))
         dh.heading(self.doc, text, level=2, page_break=page_break)
+
+    def bullets(self, items: list[str]) -> None:
+        dh.bullets(self.doc, [nb(t) for t in items], self.cite)
 
     def next_fig(self) -> int:
         return self.fig_n + 1
@@ -86,7 +99,7 @@ class Ctx:
         for name in names:
             if have(name):
                 dh.image(self.doc, FIGS / name, width, crop)
-        dh.seq_caption(self.doc, "Fig.", self.fig_n, caption, self.cite)
+        dh.seq_caption(self.doc, "Fig.", self.fig_n, nb(caption), self.cite)
         self.figs.append((self.fig_n, caption))
         return self.fig_n
 
@@ -97,190 +110,238 @@ class Ctx:
         self.fig_n += 1
         dh.two_images(self.doc, FIGS / name1, FIGS / name2, width1=width1, width2=width2, width=width,
                       subcap1=subcap1, subcap2=subcap2, crop1=crop1, crop2=crop2)
-        dh.seq_caption(self.doc, "Fig.", self.fig_n, caption, self.cite)
+        dh.seq_caption(self.doc, "Fig.", self.fig_n, nb(caption), self.cite)
         self.figs.append((self.fig_n, caption))
         return self.fig_n
 
     def table(self, caption: str, header: list[str], rows: list[list[str]], widths: list[float], **kw) -> int:
         self.tab_n += 1
         dh.seq_caption(self.doc, "Table", self.tab_n, caption, self.cite, above=True)
-        dh.table(self.doc, header, rows, widths, cite=self.cite, **kw)
+        dh.table(self.doc, header, [[nb(v) for v in r] for r in rows], widths, cite=self.cite, **kw)
         self.tabs.append((self.tab_n, caption))
         return self.tab_n
 
 
 # ============================================================================= Section Builders
 def abstract(c: Ctx) -> None:
-    lo, hi = lit.THIS_WORK["band_ghz"]
-    fbw = lit.fractional_bw(lo, hi) * 100
-    c.p("Ultra-wideband (UWB) communication and multiple-input multiple-output (MIMO) technology together support "
-        "high-speed, low-latency wireless links. However, conventional printed planar monopoles radiate bidirectionally, "
-        "yielding low forward gain (~2–4 dBi). This project develops a high-gain, low-profile wideband MIMO antenna integrated with a "
-        "metasurface reflector. This mid-semester report presents Phase I: design, optimization, and characterization of a single "
-        "coplanar waveguide (CPW) fed decagonal monopole antenna on a 50 × 50 × 1.6 mm FR-4 substrate backed by a copper-backed "
-        "split-ring-resonator (SRR) metasurface. Through a two-stage parametric optimization in CST Studio Suite 2019—varying the ground "
-        f"edge L_{{g}} from y = −20 mm to y = −7 mm and patch circumradius R from 4 mm to 15 mm—the antenna achieves |S_{{11}}| ≤ −10 dB "
-        f"from {lo:.2f} GHz to {hi:.2f} GHz (fractional bandwidth of {fbw:.1f} %), comprehensively covering the 2.1 GHz to 15 GHz spectrum "
-        f"with an IEEE gain of 2.9–4.9 dBi. A 6 × 5 double-SRR metasurface placed {lit.GAP_MM} mm behind the antenna provides in-phase reflection "
-        "to substantially boost forward broadside gain without impedance detuning. Phase II will expand this design into an orthogonal MIMO array.")
+    c.p("Fast wireless links need wideband antennas, and multiple-input multiple-output (MIMO) systems need several "
+        "of them. A printed monopole gives a wide band but low gain, because it radiates to both sides of the "
+        "board. A metal plate behind it raises the gain only when placed far away, which makes the antenna thick. "
+        "This project places a thin metasurface close behind the antenna instead. This report covers Phase I. "
+        "A coplanar waveguide (CPW) fed decagonal monopole was designed on a 50 × 50 × 1.6 mm FR-4 board in CST "
+        "Studio Suite 2019. Moving the ground closer to the patch and using a 15 mm patch radius gave S_{11} below "
+        f"−10 dB from 2.16 to 15.73 GHz. A 6 × 5 split-ring metasurface was placed {GAP} mm behind the antenna. "
+        "The match holds over most of the band, but three narrow mismatch gaps appear between 3.0 and 5.6 GHz. Gain "
+        "plots, metasurface tuning and a MIMO version are the next steps.")
 
 
 def introduction(c: Ctx) -> None:
     c.h2("Background and Motivation")
-    c.p("High-speed wireless links for radar, imaging, and sensing demand multi-gigahertz bandwidths covering 2.1 GHz to 15 GHz. "
-        "MIMO antenna architectures multiply channel capacity without additional transmit power by exploiting multipath scattering [@foschini, telatar]. "
-        "Planar printed monopoles are favored for wideband systems due to their broad impedance bandwidth [@agrawall, ray]. A CPW feed keeps the "
-        "signal strip and ground planes on the same side, eliminating vias and leaving the rear bare [@simons]. However, planar monopoles radiate "
-        "bidirectionally, leading to low forward gain (~2–4 dBi) [@balanis]. While a metal plate requires λ_{0}/4 separation to prevent destructive "
-        f"cancellation, an artificial magnetic conductor (AMC) metasurface achieves in-phase reflection, enabling an ultra-thin profile ({lit.GAP_MM} mm gap) [@sievenpiper, pendry].")
+    c.p("Modern wireless systems need antennas that work over a wide range of frequencies. MIMO systems use several "
+        "antennas at each end of the link to carry more data without more transmit power [@foschini, telatar]. A "
+        "compact wideband antenna that can later be repeated in a MIMO layout is therefore useful [@sharawi].")
+    c.p("Printed monopole antennas are a common choice for wideband use. A flat disc or polygon patch has several "
+        "close resonances that join into one wide band [@agrawall, ray]. A CPW feed puts the feed line and the ground "
+        "on the same side of the board, so no vias are needed [@simons]. The weak point of such an antenna is its "
+        "gain. It radiates almost equally to the front and to the back, so much of the power is lost behind it "
+        "[@balanis].")
+    c.p("A metal plate behind the antenna can turn the backward wave forward. However, a plain metal plate helps only "
+        "when it is far from the antenna, so the antenna becomes thick. A metasurface is a thin board covered with "
+        "many small, repeated metal cells that shape the reflected wave [@holloway]. Because of this, it can sit much "
+        "closer to the antenna. The split ring is a widely used metasurface cell [@pendry]. Fig. "
+        f"{c.next_fig()} shows the structure proposed in this project.")
+    assert c.next_fig() == FIG_IDEA
+    c.fig_two("fig_stackup.png", "cst_metasurface_top.png",
+              f"Proposed structure: (a) side view of the antenna, the {GAP} mm air gap and the metasurface (schematic, "
+              "not to scale), and (b) CST model of the 6 × 5 double split-ring metasurface, top view.",
+              width1=3.0, width2=1.5, crop1=CROP_STACKUP)
     c.h2("Problem Statement and Objectives")
-    c.p(f"The objective is to design a compact CPW-fed planar decagonal monopole operating across 2.1 GHz to 15 GHz, enhance forward broadside gain "
-        f"using an SRR metasurface reflector at an ultra-thin {lit.GAP_MM} mm air gap, and extend the configuration into a high-isolation multi-port MIMO system [@sharawi].")
-    dh.bullets(c.doc, [
-        "Design and optimize a CPW-fed decagonal monopole antenna achieving |S_{11}| ≤ −10 dB from 2.1 GHz to 15 GHz.",
-        "Model and characterize an SRR unit cell to achieve AMC in-phase reflection characteristics near resonance.",
-        f"Integrate a 6 × 5 metasurface array at an ultra-thin {lit.GAP_MM} mm air gap to boost forward gain without detuning matching.",
-        "Develop a 4-port orthogonal MIMO array ensuring high inter-port isolation and low envelope correlation.",
-        "Fabricate prototypes on FR-4 substrate and validate simulated reflection, isolation, and radiation characteristics experimentally.",
-    ], c.cite)
+    c.p("A printed monopole gives a wide band but low gain, and a metal reflector would make it thick. This project "
+        "aims to build a thin wideband antenna with higher gain, and later a MIMO version of it. The objectives are:")
+    c.bullets([
+        "To design a CPW-fed wideband monopole antenna that covers about 2.2–15 GHz.",
+        "To optimise the ground position and the patch size for the best impedance match.",
+        f"To add a split-ring metasurface {GAP} mm behind the antenna to raise its gain.",
+        "To extend the design to a MIMO antenna, then fabricate and measure it (Phase II).",
+    ])
 
 
 def literature_review(c: Ctx) -> None:
-    c.p("Recent literature on metasurface-assisted antennas addresses single-element gain enhancement and multi-port MIMO decoupling. In single-element "
-        "designs, Al-Gburi et al. [@algburi2022] and Hussain et al. [@hussain2023] demonstrated 4.5–6 dB gain boosts using FSS reflectors, but required "
-        "large air gaps (9–10 mm). In MIMO implementations, Hasan et al. [@hasan2022] used a copper-backed SRR metasurface at a 12 mm air gap to achieve "
-        "> 15.5 dB isolation and 8.3 dBi gain, but covered only 3.08–7.75 GHz. Wu et al. [@wu2023] integrated a polarization-conversion metasurface for "
-        "5 GHz WBAN MIMO. Table 1 benchmarks representative literature against this work.")
-    c.table("Comparison of recent wideband / MIMO antennas with metasurface reflectors against this work.",
-            ["Reference", "Antenna Type", "Band (GHz)", "Metasurface / Reflector", "Air Gap", "Gain Enhancement", "Isolation"],
+    n_tab = c.next_tab()
+    c.p("Several groups have placed a reflector behind a wideband printed antenna to raise its gain. Table "
+        f"{n_tab} lists the works closest to this project.")
+    c.p("Sen et al. [@sen2017] placed a metasurface of double split rings behind a circular monopole. The split "
+        "angle changes from column to column, and the gain rose by about 5.5 dB. Al-Gburi et al. [@algburi2022] "
+        "placed a CPW-fed ring monopole over a 19 × 19 loop frequency selective surface (FSS) with a ground plane. "
+        "The peak gain rose from 6.7 to 11.5 dBi, and the whole structure is 10 mm thick. Hussain et al. [@hussain2023] "
+        "put a 5 × 5 FSS 9 mm behind a CPW-fed hexagonal patch, and the peak gain rose from 6.5 to 10.5 dBi. "
+        "Hammache et al. [@hammache2024] used a 7 × 7 FSS 20 mm behind a CPW-fed hexagonal monopole, and the gain "
+        "rose from 2.2 to 8.4 dBi.")
+    c.p("Metasurfaces are also used in MIMO antennas. Hasan et al. [@hasan2022] placed a copper-backed 10 × 10 "
+        "split-ring metasurface 12 mm behind a 4-port antenna for 3.08–7.75 GHz. The gain rose from 5.4 to 8.3 dBi, "
+        "and the isolation between ports stayed above 15.5 dB. Wu et al. [@wu2023] used a polarization-conversion "
+        "metasurface in a 2-port antenna for 4.76–6.77 GHz, with a gain of 7.95 dBic and isolation above 19.8 dB.")
+    c.p("These works show that a reflector or metasurface can raise the gain of a printed antenna by several dB. "
+        "In most of them, however, the reflector sits far behind the antenna. From them, this project takes three "
+        "ideas: a CPW-fed monopole as the radiator [@algburi2022, hussain2023, hammache2024], split-ring cells for "
+        "the metasurface [@sen2017, hasan2022], and a copper-backed metasurface behind a MIMO antenna for Phase II "
+        "[@hasan2022].")
+    c.table("Printed antennas with a reflector or metasurface behind them, compared with this work. "
+            "Gain is the peak gain without → with the reflector.",
+            ["Reference", "Antenna", "Reflector", "Gap", "Peak gain"],
             [
-                ["Al-Gburi (2022) [@algburi2022]", "1-port CPW ring", "3.08–11.5", "19 × 19 cross-loop FSS", "10 mm (0.10λ_{L})", "6.7 → 11.5 dBi", "—"],
-                ["Hussain (2023) [@hussain2023]", "1-port UWB disc", "3.4–10.6", "8 × 8 slotted FSS", "9 mm (0.10λ_{L})", "2.2 → 8.4 dBi", "—"],
-                ["Hasan (2022) [@hasan2022]", "4-port square patch", "3.08–7.75", "10 × 10 SRR AMC (backed)", "12 mm (0.12λ_{L})", "5.4 → 8.3 dBi", "> 15.5 dB"],
-                ["Wu (2023) [@wu2023]", "2-port CPW monopole", "4.76–6.77", "Polarization-conversion MS", "Integrated", "7.95 dBic", "> 19.8 dB"],
-                ["**This Work**", "1-port decagon (→ MIMO)", f"{lit.THIS_WORK['band_ghz'][0]:.2f}–{lit.THIS_WORK['band_ghz'][1]:.2f}",
-                 "6 × 5 double-SRR AMC", f"**{lit.GAP_MM} mm (0.03λ_{{L}})**", f"{lit.THIS_WORK['gain_ieee_uwb']} dBi → pending", "> 15 dB (target)"],
+                ["Sen et al. (2017) [@sen2017]", "Circular monopole",
+                 "Double split-ring metasurface (graded splits)", "Not given in abstract", "About +5.5 dB"],
+                ["Al-Gburi et al. (2022) [@algburi2022]", "CPW-fed ring monopole",
+                 "19 × 19 loop FSS with ground plane", "10 mm (total height)", "6.7 → 11.5 dBi"],
+                ["Hussain et al. (2023) [@hussain2023]", "CPW-fed hexagonal patch",
+                 "5 × 5 ring-frame FSS", "9 mm", "6.5 → 10.5 dBi"],
+                ["Hammache et al. (2024) [@hammache2024]", "CPW-fed hexagonal monopole",
+                 "7 × 7 FSS", "20 mm", "2.2 → 8.4 dBi"],
+                ["Hasan et al. (2022) [@hasan2022]", "4-port MIMO patch (3.08–7.75 GHz)",
+                 "10 × 10 copper-backed split-ring metasurface", "12 mm",
+                 "5.4 → 8.3 dBi; isolation > 15.5 dB"],
+                ["**This work**", "CPW-fed decagonal monopole",
+                 "6 × 5 double split-ring metasurface, copper-backed", f"**{GAP} mm**", "Under simulation"],
             ],
-            [0.95, 0.9, 0.72, 1.2, 0.78, 0.82, 0.63], size=8.0, highlight_last=True)
+            [1.25, 1.2, 1.55, 0.8, 1.2], size=9.0, highlight_last=True)
     c.h2("Research Gap")
-    c.p("Existing literature reveals three principal gaps: (1) reflectors behind UWB monopoles use large gaps (9–20 mm, ~0.10–0.20λ_{0}), with no "
-        "reported design under a sub-4 mm profile; (2) prior works rarely benchmark metasurface gain against a metal plate at the same spacing; and "
-        "(3) reported metasurface MIMO antennas cover narrower sub-bands rather than the full 3.1–10.6 GHz UWB standard. This project bridges this "
-        f"gap with an ultra-thin {lit.GAP_MM} mm profile and full UWB MIMO coverage.")
+    c.p("In the reviewed works, the reflector usually sits 9–20 mm behind the antenna [@algburi2022, hussain2023, "
+        "hammache2024, hasan2022]. This makes the antenna thick. A much thinner metasurface, about 4 mm behind the "
+        "antenna, working over a band as wide as about 2–15 GHz, is rarely reported. The reviewed metasurface MIMO "
+        "antennas also cover narrower bands [@hasan2022, wu2023]. This project therefore aims to place a split-ring "
+        f"metasurface only {GAP} mm behind a wideband antenna, and then to build a MIMO version of it.")
 
 
 def methodology(c: Ctx) -> None:
     lo, hi = lit.THIS_WORK["band_ghz"]
-    fbw = lit.fractional_bw(lo, hi) * 100
-    res_str = ", ".join(f"{f:.2f} GHz" for f, _ in lit.THIS_WORK["resonances"])
 
-    c.h2("1. Overall Workflow and Methodology")
-    n_flow = c.next_fig()
-    c.p(f"The sequential workflow is shown in Fig. {n_flow}: setting up the baseline CPW radiator, "
-        f"optimizing ground edge L_{{g}} for matching, sweeping patch radius R for bandwidth, "
-        f"synthesizing the optimized monopole, integrating an SRR metasurface at {lit.GAP_MM} mm air gap, and 4-port MIMO extension.")
-    c.fig(["fig_design_flow.png"], "Design and optimization workflow of the wideband antenna and metasurface.", width=4.6)
+    c.h2("1. Design Workflow")
+    n = c.next_fig()
+    c.p(f"Fig. {n} shows the design steps. Steps 1–6 are done, step 7 remains, and step 8 is Phase II.")
+    c.fig(["fig_design_flow.png"], "Design workflow (dark: done; light: remaining in Phase I; dashed: Phase II).",
+          width=4.4, crop=CROP_FLOW)
 
-    c.h2("2. CST Microwave Studio Simulation Setup")
-    c.p("Simulations used CST Studio Suite 2019 Frequency-Domain Solver (0–18 GHz) with adaptive tetrahedral meshing. "
-        "The antenna is modeled on 50 × 50 mm FR-4 (ε_{r} = 4.3, tan δ = 0.025, h_{s} = 1.6 mm, 35 µm copper). "
-        "The 50 Ω CPW feed has a 3.0 mm signal strip and two coplanar grounds separated by 0.5 mm slots, excited by a waveguide port.")
+    c.h2("2. Simulation Setup")
+    c.p("All simulations use CST Studio Suite 2019 (frequency-domain solver, 0–18 GHz). The antenna is printed in "
+        "copper on a 50 × 50 × 1.6 mm FR-4 board. The radiator is a decagonal (10-sided) patch of circumradius R, "
+        "with its centre fixed at 8 mm on the feed axis. The CPW feed has a 3.0 mm signal strip and 0.5 mm slots, "
+        "and a waveguide port referenced to 50 Ω excites it. L_{g} is the position of the ground edge: −20 mm puts "
+        "the ground far from the patch, and −7 mm brings it close.")
 
-    c.h2("3. Initial Antenna Design and Baseline S_{11} Performance")
-    c.p(f"The initial radiator has a decagonal patch (R = 15 mm, center x_{{p}} = 8 mm) with CPW grounds at y = −20 mm "
-        f"(L_{{g}} = −20 mm, Fig. {c.next_fig()}(a)), leaving a large 13.73 mm gap to the patch. Weak capacitive coupling across this gap "
-        f"kept baseline |S_{{11}}| above −10 dB (−3 to −8 dB) across almost the entire spectrum (Fig. {c.next_fig()}(b)), failing wideband requirements.")
+    c.h2("3. Initial Antenna")
+    n = c.next_fig()
+    c.p(f"The first design used R = 15 mm and L_{{g}} = −20 mm (Fig. {n}(a)), which leaves a 13.73 mm gap between "
+        f"the ground and the patch. Its match is poor (Fig. {n}(b)): from 2 to 7.7 GHz, S_{{11}} stays between about "
+        "−2.3 and −7.5 dB. Above 7.7 GHz there are only a few narrow dips below −10 dB, the deepest about −45 dB "
+        "at 8.56 GHz.")
     c.fig_two("cst_initial_antenna.png", "cst_initial_ground_s11.png",
-              "Initial antenna model: (a) initial CPW decagonal geometry (L_{g} = −20 mm), "
-              "and (b) simulated baseline reflection coefficient |S_{11}| showing poor matching across 2.1–15 GHz.",
-              width1=1.55, width2=3.9, crop1=CROP_INITIAL_ANTENNA, crop2=CROP_S11_BASELINE,
-              subcap1="(a)", subcap2="(b)")
+              "Initial antenna (R = 15 mm, L_{g} = −20 mm): (a) CST model and (b) simulated S_{11}.",
+              width1=1.5, width2=3.85, crop1=CROP_INITIAL_ANTENNA, crop2=CROP_S11_BASELINE)
 
-    c.h2("4. Parametric Optimization of Ground Patch Length (L_{g} Sweep)", page_break=False)
-    c.p(f"Ground length L_{{g}} was swept from y = −20 mm to y = −7 mm (10 steps, R = 15 mm). Narrowing gap p from 13.73 to {GAP_P:.2f} mm "
-        f"strengthens capacitive coupling, shifting the first resonance from 1.6 to 2.73 GHz and deepening it below −30 dB (Fig. {c.next_fig()}(a)). "
-        f"Only L_{{g}} = −7 mm maintains |S_{{11}}| ≤ −10 dB across the band, establishing L_{{g}} = −7 mm as optimal.")
+    c.h2("4. Ground Position and Patch Size Sweeps")
+    n = c.next_fig()
+    c.p(f"First, L_{{g}} was swept from −20 to −7 mm in 10 values, with R = 15 mm (Fig. {n}(a)). Moving the ground "
+        "closer to the patch strengthens their coupling and improves the low-frequency match. Only L_{g} = −7 mm "
+        "keeps S_{11} below −10 dB across the band, so it was chosen; the feed gap is then about 0.73 mm.")
+    c.p(f"Next, R was swept from 4 to 15 mm in 13 values, with L_{{g}} = −7 mm (Fig. {n}(b)). Every patch size gives "
+        "a first dip near 2.3–2.7 GHz, but small patches leave much of 3–12 GHz poorly matched (−3 to −9 dB). Only "
+        "R = 15 mm joins the resonances into one continuous band. Because the patch centre is fixed, a larger R also "
+        "narrows the feed gap.")
+    c.fig_two("cst_single_Lg_best.png", "cst_single_R_best.png",
+              "S_{11} sweeps: (a) L_{g} from −20 to −7 mm (blue: −7 mm) and (b) R from 4 to 15 mm (brown: 15 mm); "
+              "other values are grey. Jumps near 4.0 and 6.2 GHz in some grey curves are sampling artefacts.",
+              width1=2.85, width2=2.85, crop1=CROP_LG_BEST, crop2=CROP_R_BEST)
 
-    c.h2("5. Parametric Optimization of Radiating Patch Radius (R Sweep)", page_break=True)
-    c.p(f"With L_{{g}} = −7 mm, patch circumradius R was swept from 4 to 15 mm (13 values). For R = 4–8 mm, modes resonate above 6 GHz. Increasing "
-        f"R enlarges electrical volume, shifting the lower cutoff downward as f_{{L}} ≈ 7.2 / (L + r + p) [@agrawall, ray]. At R = 15 mm "
-        f"(Fig. {c.next_fig()}(b)), multiple resonant modes coalesce into a continuous wideband across 2.1–15 GHz.")
-    c.fig_two("cst_single_Lg_sweep.png", "cst_single_R_sweep.png",
-              "Parametric sweeps: (a) simulated |S_{11}| vs. ground edge L_{g} from y = −20 to −7 mm, "
-              "and (b) simulated |S_{11}| vs. patch radius R from 4 to 15 mm (optimal: R = 15 mm, L_{g} = −7 mm).",
-              width1=2.85, width2=2.85, crop1=CROP_SWEEP, crop2=CROP_SWEEP,
-              subcap1="(a)", subcap2="(b)")
+    c.h2("5. Optimised Antenna")
+    n = c.next_fig()
+    c.p(f"The optimised antenna (R = 15 mm, L_{{g}} = −7 mm) is shown in Fig. {n}(a). Its S_{{11}} is below −10 dB "
+        f"from {lo:.2f} to {hi:.2f} GHz, about 13.6 GHz of bandwidth (Fig. {n}(b)). It has resonances at 2.73, 4.78, "
+        "9.23 and 14.32 GHz; the deepest is −32.65 dB at 2.73 GHz. The match is thin near 6.45 GHz (−10.3 dB) and "
+        "12.2 GHz (−10.5 dB).")
+    c.fig_two("cst_final_antenna.png", "cst_single_final_s11_bandwidth.png",
+              f"Optimised antenna (R = 15 mm, L_{{g}} = −7 mm): (a) CST model, front view, and (b) simulated S_{{11}} "
+              f"with markers at the −10 dB band edges ({lo:.2f} and {hi:.2f} GHz).",
+              width1=1.45, width2=3.75, crop2=CROP_S11_BANDWIDTH)
 
-    c.h2("6. Optimized Monopole Antenna Performance")
-    c.p(f"The optimized standalone antenna (R = 15 mm, L_{{g}} = −7 mm, p = {GAP_P:.2f} mm, Fig. {c.next_fig()}(a)) maintains |S_{{11}}| ≤ −10 dB "
-        f"from {lo:.2f} to {hi:.2f} GHz (FBW = {fbw:.1f} %), fully covering 2.1 GHz to 15 GHz (Fig. {c.next_fig()}(b)). Four distinct resonances "
-        f"occur at {res_str}, with a peak return loss of 32.65 dB at 2.73 GHz. Simulated IEEE gain is 2.9–4.9 dBi across 3.1–10.6 GHz (peak 5.09 dBi near 13.5 GHz).")
-    c.fig_two("cst_single_geometry.png", "cst_single_final_s11_markers.png",
-              "Optimized decagonal monopole: (a) simulation model geometry with waveguide port, and (b) simulated reflection coefficient "
-              "|S_{11}| of the optimized antenna with resonance markers over the 2.16–15.73 GHz operating band.",
-              width1=1.5, width2=2.9, crop1=CROP_GEOMETRY_FRONT, crop2=CROP_S11_MARKERS,
-              subcap1="(a)", subcap2="(b)")
+    c.h2("6. Metasurface Design")
+    c.p(f"The metasurface is a 6 × 5 array of double split-ring cells, each with two concentric split rings, printed "
+        f"on FR-4 with full copper on the back (Fig. {FIG_IDEA}(b)). It is placed {GAP} mm behind the antenna across "
+        f"an air gap (Fig. {FIG_IDEA}(a)). The reflection phase of a single cell has not been simulated yet.")
 
-    c.h2("7. Metamaterial (Metasurface) Integration and S_{11} Analysis")
-    c.p(f"A 6 × 5 double-SRR metasurface on copper-backed 1.6 mm FR-4 is positioned at an air gap of {lit.GAP_MM} mm behind the antenna (Fig. {c.next_fig()}(a)). "
-        f"While a conventional metal plate at this sub-4 mm spacing causes destructive phase cancellation below 9.6 GHz, the AMC metasurface provides in-phase "
-        f"reflection (φ_{{R}} − 2k_{{0}}h ≈ 0). Full-wave CST simulations verify that near-field metasurface loading preserves |S_{{11}}| ≤ −10 dB across the "
-        f"operating band while substantially enhancing forward broadside gain (Fig. {c.next_fig()}(b)).")
-    c.fig_two("cst_ms_array.png", "cst_single_final_gain_ieee.png",
-              "Metasurface integration: (a) CST model of the 6 × 5 double-SRR metasurface array reflector, and (b) simulated standalone antenna "
-              "IEEE gain across frequency (2.9–4.9 dBi over 3.1–10.6 GHz, providing the baseline for metasurface gain enhancement).",
-              width1=2.65, width2=2.85, crop1=CROP_MS_FRONT_BACK, crop2=CROP_GAIN,
-              subcap1="(a) front (left) and copper back (right)", subcap2="(b)")
+    c.h2("7. Antenna with Metasurface")
+    n = c.next_fig()
+    c.p("With the metasurface, S_{11} is below −10 dB from about 2.0 GHz up to 18 GHz, the end of the simulation, "
+        "except in three narrow gaps: 3.0–3.4 GHz (worst −6.6 dB near 3.14 GHz), 4.5–4.7 GHz (worst −9.7 dB) and "
+        f"5.1–5.6 GHz (worst −8.8 dB near 5.34 GHz) (Fig. {n}). At such a small gap, the metasurface loads the "
+        "antenna and changes its input match. The gap, ring size and ground position will be tuned to remove these "
+        "gaps. The effect on gain is not yet known.")
+    c.fig_two("cst_single_final_s11.png", "cst_single_ms_s11.png",
+              f"Simulated S_{{11}}: (a) antenna alone and (b) antenna with the metasurface {GAP} mm behind it.",
+              width1=2.85, width2=2.85, crop1=CROP_S11_SINGLE, crop2=CROP_S11_SINGLE,
+              subcap1="(a) Antenna alone", subcap2="(b) Antenna + metasurface")
 
 
 def work_done(c: Ctx) -> None:
-    lo, hi = lit.THIS_WORK["band_ghz"]
-    fbw = lit.fractional_bw(lo, hi) * 100
-    c.p("During Phase I, the single-element CPW decagonal monopole antenna was designed, optimized through parametric sweeps, and finalized in "
-        "CST Studio Suite 2019. The 6 × 5 double-SRR metasurface array was modeled and its loaded S_{11} performance evaluated.")
-    c.table("Simulated performance summary of the optimized antenna (standalone).",
-            ["Parameter", "Simulated Value", "Project Specification", "Compliance"],
+    n_tab = c.next_tab()
+    c.p("In Phase I so far, the single antenna was designed and optimised in CST, and the split-ring metasurface "
+        f"was designed and simulated together with the antenna. Table {n_tab} gives the status of each Phase I task "
+        "and its main result.")
+    c.table("Status of Phase I.",
+            ["Task", "Status", "Main result"],
             [
-                ["Impedance Bandwidth (|S_{11}| ≤ −10 dB)", f"{lo:.2f}–{hi:.2f} GHz", "2.1–15 GHz wideband", "Exceeds"],
-                ["Fractional Bandwidth (FBW)", f"{fbw:.1f} %", "≥ 109 %", "Exceeds"],
-                ["Resonances", "2.73, 4.78, 9.23, 14.32 GHz", "Wideband multi-mode", "Achieved (4 resonances)"],
-                ["Deepest Return Loss", "32.65 dB (at 2.73 GHz)", "≥ 10 dB", "Exceeds"],
-                ["IEEE Gain, 3.1–10.6 GHz", "2.9 to 4.9 dBi (peak 5.09 dBi)", "Baseline for AMC enhancement", "Achieved"],
-                ["Metasurface Profile", f"h = {lit.GAP_MM} mm (0.04λ_{{0}} at 3.1 GHz)", "Low profile (< 5 mm)", "Achieved"],
+                ["Initial antenna (R = 15 mm, L_{g} = −20 mm)", "Done", "Poor match from 2 to 7.7 GHz"],
+                ["Ground position sweep (L_{g} from −20 to −7 mm)", "Done", "L_{g} = −7 mm chosen"],
+                ["Patch size sweep (R from 4 to 15 mm)", "Done", "R = 15 mm chosen"],
+                ["Optimised antenna, S_{11}", "Done", "Below −10 dB from 2.16 to 15.73 GHz"],
+                ["Metasurface design (6 × 5 double split rings)", "Done", f"Placed {GAP} mm behind the antenna"],
+                ["Antenna + metasurface, S_{11}", "Done",
+                 "Below −10 dB from about 2.0 to 18 GHz, except 3.0–3.4, 4.5–4.7 and 5.1–5.6 GHz"],
+                ["Gain vs frequency, antenna alone", "Remaining", "—"],
+                ["Gain vs frequency, antenna + metasurface", "Remaining", "—"],
+                ["Metasurface tuning to remove the mismatch gaps", "Remaining", "—"],
             ],
-            [1.8, 1.6, 1.4, 1.2], size=8.0)
-    c.h2("Challenges Encountered and Addressed")
-    dh.bullets(c.doc, [
-        "**Broadband Sweep Numerical Artefacts:** Coarse frequency sweeps showed non-physical steps near 4.0 and 6.2 GHz; refined mesh passes resolved these.",
-        f"**Near-Field Metasurface Loading:** At an ultra-thin spacing of h = {lit.GAP_MM} mm, reactive loading slightly alters impedance; re-tuning L_{{g}} preserves matching.",
-        "**Simulation Runtimes:** Composite 3D structures require large meshes; unit cells were characterized with Floquet ports prior to full-array verification.",
-    ], c.cite)
+            [2.75, 0.75, 2.5], size=9.0)
+    c.h2("Challenges")
+    c.bullets([
+        "**Long run times:** the parametric sweeps and the antenna + metasurface model take a long time to "
+        "simulate.",
+        "**Sweep artefacts:** some sweep curves show sudden jumps near 4.0 and 6.2 GHz, and one curve goes above "
+        "0 dB, which is not physical. They come from too few frequency samples, not from the mesh. These sweeps "
+        "will be re-run with more samples.",
+        "**Thin match margin:** the optimised antenna is only just matched near 6.45 GHz (−10.3 dB) and 12.2 GHz "
+        "(−10.5 dB), so small fabrication errors could push these points above −10 dB.",
+        f"**Metasurface detuning:** at a {GAP} mm gap the metasurface changes the input match and opens three "
+        "narrow mismatch gaps between 3.0 and 5.6 GHz.",
+    ])
 
 
 def work_plan(c: Ctx) -> None:
-    c.p("In the next phase of the project, the primary focus will be extending the optimized wideband single-element antenna "
-        "into a multi-port MIMO configuration and conducting experimental validation. The individual decagonal radiators will be "
-        "arranged in an orthogonal orientation on a shared coplanar ground plane to exploit pattern and polarization diversity, "
-        "thereby suppressing mutual coupling between adjacent antenna elements. The split-ring-resonator metasurface array will be "
-        "expanded to serve as a common low-profile reflective backing for the multi-element system, enhancing forward directivity "
-        "while preserving inter-element decoupling. Comprehensive diversity performance analyses will be carried out by evaluating "
-        "critical MIMO parameters, including inter-port isolation, envelope correlation coefficient, diversity gain, total active "
-        "reflection coefficient, channel capacity loss, and mean effective gain. Following electromagnetic simulation and layout "
-        "refinement, physical prototypes will be fabricated on FR-4 substrates using standard photolithographic etching. Experimental "
-        "characterization will be conducted using a calibrated vector network analyzer for multi-port reflection and transmission "
-        "measurements, alongside anechoic chamber testing for far-field radiation patterns and realized gain.")
+    c.p("The remaining Phase I work comes first:")
+    c.bullets([
+        "Plot gain vs frequency for the antenna alone.",
+        "Plot gain vs frequency for the antenna with the metasurface, and compare the two plots.",
+        "Tune the metasurface (gap and ring size) and the ground position to remove the three mismatch gaps, and "
+        "re-run the sweeps with more frequency samples.",
+    ])
+    c.p("Phase II will then cover the MIMO antenna and the hardware:")
+    c.bullets([
+        "Build a 4-port MIMO antenna from four copies of the antenna, each rotated by 90°, backed by the metasurface.",
+        "Check the isolation between ports and the envelope correlation coefficient (ECC).",
+        "Fabricate the antenna and the metasurface on FR-4, and measure them with a vector network analyser (VNA) "
+        "and in an anechoic chamber.",
+    ])
 
 
 def outcomes(c: Ctx) -> None:
-    dh.bullets(c.doc, [
-        f"A validated CPW-fed decagonal monopole antenna covering 2.16–15.73 GHz ({lit.fractional_bw(*lit.THIS_WORK['band_ghz']) * 100:.1f} % FBW), "
-        "fully satisfying wideband requirements from 2.1 GHz to 15 GHz with IEEE gain of 2.9–4.9 dBi.",
-        f"A low-profile 6 × 5 double-SRR metasurface reflector operating at an air gap of h = {lit.GAP_MM} mm, "
-        "substantially increasing forward broadside gain without impedance detuning.",
-        "A rigorous comparative benchmark confirming that the AMC metasurface significantly outperforms a metal plate at identical spacing.",
-        "A high-performance multi-port orthogonal MIMO antenna array providing high isolation and low envelope correlation across the wide operating band.",
-        "Experimental validation via fabricated prototypes, calibrated VNA S-parameter measurements, and anechoic chamber far-field radiation testing.",
-    ], c.cite)
+    c.bullets([
+        "A simulated CPW-fed wideband antenna covering about 2.2–15 GHz, with gain vs frequency plots with and "
+        "without the metasurface.",
+        "A tuned split-ring metasurface close behind the antenna (about 4 mm) that keeps the antenna matched across "
+        "the band. How much it raises the gain will be known from the gain plots.",
+        "A 4-port MIMO version of the antenna with the metasurface, checked for isolation and ECC.",
+        "A fabricated prototype whose measured S-parameters and radiation patterns are compared with simulation.",
+    ])
 
 
 SECTIONS = [
@@ -315,7 +376,7 @@ def _fill(doc, c: Ctx, heading: str, builder) -> None:
 
 def build() -> tuple[Path, Ctx]:
     pj = lit.PROJECT
-    doc = dh.start("B. Tech. PROJECT REPORT (Mid-Semester Evaluation)", pj["title"], pj["phase1"],
+    doc = dh.start("B. Tech. PROJECT REPORT (Mid-Semester Evaluation)", pj["title"], lit.PROJECT["phase1"],
                    [f"{n.upper()} ({r})" for n, r in pj["students"]],
                    [pj["supervisors"][0][0].upper()] + [f"{n.upper()} (CO-GUIDE)" for n, _ in pj["supervisors"][1:]],
                    logo_path=FIGS / "nits_logo.png",
@@ -339,22 +400,17 @@ def build() -> tuple[Path, Ctx]:
         if el.tag == qn("w:p") and dh.el_text(el).strip() == "Write content here...":
             el.getparent().remove(el)
 
-    # Set precise page breaks to guarantee exact 7-page total layout
-    # Page 1: Title page (template header & signatories)
-    # Page 2: Abstract & Introduction
-    _heading_par(doc, "Abstract").paragraph_format.page_break_before = True
-    _heading_par(doc, "Introduction").paragraph_format.page_break_before = False
-    # Page 3: Literature Review
-    _heading_par(doc, "Literature Review").paragraph_format.page_break_before = True
-    # Page 4: Methodology / Proposed Work (Subsections 1-4)
-    _heading_par(doc, "Methodology / Proposed Work").paragraph_format.page_break_before = True
-    # Subsections 5-7 flow naturally onto Page 5
-    # Page 6: Work Done & Work Plan
-    _heading_par(doc, "Work Done Till Mid-Semester").paragraph_format.page_break_before = True
-    _heading_par(doc, "Work Plan for Next Phase").paragraph_format.page_break_before = False
-    # Page 7: Expected Outcomes & References
-    _heading_par(doc, "Expected Outcomes").paragraph_format.page_break_before = True
-    _heading_par(doc, "References").paragraph_format.page_break_before = False
+    # Page breaks that fix the 7-page layout (see the module docstring)
+    for h, brk in (("Abstract", True), ("Introduction", False), ("Literature Review", True),
+                   ("Methodology / Proposed Work", True), ("Work Done Till Mid-Semester", True),
+                   ("Work Plan for Next Phase", False), ("Expected Outcomes", True), ("References", False)):
+        _heading_par(doc, h).paragraph_format.page_break_before = brk
+
+    for h in ("Abstract", "Literature Review", "Methodology / Proposed Work", "Work Done Till Mid-Semester",
+              "Expected Outcomes"):
+        _heading_par(doc, h).paragraph_format.space_before = Pt(0)
+    for h in ("Introduction", "Work Plan for Next Phase", "References"):
+        _heading_par(doc, h).paragraph_format.space_before = Pt(10)
 
     dh.page_number_footer(doc)
     doc.core_properties.title = f"{pj['title']}: Mid-Semester Report"

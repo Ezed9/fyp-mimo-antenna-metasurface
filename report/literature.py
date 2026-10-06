@@ -30,7 +30,7 @@ def round_trip_phase_deg(f_ghz: float, h_mm: float) -> float:
 # ============================================================================= project (confirm before submission)
 PROJECT = {
     "title": "Wideband MIMO Antenna with Metasurface",
-    "phase1": "Phase I: CPW-fed UWB Antenna with a Split-Ring-Resonator Metasurface Reflector",
+    "phase1": "Phase I: CPW-fed Wideband Antenna with a Split-Ring Metasurface Reflector",
     # From the existing deck (presentation/build_deck.py); to be confirmed by the team.
     "students": [("Chanswarang Boro", "2314143"), ("Nishit Baishya", "2314088"),
                  ("Anushka Dam", "2314115"), ("Sanjana", "2314060")],
