@@ -27,13 +27,16 @@ import time
 
 import numpy as np
 from CSXCAD import ContinuousStructure
+from CSXCAD.CSProperties import CSPropDebyeMaterial
 from CSXCAD.SmoothMeshLines import SmoothMeshLines
 from openEMS import openEMS
 from openEMS.physical_constants import C0, EPS0
 
 UNIT = 1e-3
 EPS_R, TAND, F_KAPPA = 4.3, 0.025, float(os.environ.get("F_KAPPA", 6e9))
-KAPPA = 2 * np.pi * F_KAPPA * EPS0 * EPS_R * TAND
+KAPPA = 2 * np.pi * F_KAPPA * EPS0 * EPS_R * TAND          # only for loss='kappa'
+DEBYE_EPS_INF, DEBYE_DEPS = 4.048, 0.1136
+DEBYE_TAU = 1.0 / (2 * np.pi * np.array([0.1, 0.5, 2.5, 12.5, 62.5]) * 1e9)
 
 # ---- antenna (team's CST geometry) ----
 HALF_BOARD = 25.0
@@ -53,6 +56,10 @@ MS_H = 1.6
 # feed axis keep the x = 0 mirror symmetry (ASSUMED orientation and width).
 RINGS = [(7.0, 7.5, 270.0), (5.0, 5.5, 90.0)]
 SPLIT = 0.5
+
+
+KEEP_LINES = [0.25, -0.25, W_FEED / 2, W_FEED / 2 + GAP, -W_FEED / 2, -W_FEED / 2 - GAP,
+              Y_GND_TOP, Y_PATCH_BOT, -HALF_BOARD, -HALF_BOARD + 0.5]
 
 
 def decagon(n_pts=10):
@@ -105,9 +112,44 @@ def prune(lines, min_sp, keep):
     return np.array(out)
 
 
+def bridge(lines, a, b, r=1.25):
+    """Insert geometrically graded lines between existing lines a < b, growing from the
+    neighbouring cell sizes on each side (SmoothMeshLines leaves gaps < max_res alone)."""
+    lines = np.unique(np.round(lines, 6))
+    ia, ib = int(np.argmin(np.abs(lines - a))), int(np.argmin(np.abs(lines - b)))
+    sl = lines[ia] - lines[ia - 1] if ia > 0 else (b - a) / 4
+    sr = lines[ib + 1] - lines[ib] if ib + 1 < len(lines) else (b - a) / 4
+    left, right = [lines[ia]], [lines[ib]]
+    while right[-1] - left[-1] > r * max(sl, sr):
+        if sl <= sr:
+            sl *= r
+            left.append(left[-1] + sl)
+        else:
+            sr *= r
+            right.append(right[-1] - sr)
+    return np.unique(np.round(np.concatenate([lines, left, right]), 6))
+
+
+def region_lines(keys, a, b, step):
+    """Key lines inside [a, b] (plus a and b), pruned, then filled to <= step."""
+    k = np.unique(np.round([v for v in keys if a - 1e-9 <= v <= b + 1e-9] + [a, b], 6))
+    k = prune(k, 0.2, keep=[a, b] + KEEP_LINES)
+    return fill(k, a, b, step)
+
+
 def build(case, h, model, sim_path, f_lo=1.0e9, f_hi=16.0e9, fine=0.5, coarse=2.0,
-          margin=45.0, end_crit=1e-4, max_ts=200000, zsub=0.4, fine_ant=None):
-    """case: 'bare' | 'ms' (rings + ground) | 'plate' (substrate + ground, no rings)."""
+          margin=55.0, margin_below=45.0, end_crit=1e-4, max_ts=250000, zsub=0.2, fine_ant=0.25,
+          loss='debye'):
+    """case: 'bare' | 'ms' (rings + ground) | 'plate' (substrate + ground, no rings).
+
+    Mesh rules (after the red-team audit):
+      * half model: the PMC wall sits on the first dual-grid point, so the first
+        x cell is [-0.25, 0.25] and the wall lands exactly on x = 0;
+      * 0.25 mm cells over the antenna footprint, 0.5 mm over the rest of the
+        metasurface, graded (ratio <= 1.3) transitions, graded air above/below
+        every dielectric interface;
+      * PML >= `margin` mm from the structure (45 mm under the metasurface ground).
+    """
     has_ms = case in ('ms', 'plate')
     FDTD = openEMS(NrTS=max_ts, EndCriteria=end_crit)
     FDTD.SetGaussExcite(0.5 * (f_lo + f_hi), 0.5 * (f_hi - f_lo))
@@ -120,7 +162,15 @@ def build(case, h, model, sim_path, f_lo=1.0e9, f_hi=16.0e9, fine=0.5, coarse=2.
     mesh = CSX.GetGrid()
     mesh.SetDeltaUnit(UNIT)
 
-    fr4 = CSX.AddMaterial('FR4', epsilon=EPS_R, kappa=KAPPA)
+    if loss == 'debye':
+        # 5-pole Djordjevic-Sarkar fit: tan d = 0.025 +- 0.001 and eps' 4.35 -> 4.21 over 2-15 GHz
+        fr4 = CSPropDebyeMaterial(CSX.GetParameterSet(), order=len(DEBYE_TAU), epsilon=DEBYE_EPS_INF)
+        fr4.SetName('FR4')
+        for k, t in enumerate(DEBYE_TAU):
+            fr4.SetDispersiveMaterialProperty(k, eps_delta=DEBYE_DEPS, eps_relax=t)
+        CSX.AddProperty(fr4)
+    else:
+        fr4 = CSX.AddMaterial('FR4', epsilon=EPS_R, kappa=KAPPA)
     cu = CSX.AddMetal('copper')
 
     # ---------------- antenna ----------------
@@ -128,8 +178,7 @@ def build(case, h, model, sim_path, f_lo=1.0e9, f_hi=16.0e9, fine=0.5, coarse=2.
     cu.AddBox([-HALF_BOARD, -HALF_BOARD, 0], [-W_FEED / 2 - GAP, Y_GND_TOP, 0], priority=10)
     cu.AddBox([W_FEED / 2 + GAP, -HALF_BOARD, 0], [HALF_BOARD, Y_GND_TOP, 0], priority=10)
     cu.AddBox([-W_FEED / 2, -HALF_BOARD, 0], [W_FEED / 2, Y_PATCH_BOT + 0.5, 0], priority=10)
-    dec = decagon()
-    cu.AddPolygon(dec, 'z', 0.0, priority=10)
+    cu.AddPolygon(decagon(), 'z', 0.0, priority=10)
 
     # ---------------- metasurface ----------------
     ring_x, ring_y = [], []
@@ -149,58 +198,59 @@ def build(case, h, model, sim_path, f_lo=1.0e9, f_hi=16.0e9, fine=0.5, coarse=2.
                      [cx + s * SPLIT / 2 for cx in cxs for s in (-1, 1)]
             ring_y = [cy + s * r for cy in cys for r in rm for s in (-1, 1)]
 
-    # ---------------- port ----------------
+    # ---------------- port (half model) ----------------
     port_len = 0.5
     if model == 'half':
         port = FDTD.AddLumpedPort(1, 100.0, [W_FEED / 2, -HALF_BOARD, 0],
                                   [W_FEED / 2 + GAP, -HALF_BOARD + port_len, 0], 'x', excite=1.0)
-    # (full-model CPW port is added after the mesh exists, it needs the mesh lines)
 
     # ---------------- mesh ----------------
     ext_x = MS_X / 2 if has_ms else HALF_BOARD
     ext_y = MS_Y / 2 if has_ms else HALF_BOARD
-    x_dom = ext_x + margin
-    y_dom = ext_y + margin
+    x_dom, y_dom = ext_x + margin, ext_y + margin
+    trans = 1.5     # graded transition band between the 0.25 mm and 0.5 mm regions
 
-    x_key = [0.0, W_FEED / 2, W_FEED / 2 + GAP / 2, W_FEED / 2 + GAP, HALF_BOARD,
-             R_PATCH * np.cos(np.deg2rad(36)), R_PATCH * np.cos(np.deg2rad(72)), R_PATCH]
-    x_key = x_key + [-v for v in x_key]
-    if has_ms:
-        x_key += [-MS_X / 2, MS_X / 2]
-    x_key += ring_x
-    y_key = [-HALF_BOARD, -HALF_BOARD + port_len, Y_GND_TOP, Y_PATCH_BOT, HALF_BOARD,
-             YC_PATCH, YC_PATCH + R_PATCH * np.sin(np.deg2rad(36)), YC_PATCH - R_PATCH * np.sin(np.deg2rad(36)),
-             YC_PATCH + R_PATCH * np.sin(np.deg2rad(72))]
-    if has_ms:
-        y_key += [-MS_Y / 2, MS_Y / 2]
-    y_key += ring_y
+    xa = [W_FEED / 2, W_FEED / 2 + GAP / 2, W_FEED / 2 + GAP, 0.25,
+          R_PATCH * np.cos(np.deg2rad(36)), R_PATCH * np.cos(np.deg2rad(72)), R_PATCH]
+    xa = xa + [-v for v in xa]
+    ya = [-HALF_BOARD + port_len, Y_GND_TOP, Y_PATCH_BOT, YC_PATCH,
+          YC_PATCH + R_PATCH * np.sin(np.deg2rad(36)), YC_PATCH - R_PATCH * np.sin(np.deg2rad(36)),
+          YC_PATCH + R_PATCH * np.sin(np.deg2rad(72))]
 
-    def axis_lines(key, ext, dom, lo_cut):
-        k = np.array([v for v in key if lo_cut - 1e-9 <= v <= dom])
-        k = prune(np.unique(np.round(k, 6)), 0.2,
-                  keep=[0.0, W_FEED / 2, W_FEED / 2 + GAP, -W_FEED / 2, -W_FEED / 2 - GAP,
-                        Y_GND_TOP, Y_PATCH_BOT, -HALF_BOARD])
-        k = np.unique(np.concatenate([k, [lo_cut if lo_cut > -dom else -dom, dom]]))
-        if fine_ant:
-            k = fill(k, -HALF_BOARD, HALF_BOARD, fine_ant)
-        k = fill(k, -ext, ext, fine)
-        return SmoothMeshLines(k, coarse, 1.3, check_symmetry=False)
+    def axis(keys_ant, keys_ms, lo, dom, ext):
+        ant = region_lines(keys_ant + keys_ms, max(lo, -HALF_BOARD), HALF_BOARD, fine_ant)
+        if model == 'half' and lo > -HALF_BOARD:
+            ant = ant[np.abs(ant) > 1e-6]     # keep the first cell [-0.25, 0.25]: PMC wall exactly at x = 0
+        lines = list(ant)
+        if has_ms:
+            lines += list(region_lines(keys_ms + [ext], HALF_BOARD + trans, ext, fine))
+            if lo < -HALF_BOARD:
+                lines += list(region_lines(keys_ms + [-ext], -ext, -HALF_BOARD - trans, fine))
+        lines = np.unique(np.round(lines + [lo, dom], 6))
+        if has_ms:
+            lines = bridge(lines, HALF_BOARD, HALF_BOARD + trans)
+            if lo < -HALF_BOARD:
+                lines = bridge(lines, -HALF_BOARD - trans, -HALF_BOARD)
+        return SmoothMeshLines(lines, coarse, 1.3, check_symmetry=False)
 
-    x_lines = axis_lines(x_key, ext_x, x_dom, 0.0 if model == 'half' else -x_dom)
-    y_lines = axis_lines(y_key, ext_y, y_dom, -y_dom)
+    x_lo = -0.25 if model == 'half' else -x_dom
+    x_lines = axis(xa, ring_x, x_lo, x_dom, ext_x)
+    y_lines = axis(ya, ring_y, -y_dom, y_dom, ext_y)
 
-    z_air = 45.0
-    z_key = [0.0, -H_SUB]
+    z_above = margin
+    z = [0.0, -H_SUB, zsub, -H_SUB - zsub]
+    z += list(np.linspace(-H_SUB, 0.0, int(round(H_SUB / zsub)) + 1))
     if has_ms:
-        z_key += [-H_SUB - h, -H_SUB - h - MS_H]
-    z_bot = min(z_key) - (35.0 if has_ms else z_air)
-    z_key += [z_air, z_bot]
-    z = np.unique(np.round(z_key, 6))
-    z = fill(z, -H_SUB, 0.0, zsub)
-    if has_ms:
-        z = fill(z, -H_SUB - h - MS_H, -H_SUB - h, zsub)
-        z = fill(z, -H_SUB - h, -H_SUB, 1.0)
-    z_lines = SmoothMeshLines(z, coarse, 1.3, check_symmetry=False)
+        z_top = -H_SUB - h
+        z_gnd = z_top - MS_H
+        z += list(np.linspace(z_gnd, z_top, int(round(MS_H / zsub)) + 1))
+        gap = SmoothMeshLines(np.array([z_top, z_top + zsub, -H_SUB - zsub, -H_SUB]), 1.0, 1.3,
+                              check_symmetry=False)
+        z += list(gap) + [z_gnd - zsub, z_gnd - margin_below]
+    else:
+        z += [-H_SUB - margin]
+    z += [z_above]
+    z_lines = SmoothMeshLines(np.unique(np.round(z, 6)), coarse, 1.3, check_symmetry=False)
 
     mesh.SetLines('x', x_lines)
     mesh.SetLines('y', y_lines)
@@ -210,11 +260,16 @@ def build(case, h, model, sim_path, f_lo=1.0e9, f_hi=16.0e9, fine=0.5, coarse=2.
         port = FDTD.AddCPWPort(1, cu, [-W_FEED / 2, -HALF_BOARD, 0], [W_FEED / 2, -HALF_BOARD + 6.0, 0],
                                'y', 'x', GAP, excite=1, Feed_R=50.0, FeedShift=1.0, MeasPlaneShift=3.0)
 
-    info = dict(case=case, h=h, model=model,
+    def ratio_max(a):
+        d = np.diff(a)
+        return float(np.max(np.maximum(d[1:] / d[:-1], d[:-1] / d[1:])))
+
+    info = dict(case=case, h=h, model=model, loss=loss,
                 nx=len(x_lines), ny=len(y_lines), nz=len(z_lines),
                 ncells=int(len(x_lines) * len(y_lines) * len(z_lines)),
                 dmin=[float(np.min(np.diff(a))) for a in (x_lines, y_lines, z_lines)],
-                dmax=[float(np.max(np.diff(a))) for a in (x_lines, y_lines, z_lines)])
+                dmax=[float(np.max(np.diff(a))) for a in (x_lines, y_lines, z_lines)],
+                grading_max=[ratio_max(a) for a in (x_lines, y_lines, z_lines)])
     os.makedirs(sim_path, exist_ok=True)
     CSX.Write2XML(os.path.join(sim_path, 'geometry.xml'))
     return FDTD, CSX, port, info
@@ -232,11 +287,14 @@ def run(case, h, model, out_root, threads=4, keep=False, tag='', **kw):
     info['runtime_s'] = time.time() - t0
 
     f = np.linspace(1.0e9, 16.0e9, 1501)
-    port.CalcPort(sim_path, f)
-    s11 = port.uf_ref / port.uf_inc
-    zin = port.uf_tot / port.if_tot
     if model == 'half':
-        zin = zin / 2.0   # two mirrored 100-ohm slot ports in parallel
+        port.CalcPort(sim_path, f)
+        zin = port.uf_tot / port.if_tot / 2.0      # two mirrored 100-ohm slot ports in parallel
+    else:
+        # de-embed the CPW port to the board edge with its own line impedance, then renormalise to 50 ohm
+        port.CalcPort(sim_path, f, ref_plane_shift=0)
+        zin = port.uf_tot / port.if_tot
+    s11 = (zin - 50.0) / (zin + 50.0)
     data = np.column_stack([f / 1e9, 20 * np.log10(np.abs(s11)), np.angle(s11, deg=True), zin.real, zin.imag])
     np.savetxt(os.path.join(out_root, tag + '.csv'), data, delimiter=',',
                header='f_GHz,S11_dB,S11_deg,ReZin_ohm,ImZin_ohm', comments='')
@@ -295,15 +353,19 @@ if __name__ == '__main__':
     ap.add_argument('--threads', type=int, default=4)
     ap.add_argument('--fine', type=float, default=0.5)
     ap.add_argument('--end', type=float, default=1e-4)
-    ap.add_argument('--zsub', type=float, default=0.4)
+    ap.add_argument('--zsub', type=float, default=0.2)
     ap.add_argument('--tag', default='')
-    ap.add_argument('--fine_ant', type=float, default=None)
+    ap.add_argument('--fine_ant', type=float, default=0.25)
+    ap.add_argument('--loss', default='debye', choices=['debye', 'kappa'])
+    ap.add_argument('--margin', type=float, default=55.0)
     ap.add_argument('--dry', action='store_true', help='build and report mesh only')
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     for h in (a.h if a.case != 'bare' else [0.0]):
         if a.dry:
-            _, _, _, info = build(a.case, h, a.model, os.path.join(a.out, 'dry'), fine=a.fine, zsub=a.zsub, fine_ant=a.fine_ant)
+            _, _, _, info = build(a.case, h, a.model, os.path.join(a.out, 'dry'), fine=a.fine, zsub=a.zsub,
+                                  fine_ant=a.fine_ant, loss=a.loss, margin=a.margin)
             print(json.dumps(info))
         else:
-            run(a.case, h, a.model, a.out, threads=a.threads, fine=a.fine, end_crit=a.end, zsub=a.zsub, tag=a.tag, fine_ant=a.fine_ant)
+            run(a.case, h, a.model, a.out, threads=a.threads, fine=a.fine, end_crit=a.end, zsub=a.zsub, tag=a.tag, fine_ant=a.fine_ant,
+                loss=a.loss, margin=a.margin)
