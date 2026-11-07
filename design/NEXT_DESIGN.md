@@ -44,7 +44,7 @@ prior art was judged from abstracts. Before submitting, rerun the IEEE Xplore/Sc
 | ✗ | Dual-polarized polarimetric GPR pair + shared reflector | **Not novel** (Yahya ~2017, Ojaroudi Parchin 2019/2022; Sun 2021 for the GPR use) | No thin reflector covers 2–8 GHz | – | – |
 | ✗ | One un-grounded layer for notch + gain + isolation | Notch part = Zhu 2023 | **Gain part fails** (Foster), isolation changes < 1.5 dB | – | – |
 
-The absorber-backed GPR MIMO is still under review; see §6.
+A resistor-loaded layer inside the 30 mm reflector gap (a GPR-oriented fix of the team's own nulls) is described in §6.
 
 ---
 
@@ -156,4 +156,13 @@ Wideband MIMO Antenna*
   - Prior art: Gordebeke 2025 (cavity-backed angle-of-arrival array), Hokmabadi IEEE TIM 2026.
 - **FR3 re-tune:** shift band 2 down ~0.6 GHz (to cover 7.125–8.4) and push band 3 beyond 15.4 GHz; then four
   elements at 90°.
-- **Absorber-backed GPR MIMO:** result pending at the time of writing.
+- **Absorber-backed GPR MIMO:** the idea as written fails the physics. A resistive layer within about λ/2π of the
+  antenna drops efficiency to 11–29 % and loses the low band, and one layer cannot absorb 2.16–15.7 GHz (Rozanov bound).
+  - **What survives (a hybrid):** an FR-4 loop layer with 4 × 430 Ω chip resistors per cell (period 12 mm, loop 10 mm),
+    6 mm above the existing copper plate, inside the 33 mm gap of GAP_STUDY.
+  - It reflects at 2–2.5 GHz (+5 dB kept) and absorbs over 3.7–14.5 GHz. The plate's −33 dB / −28 dB nulls at 4.5 and
+    9 GHz become a worst dip of about −2 dB, and pulse fidelity rises from 0.70–0.84 to about 0.97.
+  - The cost is about 2 dB of efficiency above 4 GHz, plus 256–384 resistors.
+  - Prior art is close: Zhou 2022 (GPR meta-absorber), Roy/Vinoy TAP 2023, Moulder/Sertel/Volakis TAP 2012. This is an
+    incremental "null-free, low-ringing GPR" application paper, and the most direct fix of the team's own 30 mm result.
+  - Ranked between 3 and 4.
