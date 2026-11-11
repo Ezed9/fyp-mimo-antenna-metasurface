@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["python-docx>=1.1", "pillow>=10", "numpy>=1.26"]
+# dependencies = ["python-docx>=1.1", "pillow>=10", "numpy>=1.26", "matplotlib>=3.8"]
 # ///
 """Build the conference paper "MIMO Antenna with FSS": paper2/MIMO_Antenna_with_FSS.docx and .pdf.
 
@@ -13,12 +13,21 @@ Layout: IEEE two-column conference style (US Letter, Times New Roman, single-col
 It reuses the text markup, citation numbering and equation helpers of report/docx_helpers.py and the reference
 list of report/literature.py; nothing under report/ is changed.
 
+The paper follows the co-guide's order: the single antenna first, then the four-port MIMO antenna with the FSS,
+and a comparison of the two results.
+
 Rules this script keeps:
-* The only result is the simulated S11 curve in paper2/inputs/04_s11.png. Every S11 number in the text is computed
-  here from its digitised copy (paper2/data/s11_digitized.csv), so text and tables cannot drift from the plot.
-* Nothing else is reported. Gain, isolation, ECC, efficiency, radiation patterns and dimensions are not invented:
-  each is a yellow "TO BE ADDED" placeholder (written «like this» below) and is listed in paper2/MISSING.md.
-* The figures are the team's CST images in paper2/inputs/, only cropped.
+* MIMO antenna with FSS: the only result is the simulated S11 curve in paper2/inputs/04_s11.png. Every number for
+  it is computed here from its digitised copy (paper2/data/s11_digitized.csv), so text and tables cannot drift
+  from the plot.
+* Single antenna: dimensions and results are the team's existing CST values recorded in the repository
+  (report/literature.py THIS_WORK, report/build_report.py, GAP_STUDY.md); its S11 plot is figures/
+  cst_single_final_s11.png, copied to paper2/inputs/06_single_s11.png.
+* Nothing else is reported. Gain, isolation, ECC, efficiency and radiation patterns of the MIMO antenna, and the
+  MIMO and FSS dimensions, are not invented: each is a yellow "TO BE ADDED" placeholder (written «like this»
+  below) and is listed in paper2/MISSING.md.
+* The figures are the team's CST images in paper2/inputs/, only cropped. Fig. 6 redraws the two S11 curves on one
+  pair of axes from their digitised copies.
 """
 from __future__ import annotations
 
@@ -46,7 +55,8 @@ from docx.shared import Inches, Pt  # noqa: E402
 from PIL import Image  # noqa: E402
 
 INPUTS = HERE / "inputs"
-S11_CSV = HERE / "data" / "s11_digitized.csv"
+S11_CSV = HERE / "data" / "s11_digitized.csv"                 # four-port MIMO antenna with the FSS, port 1
+S11_SINGLE_CSV = HERE / "data" / "s11_single_digitized.csv"   # single antenna (figures/cst_single_final_s11.png)
 OUT = HERE / "MIMO_Antenna_with_FSS.docx"
 
 TITLE = "MIMO Antenna with FSS"
@@ -59,12 +69,13 @@ TBA = "«TO BE ADDED»"
 
 # Crops of the CST views, (left, top, right, bottom) in source pixels: the board without the grey background.
 CROP_BOARD = (440, 0, 1166, 671)
+CROP_S11_SINGLE = (8, 64, 2288, 950)   # 06_single_s11.png without the empty band above the plot title
 CROP_CELL = (573, 146, 695, 268)   # one unit cell (row 2, column 2) of 01_fss_array.webp, centred on its rings
 
 
 # ============================================================================= S11 numbers (from the digitised plot)
-def load_s11() -> tuple[np.ndarray, np.ndarray]:
-    d = np.genfromtxt(S11_CSV, delimiter=",", comments="#", skip_header=4)
+def load_s11(path: Path = S11_CSV) -> tuple[np.ndarray, np.ndarray]:
+    d = np.genfromtxt(path, delimiter=",", comments="#", skip_header=4)
     return d[:, 0], d[:, 1]
 
 
@@ -121,6 +132,16 @@ def stretch_below(level: float, f_inside: float) -> tuple[float, float]:
 
 
 GOOD_LO, GOOD_HI = stretch_below(-20.0, F_MIN)     # the well-matched region around the deepest resonance
+
+
+# Single antenna: the band edges and resonances are the team's CST marker values (report/literature.py); the
+# digitised curve is used for Fig. 6 and for the two weak points, and must agree with the markers.
+FS, SS = load_s11(S11_SINGLE_CSV)
+S_LO, S_HI = lit.THIS_WORK["band_ghz"]
+_single_band = max(bands(FS, SS), key=lambda b: b[1] - b[0])
+assert abs(_single_band[0] - S_LO) < 0.05 and abs(_single_band[1] - S_HI) < 0.05, _single_band
+S_WEAK1 = peak(FS, SS, 5.0, 8.0)                   # weakest points inside the single antenna's band
+S_WEAK2 = peak(FS, SS, 10.0, 13.5)
 
 
 def fbw(lo: float, hi: float) -> float:
@@ -372,14 +393,16 @@ def abstract(doc) -> None:
     runs(p, "*Abstract*—", 9, bold=True)
     runs(p, (
         "This paper presents a four-port multiple-input multiple-output (MIMO) antenna placed over a frequency "
-        "selective surface (FSS). Each port feeds a ten-sided (decagonal) patch through a coplanar-waveguide (CPW) "
-        "style feed line. The FSS is a 6 × 5 array of unit cells, and each cell is a pair of concentric split "
-        "rings. The structure is modelled and simulated in CST Studio Suite. The simulated reflection coefficient "
-        f"at port 1 is below −10 dB from {n(B1_LO)} to {n(B1_HI)} GHz and from {n(B2_LO)} GHz to the end of the "
-        f"simulated range at {n(F_STOP, 0)} GHz. Between these two bands it rises to {n(GAP_S, 1)} dB at "
-        f"{n(GAP_F)} GHz. The best match is {n(S_MIN, 1)} dB at {n(F_MIN)} GHz. "
-        "«Port isolation, gain, envelope correlation coefficient and radiation patterns: TO BE ADDED.»"), 9,
-        bold=True)
+        "selective surface (FSS), and compares it with the single antenna from which it is built. The single "
+        "antenna is a ten-sided (decagonal) patch with a coplanar-waveguide (CPW) feed on an FR-4 board. In "
+        f"simulation, its reflection coefficient is below −10 dB from {n(S_LO)} to {n(S_HI)} GHz. Four such "
+        "elements form the MIMO antenna, and the FSS behind it is a 6 × 5 array of concentric split rings. "
+        "All models are simulated in CST Studio Suite. With the FSS, the reflection coefficient at port 1 of the "
+        f"MIMO antenna is below −10 dB from {n(B1_LO)} to {n(B1_HI)} GHz and from {n(B2_LO)} GHz to the end of "
+        f"the simulated range at {n(F_STOP, 0)} GHz, with a short rise to {n(GAP_S, 1)} dB at {n(GAP_F)} GHz "
+        f"between them. The lower band edge moves down from {n(S_LO)} to {n(B1_LO)} GHz. "
+        "«Port isolation, gain, envelope correlation coefficient and radiation patterns of the MIMO antenna: "
+        "TO BE ADDED.»"), 9, bold=True)
     p = fmt(doc.add_paragraph(), JUSTIFY, after=6, indent=0.17)
     runs(p, "*Keywords*—", 9, bold=True)
     runs(p, "MIMO antenna, frequency selective surface, split-ring resonator, CPW feed, wideband antenna", 9,
@@ -412,29 +435,39 @@ def introduction(doc) -> None:
     para(doc, (
         "Fewer works combine a periodic surface with a MIMO antenna. A four-port antenna over a metasurface of "
         "split-ring cells reached 8.3 dBi with more than 15.5 dB isolation in [@hasan2022], and a two-port UWB "
-        "antenna with FSS layers was reported in [@ushadevi]. In this paper, a four-port MIMO antenna with "
-        "decagonal patches is placed over an FSS made of concentric split rings. Section II describes the "
-        "structure, Section III gives the simulated result that is available so far, and Section IV concludes "
-        "the paper."))
+        "antenna with FSS layers was reported in [@ushadevi]. This paper follows the design in two steps. First, "
+        "a single CPW-fed decagonal antenna is designed and its result is given. Then four such elements are "
+        "arranged as a MIMO antenna and placed over an FSS made of concentric split rings, and the result is "
+        "compared with that of the single antenna. Section II describes the structures, Section III gives and "
+        "compares the simulated results, and Section IV concludes the paper."))
 
 
 def design(doc) -> None:
     h1(doc, "II", "Antenna Design")
-    h2(doc, "A", "Four-Port MIMO Antenna")
+    h2(doc, "A", "Single Antenna")
     para(doc, (
-        "Fig. 1 shows the four-port MIMO antenna. It has four radiating elements arranged in two rows and two "
-        "columns. Each element is a ten-sided (decagonal) patch joined to a straight feed line. A rectangular "
-        "ground patch lies on each side of the feed line, on the same face of the board, as in a CPW feed. The "
-        "two upper elements are fed from the top edge of the board and the two lower elements from the bottom "
-        "edge, so the upper pair is a mirror image of the lower pair and the four patches face each other at the "
-        "middle of the board. The upper and lower halves are shifted sideways by a small amount, which gives the board a "
-        f"stepped outline. The dimensions of the antenna are listed in Table I. «Substrate and port numbering: "
-        f"TO BE ADDED.»"))
-    figure(doc, 1, "02_mimo_4port.webp", "Four-port MIMO antenna with decagonal patches and CPW-style feeds "
+        "The single antenna is shown in Fig. 1. It is printed in copper on one face of a 50 × 50 × 1.6 mm FR-4 "
+        "board (ε_{r} = 4.3). The radiator is a ten-sided (decagonal) patch of circumradius R = 15 mm. It is fed "
+        "by a CPW line with a 3.0 mm signal strip and 0.5 mm slots, and a rectangular ground lies on each side of "
+        "the strip. The top edge of the ground stops 0.73 mm below the patch. This small gap was chosen by "
+        "sweeping the ground position and the patch radius, because it controls the match at the low end of the "
+        "band. The dimensions are listed in Table I."))
+    figure(doc, 1, "05_single_antenna.png", "Single CPW-fed decagonal antenna (copper pattern, CST).", 2.4, None,
+           CENTER)
+    h2(doc, "B", "Four-Port MIMO Antenna")
+    para(doc, (
+        "Fig. 2 shows the four-port MIMO antenna. It uses four elements of the same kind as the single antenna, "
+        "arranged in two rows and two columns. «TO BE CONFIRMED: patch and feed dimensions equal to those of the "
+        "single antenna.» The two upper elements are fed from the top edge of the board and the two lower "
+        "elements from the bottom edge, so the upper pair is a mirror image of the lower pair and the four "
+        "patches face each other at the middle of the board. The upper and lower halves are shifted sideways by "
+        "a small amount, which gives the board a stepped outline. «Board size, element spacing and port "
+        "numbering: TO BE ADDED.»"))
+    figure(doc, 2, "02_mimo_4port.webp", "Four-port MIMO antenna with decagonal patches and CPW-style feeds "
            "(top view, CST).", 3.3, CROP_BOARD, CENTER)
-    h2(doc, "B", "FSS Unit Cell and Array")
+    h2(doc, "C", "FSS Unit Cell and Array")
     para(doc, (
-        "The FSS is shown in Fig. 2. Its unit cell has two concentric metal rings, and each ring is cut by a "
+        "The FSS is shown in Fig. 3. Its unit cell has two concentric metal rings, and each ring is cut by a "
         "narrow split. The cell is repeated in 6 columns and 5 rows, which gives 30 cells on one board. A split "
         "ring acts as a resonant circuit: the metal ring gives an inductance L, and the split and the gap between "
         "the two rings give a capacitance C. The cell resonates at"))
@@ -444,11 +477,11 @@ def design(doc) -> None:
         "different size resonate at two different frequencies, which widens the range over which the surface "
         "reflects. «Unit-cell simulation (reflection and transmission of the FSS, and its reflection phase): "
         "TO BE ADDED.»"))
-    figure_pair(doc, 2, png("01_fss_array.webp", CROP_CELL, 4), 1.0, png("01_fss_array.webp", CROP_BOARD), 2.15,
+    figure_pair(doc, 3, png("01_fss_array.webp", CROP_CELL, 4), 1.0, png("01_fss_array.webp", CROP_BOARD), 2.15,
                 "FSS: (a) unit cell with two concentric split rings, (b) 6 × 5 array (top view, CST).")
-    h2(doc, "C", "Combined Structure")
+    h2(doc, "D", "MIMO Antenna over the FSS")
     para(doc, (
-        "In the combined structure of Fig. 3, the MIMO antenna is placed over the FSS, so the FSS lies behind "
+        "In the combined structure of Fig. 4, the MIMO antenna is placed over the FSS, so the FSS lies behind "
         "all four elements. The two boards have nearly the same footprint. The wave that the antenna radiates "
         "backwards travels across the gap h, is reflected by the FSS and returns to the antenna. It adds to the "
         "forward wave when [@hussain2023]"))
@@ -456,80 +489,148 @@ def design(doc) -> None:
                    dh.mr("n"), up(" = 0, 1, 2, …")], 2)
     para(doc, (
         "where φ_{FSS} is the reflection phase of the FSS and k_{0} is the free-space wavenumber. The gap "
-        f"h therefore decides at which frequencies the FSS helps. «Gap h between the antenna and the FSS: "
-        f"TO BE ADDED.»"))
-    figure(doc, 3, "03_mimo_4port_over_fss.webp", "Four-port MIMO antenna placed over the FSS (top view, CST).",
+        "h therefore decides at which frequencies the FSS helps. «Gap h between the antenna and the FSS: "
+        "TO BE ADDED.»"))
+    figure(doc, 4, "03_mimo_4port_over_fss.webp", "Four-port MIMO antenna placed over the FSS (top view, CST).",
            3.3, CROP_BOARD, CENTER)
-    table(doc, 1, "Dimensions of the Proposed Structure", [
+    table(doc, 1, "Dimensions of the Structures", [
         ["Part", "Parameter", "Value (mm)"],
-        ["Board", "Substrate material and thickness", TBA],
-        ["Board", "Length × width", TBA],
-        ["Element", "Decagon circumradius", TBA],
-        ["Element", "Feed-line width and slot width", TBA],
-        ["Element", "Ground patch length × width", TBA],
-        ["Element", "Spacing between elements", TBA],
+        ["Single antenna", "FR-4 board, length × width × thickness", "50 × 50 × 1.6"],
+        ["Single antenna", "Decagon circumradius R", "15"],
+        ["Single antenna", "CPW strip width; slot width", "3.0; 0.5"],
+        ["Single antenna", "Ground length (along the feed)", "18"],
+        ["Single antenna", "Gap between ground and patch", "0.73"],
+        ["MIMO antenna", "Board length × width", TBA],
+        ["MIMO antenna", "Spacing between elements", TBA],
         ["FSS cell", "Outer and inner ring radii", TBA],
         ["FSS cell", "Ring width and split width", TBA],
-        ["FSS", "Cell period; board size", TBA],
+        ["FSS", "Cell period; board size; substrate", TBA],
         ["Stack", "Gap h, antenna to FSS", TBA],
-    ], [0.65, 1.85, 1.0])
+    ], [0.8, 1.75, 0.95])
 
 
 def s11_figure(doc) -> None:
-    """Fig. 4 across both columns, so the CST axis labels stay readable."""
+    """Fig. 5 across both columns, so the CST axis labels stay readable: the two S11 plots, one above the other."""
     new_section(doc, 1)
-    figure(doc, 4, "04_s11.png", "Simulated reflection coefficient S_{11} at port 1 from 1 to 15 GHz (CST). "
-           "«TO BE CONFIRMED: taken here as the four-port antenna with the FSS.»", 6.6, None, CENTER)
+    doc.add_picture(png("06_single_s11.png", CROP_S11_SINGLE), width=Inches(6.6))
+    fmt(doc.paragraphs[-1], CENTER, before=4, keep=True)
+    runs(fmt(doc.add_paragraph(), CENTER, after=2, keep=True), "(a)", SMALL)
+    doc.add_picture(png("04_s11.png"), width=Inches(6.6))
+    fmt(doc.paragraphs[-1], CENTER, keep=True)
+    runs(fmt(doc.add_paragraph(), CENTER, keep=True), "(b)", SMALL)
+    caption(doc, 5, "Simulated reflection coefficient S_{11} (CST): (a) single antenna, 0–18 GHz; (b) port 1 of the "
+            "four-port MIMO antenna, 1–15 GHz. «TO BE CONFIRMED: (b) is taken here as the MIMO antenna with the "
+            "FSS.»", CENTER)
     new_section(doc, 2)
+
+
+def comparison_plot() -> io.BytesIO:
+    """Fig. 6: the two S11 curves on the same axes, drawn from their digitised copies."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    plt.rcParams.update({"font.family": "serif", "font.serif": ["Times New Roman", "Liberation Serif", "DejaVu Serif"],
+                         "mathtext.fontset": "stix", "font.size": 8, "axes.linewidth": 0.6})
+    fig, ax = plt.subplots(figsize=(3.45, 2.3))
+    ax.axhline(-10, color="#52514e", lw=0.7, ls=(0, (4, 2)))
+    ax.plot(FS, SS, color="#eb6834", lw=1.2, ls=(0, (5, 2)), label="Single antenna")
+    ax.plot(F, S, color="#2a78d6", lw=1.4, label="Four-port MIMO with FSS (port 1)")
+    ax.set_xlim(0, 18)
+    ax.set_ylim(-40, 0)
+    ax.set_xticks(range(0, 19, 2))
+    ax.set_xlabel("Frequency (GHz)")
+    ax.set_ylabel("$S_{11}$ (dB)")
+    ax.grid(True, color="#d9d8d4", lw=0.5)
+    ax.set_axisbelow(True)
+    ax.legend(loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=1, frameon=False, fontsize=7.5, handlelength=2.6)
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=300, bbox_inches="tight", pad_inches=0.02)
+    plt.close(fig)
+    (HERE / "figures").mkdir(exist_ok=True)
+    (HERE / "figures" / "fig6_s11_comparison.png").write_bytes(buf.getvalue())
+    buf.seek(0)
+    return buf
 
 
 def results(doc) -> None:
     h1(doc, "III", "Results and Discussion")
-    h2(doc, "A", "Reflection Coefficient")
+    h2(doc, "A", "Single Antenna")
+    res = lit.THIS_WORK["resonances"]
+    res_txt = ", ".join(f"{n(f0)} GHz ({n(s0, 1)} dB)" for f0, s0 in res[:-1])
+    res_txt += f" and {n(res[-1][0])} GHz ({n(res[-1][1], 1)} dB)"
+    para(doc, (
+        "The single antenna was simulated in CST Studio Suite from 0 to 18 GHz. Its reflection coefficient is "
+        "shown in Fig. 5(a). An antenna is taken as matched where S_{11} is below −10 dB, which means that less "
+        f"than 10 % of the input power is reflected. S_{{11}} is below −10 dB from {n(S_LO)} to {n(S_HI)} GHz, a "
+        f"single band {n(S_HI - S_LO, 1)} GHz wide with a fractional bandwidth of {n(fbw(S_LO, S_HI), 0)} %. "
+        f"The resonances are at {res_txt}. The match is weakest near {n(S_WEAK1[0], 1)} GHz "
+        f"({n(S_WEAK1[1], 1)} dB) and near {n(S_WEAK2[0], 1)} GHz ({n(S_WEAK2[1], 1)} dB), where the curve only "
+        "just stays below the limit. The simulated gain of the single antenna is about "
+        f"{lit.THIS_WORK['gain_ieee_uwb'].replace('≈ ', '')} dBi over 3.1–10.6 GHz."))
+    h2(doc, "B", "MIMO Antenna with FSS")
     others = [fd for fd, _ in DIPS if abs(fd - F_MIN) > 0.05]
     dip_txt = ", ".join(n(fd) for fd in others[:-1]) + f" and {n(others[-1])} GHz"
     para(doc, (
-        "The structure was simulated in CST Studio Suite from 1 to 15 GHz. Fig. 4 shows the reflection "
-        "coefficient at port 1, and Table II lists the values read from it. An antenna is taken as matched where "
-        "S_{11} is below −10 dB, which means that less than 10 % of the input power is reflected."))
+        "The MIMO antenna was simulated from 1 to 15 GHz. Fig. 5(b) shows the reflection coefficient at port 1. "
+        f"S_{{11}} falls below −10 dB at {n(B1_LO)} GHz and stays below it up to {n(B1_HI)} GHz, a fractional "
+        f"bandwidth of {n(fbw(B1_LO, B1_HI), 0)} %. From {n(B1_HI)} to {n(B2_LO)} GHz the curve rises slightly "
+        f"above the limit and reaches {n(GAP_S, 1)} dB at {n(GAP_F)} GHz. From {n(B2_LO)} GHz it is below −10 dB "
+        f"again up to {n(F_STOP, 0)} GHz, the end of the simulated range, so the upper edge of this second band "
+        "is not known yet."))
     para(doc, (
-        f"S_{{11}} falls below −10 dB at {n(B1_LO)} GHz and stays below it up to {n(B1_HI)} GHz. This first band "
-        f"is {n(B1_HI - B1_LO)} GHz wide, a fractional bandwidth of {n(fbw(B1_LO, B1_HI), 0)} %. From {n(B1_HI)} "
-        f"to {n(B2_LO)} GHz the curve rises slightly above the limit and reaches {n(GAP_S, 1)} dB at {n(GAP_F)} "
-        f"GHz. From {n(B2_LO)} GHz it is below −10 dB again up to {n(F_STOP, 0)} GHz, the end of the simulated "
-        f"range, so the upper edge of this second band is not known yet. Over {n(B2_LO)}–{n(F_STOP, 0)} GHz the "
-        f"fractional bandwidth is at least {n(fbw(B2_LO, F_STOP), 0)} %."))
+        f"The deepest resonance is {n(S_MIN, 1)} dB at {n(F_MIN)} GHz. Other resonances deeper than −20 dB are at "
+        f"{dip_txt}. The match is best from {n(GOOD_LO, 1)} to {n(GOOD_HI, 1)} GHz, where S_{{11}} stays below "
+        f"−20 dB. Above 10.5 GHz it stays between {n(HIGH_S, 1)} and {n(HIGH_MIN, 1)} dB."))
+    h2(doc, "C", "Comparison of the Two Results")
     para(doc, (
-        f"The curve has several resonances. The deepest is {n(S_MIN, 1)} dB at {n(F_MIN)} GHz. Other resonances "
-        f"deeper than −20 dB are at {dip_txt}. The match is best from {n(GOOD_LO, 1)} to {n(GOOD_HI, 1)} GHz, "
-        f"where S_{{11}} stays below −20 dB. It is weakest near {n(GAP_F)} GHz ({n(GAP_S, 1)} dB) and near "
-        f"{n(WEAK_F)} GHz ({n(WEAK_S, 1)} dB). Above 10.5 GHz it stays between {n(HIGH_S, 1)} and "
-        f"{n(HIGH_MIN, 1)} dB. A small change of the feed gap or of the gap h could be tried to bring the region "
-        f"near {n(GAP_F, 1)} GHz below −10 dB, so that the two bands join into one."))
-    table(doc, 2, "Reflection Coefficient at Port 1 (Read from Fig. 4)", [
-        ["Quantity", "Value"],
-        ["Band 1, S_{11} < −10 dB", f"{n(B1_LO)}–{n(B1_HI)} GHz ({n(fbw(B1_LO, B1_HI), 0)} %)"],
-        ["Band 2, S_{11} < −10 dB", f"{n(B2_LO)}–{n(F_STOP, 0)} GHz^{{†}} (≥ {n(fbw(B2_LO, F_STOP), 0)} %)"],
-        ["Highest S_{11} between the bands", f"{n(GAP_S, 1)} dB at {n(GAP_F)} GHz"],
-        ["Deepest resonance", f"{n(S_MIN, 1)} dB at {n(F_MIN)} GHz"],
-        ["Other resonances below −20 dB (GHz)", ", ".join(n(fd) for fd in others)],
-    ], [1.75, 1.75], note="^{†}End of the simulated range; the upper edge of band 2 is not known.")
-    h2(doc, "B", "Results to Be Added")
+        "Fig. 6 draws the two curves on the same axes, and Table II lists the main values side by side. Three "
+        f"changes can be seen. First, the lower band edge moves down from {n(S_LO)} to {n(B1_LO)} GHz, so the "
+        f"MIMO antenna with the FSS is matched {n(S_LO - B1_LO)} GHz lower than the single antenna. Second, the "
+        f"best match moves to the middle of the band. The single antenna has its deepest resonance at "
+        f"{n(res[0][0])} GHz and is only just matched near {n(S_WEAK1[0], 1)} GHz, while the MIMO antenna with the "
+        f"FSS stays below −20 dB from {n(GOOD_LO, 1)} to {n(GOOD_HI, 1)} GHz. Third, the single antenna is matched "
+        f"over one continuous band, but the MIMO antenna with the FSS rises to {n(GAP_S, 1)} dB at {n(GAP_F)} GHz, "
+        "which splits its matched range into two bands. A small change of the feed gap or of the gap h could be "
+        "tried to remove this rise."))
+    doc.add_picture(comparison_plot(), width=Inches(3.4))
+    fmt(doc.paragraphs[-1], CENTER, before=4, keep=True)
+    caption(doc, 6, "S_{11} of the single antenna and of the four-port MIMO antenna with the FSS on the same axes "
+            "(curves read from the CST plots of Fig. 5).")
     para(doc, (
-        "The reflection coefficient at one port is the only result available at present. The following results "
-        "are needed to complete the paper and are not reported here: «(i) S_{11} of the MIMO antenna without the "
-        "FSS, for comparison; (ii) reflection coefficients at ports 2, 3 and 4; (iii) isolation between the ports "
-        "(S_{21}, S_{31}, S_{41}); (iv) gain and efficiency against frequency, with and without the FSS; (v) ECC "
-        "and diversity gain; (vi) radiation patterns: TO BE ADDED.» Figs. 5–7 keep the place of the main missing "
-        "plots. The ECC can be computed from the S-parameters with the method of [@blanch] or from the far-field "
-        "patterns [@sharawi]."))
-    placeholder_figure(doc, 5, "CST S-parameters of all four ports, 1–15 GHz",
-                       "Reflection coefficients of ports 2–4 and isolation between the ports.")
-    placeholder_figure(doc, 6, "CST realized gain (and efficiency) against frequency",
-                       "Gain of the MIMO antenna with and without the FSS.")
-    placeholder_figure(doc, 7, "CST far-field cuts in the two principal planes",
-                       "Radiation patterns at selected frequencies.")
-    h2(doc, "C", "Comparison with Reported Work")
+        "This comparison has a limit. The two models differ in two ways at once, because the MIMO antenna has "
+        "three more elements and also the FSS behind it. The changes above cannot yet be assigned to one cause. "
+        "«S_{11} of the MIMO antenna without the FSS: TO BE ADDED.»"))
+    table(doc, 2, "Single Antenna and MIMO Antenna with FSS (Simulated)", [
+        ["Quantity", "Single antenna", "MIMO with FSS (port 1)"],
+        ["Simulated range (GHz)", "0–18", f"1–{n(F_STOP, 0)}"],
+        ["S_{11} < −10 dB (GHz)", f"{n(S_LO)}–{n(S_HI)}",
+         f"{n(B1_LO)}–{n(B1_HI)} and {n(B2_LO)}–{n(F_STOP, 0)}^{{†}}"],
+        ["Fractional bandwidth (%)", n(fbw(S_LO, S_HI), 0),
+         f"{n(fbw(B1_LO, B1_HI), 0)} and ≥ {n(fbw(B2_LO, F_STOP), 0)}"],
+        ["Lower band edge (GHz)", n(S_LO), n(B1_LO)],
+        ["Deepest resonance", f"{n(res[0][1], 1)} dB at {n(res[0][0])} GHz", f"{n(S_MIN, 1)} dB at {n(F_MIN)} GHz"],
+        ["Weakest point in the matched range", f"{n(S_WEAK1[1], 1)} dB near {n(S_WEAK1[0], 1)} GHz",
+         f"{n(GAP_S, 1)} dB at {n(GAP_F)} GHz"],
+        ["Gain, 3.1–10.6 GHz (dBi)", lit.THIS_WORK["gain_ieee_uwb"].replace("≈ ", ""), TBA],
+        ["Isolation; ECC", "not applicable", TBA],
+    ], [1.2, 1.0, 1.3], note="^{†}End of the simulated range; the upper edge of this band is not known.")
+    h2(doc, "D", "Results to Be Added")
+    para(doc, (
+        "The reflection coefficient at one port is the only result of the MIMO antenna available at present. The "
+        "following results are needed to complete the paper and are not reported here: «(i) S_{11} of the MIMO "
+        "antenna without the FSS; (ii) reflection coefficients at ports 2, 3 and 4; (iii) isolation between the "
+        "ports (S_{21}, S_{31}, S_{41}); (iv) gain and efficiency against frequency, with and without the FSS; "
+        "(v) ECC and diversity gain; (vi) radiation patterns: TO BE ADDED.» Figs. 7–9 keep the place of the main "
+        "missing plots. The ECC can be computed from the S-parameters with the method of [@blanch] or from the "
+        "far-field patterns [@sharawi]."))
+    placeholder_figure(doc, 7, "CST S-parameters of all four ports, 1–15 GHz",
+                       "Reflection coefficients of ports 2–4 and isolation between the ports.", 0.95)
+    placeholder_figure(doc, 8, "CST realized gain (and efficiency) against frequency",
+                       "Gain of the MIMO antenna with and without the FSS.", 0.95)
+    placeholder_figure(doc, 9, "CST far-field cuts in the two principal planes",
+                       "Radiation patterns at selected frequencies.", 0.95)
+    h2(doc, "E", "Comparison with Reported Work")
     para(doc, (
         "Table III places this work next to reported antennas that use an FSS or a metasurface reflector. The "
         "values of the other works are those given by their authors. The matched range of the present antenna is "
@@ -547,14 +648,17 @@ def results(doc) -> None:
 def conclusion(doc) -> None:
     h1(doc, "IV", "Conclusion")
     para(doc, (
-        "A four-port MIMO antenna with decagonal patches and CPW-style feeds was placed over an FSS made of a "
-        "6 × 5 array of concentric split rings, and the structure was simulated in CST Studio Suite. The simulated "
-        f"reflection coefficient at port 1 is below −10 dB from {n(B1_LO)} to {n(B1_HI)} GHz and from {n(B2_LO)} "
-        f"to {n(F_STOP, 0)} GHz, with a short rise to {n(GAP_S, 1)} dB at {n(GAP_F)} GHz between them, and the "
-        f"deepest resonance is {n(S_MIN, 1)} dB at {n(F_MIN)} GHz. The antenna is therefore matched over most of "
-        "the 2–15 GHz range. The dimensions, the isolation between the ports, the gain, the ECC and the radiation "
-        "patterns are still to be added, and they will show how much the FSS improves the antenna. Fabrication "
-        "and measurement of the antenna are planned as the next step."))
+        "A single CPW-fed decagonal antenna on FR-4 was designed first. In simulation it is matched "
+        f"(S_{{11}} below −10 dB) from {n(S_LO)} to {n(S_HI)} GHz. Four such elements were then arranged as a "
+        "four-port MIMO antenna and placed over an FSS made of a 6 × 5 array of concentric split rings. The "
+        f"simulated reflection coefficient at port 1 of this structure is below −10 dB from {n(B1_LO)} to "
+        f"{n(B1_HI)} GHz and from {n(B2_LO)} to {n(F_STOP, 0)} GHz, with a short rise to {n(GAP_S, 1)} dB at "
+        f"{n(GAP_F)} GHz between them. Compared with the single antenna, the lower band edge moves down by "
+        f"{n(S_LO - B1_LO)} GHz and the best match moves to {n(GOOD_LO, 1)}–{n(GOOD_HI, 1)} GHz, but the matched "
+        "range is no longer one continuous band. The remaining dimensions, the result of the MIMO antenna "
+        "without the FSS, the isolation between the ports, the gain, the ECC and the radiation patterns are "
+        "still to be added, and they will show how much the FSS improves the antenna. Fabrication and "
+        "measurement of the antenna are planned as the next step."))
 
 
 def reference_list(doc) -> None:
