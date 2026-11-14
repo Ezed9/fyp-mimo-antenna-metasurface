@@ -23,17 +23,27 @@ CST = PAPER / "cst"
 EXPORTS = ROOT / "exports" / "paper"
 
 # --------------------------------------------------------------------------- CST exports (optional, fill placeholders)
-S11_MS_DIGITIZED = EXPORTS / "s11_ms4x4_digitized.csv"   # from the screenshot, analysis/digitize_cst_plot.py
-S11_MS_EXPORT = EXPORTS / "s11_with_ms.txt"              # CST Plot Data (ASCII); preferred over the digitized curve
+# The S11 figures in the paper are the CST screenshots themselves (paper/cst/). Their numbers are read from the
+# digitised copies below (analysis/digitize_cst_plot.py); a CST "Plot Data (ASCII)" export, if present, is preferred.
+S11_MS_SHOT = CST / "cst_s11_with_ms.jpg"                # dips at 5.3, 9.0, 9.9 GHz: antenna with the metasurface
+S11_ALONE_SHOT = CST / "cst_s11_no_ms_assumed.jpg"       # dips at 4.1, 7.4, 12.4 GHz: ASSUMED antenna alone
+S11_ALONE_ASSUMED = True                                 # set False once the team confirms which model it is
+S11_MS_DIGITIZED = EXPORTS / "cst_s11_with_ms_digitized.csv"
+S11_ALONE_DIGITIZED = EXPORTS / "cst_s11_no_ms_assumed_digitized.csv"
+S11_MS_EXPORT = EXPORTS / "s11_with_ms.txt"
 S11_ALONE_EXPORT = EXPORTS / "s11_antenna_alone.txt"
 GAIN_ALONE_EXPORT = EXPORTS / "gain_antenna_alone.txt"   # realized gain (dBi) vs frequency, broadside
 GAIN_MS_EXPORT = EXPORTS / "gain_with_ms.txt"
-PATTERN_FREQS = (5.3, 9.9, 14.5)                         # GHz: one in each band, at or near its deepest dip
 
-
-def pattern_export(f_ghz: float, plane: str) -> Path:
-    """CST farfield cut export (theta or phi vs dB), e.g. exports/paper/pattern_5.3GHz_E.txt; plane is 'E' or 'H'."""
-    return EXPORTS / f"pattern_{f_ghz:g}GHz_{plane}.txt"
+# Far-field directivity cuts (phi = 90 deg) supplied as CST screenshots. The values are the read-outs printed in the
+# screenshots themselves. Which model they come from (with or without the metasurface) is not confirmed.
+PATTERNS = [
+    {"f": 5.3, "shot": CST / "cst_pattern_5p3GHz.jpg", "main_dbi": 3.56, "dir_deg": 176.0, "width_deg": 71.7,
+     "sll_db": None},
+    {"f": 12.5, "shot": CST / "cst_pattern_12p5GHz.jpg", "main_dbi": 1.02, "dir_deg": 132.0, "width_deg": 40.9,
+     "sll_db": -2.6},
+]
+PATTERN_MODEL_CONFIRMED = False
 
 
 # --------------------------------------------------------------------------- dimensions
@@ -109,8 +119,8 @@ def s11_with_ms() -> tuple[np.ndarray, np.ndarray, str]:
     return f, s, "digitized from the CST screenshot"
 
 
-def s11_alone() -> tuple[np.ndarray, np.ndarray] | None:
-    return read_two_columns(S11_ALONE_EXPORT) if S11_ALONE_EXPORT.exists() else None
+def s11_alone() -> tuple[np.ndarray, np.ndarray]:
+    return read_two_columns(S11_ALONE_EXPORT if S11_ALONE_EXPORT.exists() else S11_ALONE_DIGITIZED)
 
 
 @dataclass(frozen=True)

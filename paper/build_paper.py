@@ -10,7 +10,11 @@ Run from the repo root (figures first):
 
 Layout follows the IEEE two-column conference template in Word, the format of S. Bhattacharya et al., AJEC 2025:
 US Letter, Times New Roman, single-column title and author block, two-column body, figures and tables at column
-width, numbered IEEE references.
+width (the two S11 screenshots span both columns), numbered IEEE references.
+
+Figures 1, 3 and 5 are the team's CST screenshots in paper/cst/. They are placed as they are: shot() only crops blank
+margins, and nothing is resized, filtered, redrawn or annotated. The S11 numbers in the text are read from digitised
+copies of the same screenshots (paper/design.py).
 
 Writing rules:
 * The voice and section pattern follow Bhattacharya et al. (AJEC 2025); no sentence is copied from it. --compare
@@ -18,12 +22,14 @@ Writing rules:
 * Every number comes from paper/design.py (CST S11, screenshot dimensions, analytical estimates), so text, tables
   and figures agree.
 * «...» marks text shown with a yellow highlight: dimensions read off the screenshots that the team must confirm, and
-  [xx] placeholders for CST results not exported yet (gain, patterns, antenna-alone S11). Nothing is claimed about
-  gain until that data exists.
+  [xx] placeholders for CST results not available yet (gain). "TO BE CONFIRMED" marks the two attributions that the
+  team has not confirmed: which S11 screenshot is the antenna alone, and which model the patterns come from.
+  Nothing is claimed about gain until that data exists.
 """
 from __future__ import annotations
 
 import argparse
+import io
 import re
 import subprocess
 import sys
@@ -34,6 +40,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "report"))
 
 import design as d  # noqa: E402
+import numpy as np  # noqa: E402
 import docx_helpers as dh  # noqa: E402
 import literature as lit  # noqa: E402
 from build_report import render_pdf  # noqa: E402
@@ -63,6 +70,20 @@ DIPS = d.dips(F, S)
 FMIN, SMIN = min(DIPS, key=lambda x: x[1])
 GAP1 = d.peak_between(F, S, B1.hi, B2.lo)     # worst point between band I and band II
 GAP2 = d.peak_between(F, S, B2.hi, B3.lo)
+FA, SA = d.s11_alone()                        # second S11 screenshot, taken as the antenna without the metasurface
+A_BANDS = d.bands(FA, SA)
+A1, A2 = A_BANDS[0], A_BANDS[1]
+A_DIPS = d.dips(FA, SA)
+A_FMIN, A_SMIN = min(A_DIPS, key=lambda x: x[1])
+A_GAP = d.peak_between(FA, SA, A1.hi, A2.lo)  # the short rise between its two bands
+ALONE_TBC = ("«TO BE CONFIRMED: Fig. 3(a) is taken here as the antenna without the metasurface.» "
+             if d.S11_ALONE_ASSUMED else "")
+
+
+def at(f_arr, s_arr, f0: float) -> float:
+    return float(np.interp(f0, f_arr, s_arr))
+
+
 RAY = d.ray_lower_edge()
 LC = d.patch_ms_lc()
 RT = d.round_trip_deg(LC["f0"], d.v("h"))
@@ -186,6 +207,53 @@ def figure(doc, name: str, n: int, caption: str, width: float = FIG_W) -> None:
     p = fmt(doc.add_paragraph(), JUSTIFY, before=2, after=6)
     runs(p, f"Fig. {n}. " + caption, SMALL)
 
+
+def shot(path: Path, crop: tuple[int, int, int, int] | None = None) -> io.BytesIO:
+    """A CST screenshot as an in-memory PNG. Only blank margins are cropped (crop = left, top, right, bottom in
+    source pixels); the pixels are not resized, filtered or redrawn, and the aspect ratio is kept."""
+    from PIL import Image
+
+    with Image.open(path) as im:
+        im = im.convert("RGB")
+        if crop:
+            im = im.crop(crop)
+        buf = io.BytesIO()
+        im.save(buf, format="PNG")
+    buf.seek(0)
+    return buf
+
+
+def picture(doc, img: io.BytesIO, width: float, label: str | None = None, before: float = 4) -> None:
+    doc.add_picture(img, width=Inches(width))
+    fmt(doc.paragraphs[-1], CENTER, before=before, keep=True)
+    if label:
+        runs(fmt(doc.add_paragraph(), CENTER, after=2, keep=True), label, SMALL)
+
+
+def caption(doc, n: int, text: str, align=JUSTIFY) -> None:
+    runs(fmt(doc.add_paragraph(), align, before=2, after=6), f"Fig. {n}. " + text, SMALL)
+
+
+def picture_pair(doc, left: io.BytesIO, w_left: float, right: io.BytesIO, w_right: float) -> None:
+    """Two screenshots side by side with (a)/(b) under them, in a borderless table one column wide."""
+    t = doc.add_table(rows=2, cols=2)
+    t.alignment = WD_TABLE_ALIGNMENT.CENTER
+    t.autofit = False
+    for j, (img, w, label) in enumerate(((left, w_left, "(a)"), (right, w_right, "(b)"))):
+        t.columns[j].width = Inches(w + 0.1)
+        for i in range(2):
+            c = t.cell(i, j)
+            c.width = Inches(w + 0.1)
+            c.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+        pp = fmt(t.cell(0, j).paragraphs[0], CENTER, before=4, keep=True)
+        pp.add_run().add_picture(img, width=Inches(w))
+        runs(fmt(t.cell(1, j).paragraphs[0], CENTER, keep=True), label, SMALL)
+
+
+# Blank-margin crops of the screenshots (left, top, right, bottom), measured on the files in paper/cst/.
+CROP_ANTENNA = (30, 45, 356, 405)       # cst_octagon_antenna.png: the board and a thin border of the CST background
+CROP_MS = (455, 0, 817, 386)            # cst_ms4x4_top_v2.jpg: the board; only the empty CST background is removed
+CROP_PATTERN = (461, 0, 1264, 383)      # pattern screenshots: the empty left third; plot, labels and read-outs kept
 
 ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII"]
 
@@ -368,17 +436,18 @@ def design_section(doc) -> None:
     para(doc, (
         "The geometry of the proposed antenna is depicted in Fig. 1(a), and its dimensions are given in Table I. The "
         f"radiator is a regular octagon of circumradius R = {val('R')} mm standing on one vertex. It is printed on an "
-        f"FR-4 substrate (ε_{{r}} = {d.FR4_EPS:g}, tan δ = {d.FR4_TAND:g}) of {val('W_{s}')} mm × {val('L_{s}')} mm "
-        f"and {val('h_{s}')} mm thickness. The octagon is fed by a CPW line of width W_{{f}} = {val('W_{f}')} mm, "
+        f"FR-4 substrate (ε_{{r}} = {d.FR4_EPS:g}, tan δ = {d.FR4_TAND:g}) of width W_{{s}} = {val('W_{s}')} mm, "
+        f"length L_{{s}} = {val('L_{s}')} mm and thickness h_{{s}} = {val('h_{s}')} mm. The octagon is fed by a CPW line of width W_{{f}} = {val('W_{f}')} mm, "
         f"separated from the two coplanar ground planes by slots of g = {val('g')} mm; the feed and slot widths are "
         "selected for impedance matching to the 50 Ω port. Each ground plane is "
         f"W_{{g}} = {val('W_{g}')} mm wide and L_{{g}} = {val('L_{g}')} mm long, and the lower vertex of the octagon "
         f"lies p = {val('p')} mm above the ground edge. Since the CPW grounds carry current and take part in the "
         "radiation, their length and the patch-to-ground gap mainly control the matching at the lower end of the "
         "band [@simons]."))
-    figure(doc, "fig1_geometry.png", 1, (
-        "Geometry of the proposed structure: (a) CPW-fed octagonal monopole antenna, (b) 4 × 4 square-patch "
-        "metasurface (top view, CST Studio Suite)."))
+    picture_pair(doc, shot(d.CST / "cst_octagon_antenna.png", CROP_ANTENNA), 1.55,
+                 shot(d.CST / "cst_ms4x4_top_v2.jpg", CROP_MS), 1.6)
+    caption(doc, 1, "Geometry of the proposed structure: (a) CPW-fed octagonal monopole antenna, (b) 4 × 4 "
+            "square-patch metasurface (top views, CST Studio Suite).")
     para(doc, (
         "To estimate the lower edge of the operating band, the octagon is replaced by a cylindrical monopole of the "
         "same height and the same surface area [@ray, kumar_ray]:"))
@@ -398,7 +467,7 @@ def design_section(doc) -> None:
     para(doc, (
         f"The metasurface of Fig. 1(b) is a 4 × 4 array of square copper patches of side W_{{p}} = {val('W_{p}')} mm "
         f"and period P = {val('P')} mm, so that adjacent patches are separated by s = {val('s')} mm. It is printed "
-        f"on a {val('t')} mm FR-4 board of the same footprint as the antenna, {BACK}. Such a surface behaves as a "
+        f"on a {val('t')} mm FR-4 board of nearly the same footprint as the antenna (W_{{m}} × L_{{m}}), {BACK}. Such a surface behaves as a "
         "parallel LC resonator [@sievenpiper]: the gaps between the patches provide the capacitance, and the current "
         "loop through the ground provides the inductance,"))
     equation(doc, [mr("L"), up(" = "), sub("μ", "0"), mr("t")], 3)
@@ -448,34 +517,54 @@ def _dims_rows() -> list[list[str]]:
     return rows
 
 
+def s11_figure(doc) -> None:
+    """Fig. 3 across both columns, so the axis labels of the CST screenshots stay readable."""
+    columns(doc.add_section(WD_SECTION.CONTINUOUS), 1)
+    picture(doc, shot(d.S11_ALONE_SHOT), 6.6, "(a)")
+    picture(doc, shot(d.S11_MS_SHOT), 6.6, "(b)", before=0)
+    caption(doc, 3, "Simulated reflection coefficient S_{11} from 1 to 15 GHz (CST Studio Suite): (a) antenna "
+            "without the metasurface, (b) antenna with the metasurface. " + ALONE_TBC, CENTER)
+    columns(doc.add_section(WD_SECTION.CONTINUOUS), 2)
+
+
 def results(doc) -> None:
     h1(doc, "III", "Results and Discussion")
     h2(doc, "A", "Reflection Coefficient")
     others = [f for f, _ in DIPS if abs(f - FMIN) > 0.05]
+    a_others = [f for f, _ in A_DIPS if abs(f - A_FMIN) > 0.05]
     para(doc, (
-        "The simulated reflection coefficient of the proposed antenna with the metasurface is depicted in Fig. 3, "
-        f"and the bands are summarized in Table II. The structure exhibits three −10 dB bands: band I from "
+        "The simulated reflection coefficients of the two design stages are depicted in Fig. 3 and summarized in "
+        f"Table II. {ALONE_TBC}Without the metasurface (Fig. 3(a)), |S_{{11}}| falls below −10 dB at "
+        f"{num(A1.lo)} GHz and remains below it up to 15 GHz, the upper limit of the simulation, except from "
+        f"{num(A1.hi)} to {num(A2.lo)} GHz, where it rises to {num(A_GAP[1], 1)} dB. The lowest reflection "
+        f"coefficient is {num(A_SMIN, 1)} dB at {num(A_FMIN)} GHz, and further resonances appear at "
+        f"{' and '.join(num(f) for f in a_others)} GHz."))
+    para(doc, (
+        "With the metasurface (Fig. 3(b)), the structure exhibits three −10 dB bands: band I from "
         f"{num(B1.lo)} to {num(B1.hi)} GHz, band II from {num(B2.lo)} to {num(B2.hi)} GHz and band III from "
-        f"{num(B3.lo)} GHz to beyond 15 GHz, the upper limit of the simulation. The percentage bandwidths of bands I "
-        f"and II are {num(B1.fbw, 1)} % and {num(B2.fbw, 1)} %. Throughout the resonating bands, the lowest "
-        f"reflection coefficient obtained is {num(SMIN, 1)} dB at {num(FMIN)} GHz, and further resonances appear at "
+        f"{num(B3.lo)} GHz to beyond 15 GHz. The percentage bandwidths of bands I and II are {num(B1.fbw, 1)} % "
+        f"and {num(B2.fbw, 1)} %. Throughout the resonating bands, the lowest reflection coefficient obtained is "
+        f"{num(SMIN, 1)} dB at {num(FMIN)} GHz, and further resonances appear at "
         f"{', '.join(num(f) for f in others[:-1])} and {num(others[-1])} GHz. Between the bands, |S_{{11}}| rises "
         f"to {num(GAP1[1], 1)} dB at {num(GAP1[0])} GHz and to {num(GAP2[1], 1)} dB at {num(GAP2[0])} GHz. These "
         "regions are not designed notches; they mark the edges of the operating bands. Band III stays only about "
         "1 dB below the −10 dB level, so it is marginal and should be confirmed with a finer mesh and by "
         "measurement."))
-    figure(doc, "fig3_s11.png", 3, (
-        "Simulated reflection coefficient of the proposed antenna with the metasurface; the shaded regions are the "
-        "three −10 dB bands. «The antenna-alone curve (stage 1) is to be added from CST.»"))
     para(doc, (
-        f"Because the copper ground of the metasurface lies only {val('h')} mm behind the antenna, outside the "
-        "in-phase band of Section II-B it acts close to a metal mirror, and the low-frequency matching of the antenna "
-        "is expected to be affected most. «The reflection coefficient of the antenna without the metasurface "
-        "(stage 1), to be added to Fig. 3 and Table II, quantifies this effect: lower band edge [xx] GHz without "
-        "the metasurface.»"))
+        "A comparison of the two curves shows what the metasurface changes. The lower band edge stays almost the "
+        f"same ({num(A1.lo)} GHz without and {num(B1.lo)} GHz with the metasurface). Near {num(FMIN, 1)} GHz the "
+        f"matching improves from {num(at(FA, SA, FMIN), 1)} dB to {num(SMIN, 1)} dB, and new resonances appear at "
+        f"{num(others[1])} and {num(others[2])} GHz. On the other hand, the resonances of the antenna alone at "
+        f"{num(a_others[1])} and {num(A_FMIN)} GHz are not retained: with the metasurface |S_{{11}}| is "
+        f"{num(at(F, S, a_others[1]), 1)} dB and {num(at(F, S, A_FMIN), 1)} dB at these frequencies. The antenna "
+        "alone is thus matched almost continuously, whereas the antenna with the metasurface has three separate "
+        "bands."))
     table(doc, 2, "Simulated Performance of the Design Stages", [
         ["Stage", "−10 dB band (GHz)", "FBW (%)", "Lowest |S_{11}| (dB)", "Peak gain (dBi)"],
-        ["1: antenna alone", XX, XX, XX, XX],
+        ["1: antenna alone",
+         f"{num(A1.lo)}–{num(A1.hi)}\n{num(A2.lo)}–>15",
+         f"{num(A1.fbw, 1)}\n≥ {num(A2.fbw, 1)}",
+         f"{num(A_SMIN, 1)} at {num(A_FMIN)} GHz", XX],
         ["2: with metasurface",
          f"{num(B1.lo)}–{num(B1.hi)}\n{num(B2.lo)}–{num(B2.hi)}\n{num(B3.lo)}–>15",
          f"{num(B1.fbw, 1)}\n{num(B2.fbw, 1)}\n≥ {num(B3.fbw, 1)}",
@@ -490,14 +579,22 @@ def results(doc) -> None:
         "reported as well.]»"))
     figure(doc, "fig4_gain.png", 4, "Simulated realized gain of the antenna with and without the metasurface.")
     h2(doc, "C", "Radiation Pattern")
+    p1, p2 = d.PATTERNS
+    tbc = ("" if d.PATTERN_MODEL_CONFIRMED else
+           "«TO BE CONFIRMED: the model (with or without the metasurface) from which these patterns are taken.» ")
     para(doc, (
-        f"The E-plane and H-plane radiation patterns at {', '.join(f'{f:g}' for f in d.PATTERN_FREQS[:-1])} and "
-        f"{d.PATTERN_FREQS[-1]:g} GHz, one frequency in each band, are depicted in Fig. 5. «[To be completed from the "
-        "CST far-field results: the pattern shape in each band, the direction of maximum radiation and the "
-        "front-to-back ratio with and without the metasurface.]»"))
-    figure(doc, "fig5_patterns.png", 5, (
-        f"Simulated E-plane and H-plane radiation patterns (dB) at "
-        f"{', '.join(f'{f:g}' for f in d.PATTERN_FREQS[:-1])} and {d.PATTERN_FREQS[-1]:g} GHz."))
+        f"The simulated far-field directivity patterns in the φ = 90° plane at {p1['f']:g} and {p2['f']:g} GHz "
+        f"are depicted in Fig. 5. {tbc}At {p1['f']:g} GHz the pattern has two broad lobes, one around θ = 0° and "
+        f"one around θ = 180°, so the radiation is two-sided. The main lobe has a directivity of "
+        f"{num(p1['main_dbi'])} dBi in the direction θ = {p1['dir_deg']:g}°, with a 3 dB angular width of "
+        f"{p1['width_deg']:g}°. At {p2['f']:g} GHz the pattern splits into several lobes. The main lobe has a "
+        f"directivity of {num(p2['main_dbi'])} dBi at θ = {p2['dir_deg']:g}°, a 3 dB angular width of "
+        f"{p2['width_deg']:g}° and a side-lobe level of {num(p2['sll_db'], 1)} dB. These values are directivity; "
+        "«the realized gain and the patterns in the φ = 0° plane are to be added.»"))
+    picture(doc, shot(p1["shot"], CROP_PATTERN), 3.4, "(a)")
+    picture(doc, shot(p2["shot"], CROP_PATTERN), 3.4, "(b)", before=0)
+    caption(doc, 5, f"Simulated far-field directivity in the φ = 90° plane (CST Studio Suite): (a) {p1['f']:g} GHz, "
+            f"(b) {p2['f']:g} GHz. {tbc}")
     h2(doc, "D", "Comparison with Reported Works")
     lam = num(PROFILE / LAMBDA_LO, 3)
     para(doc, (
@@ -549,7 +646,8 @@ def applications(doc) -> None:
         "surface-penetrating radar [@bhattacharya, kundu_triple]: the transmission coefficient S_{21} between them "
         "is recorded with and without a target, and the difference reveals the target. The metasurface directs the "
         "radiation away from the ground side, which reduces coupling to the electronics placed behind the antenna "
-        f"«(to be confirmed with the front-to-back ratio of Fig. 5)». Since bands I and II are separated by the "
+        "«(TO BE CONFIRMED: the pattern of Fig. 5(a) at 5.3 GHz is two-sided, so this benefit is not shown yet)». "
+        f"Since bands I and II are separated by the "
         f"unmatched region of {num(B1.hi)}–{num(B2.lo)} GHz, the antenna is not intended for impulse (UWB) radar."))
 
 
@@ -625,6 +723,7 @@ def build() -> Path:
     abstract(doc)
     introduction(doc)
     design_section(doc)
+    s11_figure(doc)
     results(doc)
     applications(doc)
     conclusion(doc)
