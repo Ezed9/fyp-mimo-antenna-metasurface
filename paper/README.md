@@ -22,14 +22,15 @@ given PDFs (e.g. the two reference papers). The body text must report 0, and it 
 | File | Role |
 |---|---|
 | `design.py` | **All numbers**: dimensions (with `est` flags), S11 band analysis, the Ray and LC estimates, service list |
-| `make_paper_figures.py` | Only the drawn figures: stack-up sketch (Fig. 2), gain placeholder (Fig. 4), applications chart (Fig. 6) |
-| `build_paper.py` | The text, tables, equations and references, then the docx and PDF. It places the CST screenshots as Figs. 1, 3 and 5 |
+| `make_paper_figures.py` | Only the drawn figures: stack-up sketch (Fig. 2) and applications chart (Fig. 6) |
+| `build_paper.py` | The text, tables, equations and references, then the docx and PDF. It places the CST screenshots as Figs. 1, 3, 4 and 5 |
 | `cst/` | The team's CST screenshots, stored byte-for-byte as received |
 | `../exports/paper/cst_s11_*_digitized.csv` | The two S11 curves read from the screenshots (±0.02 GHz, ±0.1 dB); used for the numbers only |
+| `../exports/paper/cst_directivity_*_digitized.csv` | The two directivity curves read from the screenshots (±0.02 GHz, ±0.05 dB); numbers only |
 
 ## Figures that are CST screenshots (never redrawn)
 
-Figs. 1, 3 and 5 are the screenshots themselves. `build_paper.py` only crops blank margins (`CROP_*` constants); it
+Figs. 1, 3, 4 and 5 are the screenshots themselves. `build_paper.py` only crops blank margins (`CROP_*` constants); it
 does not resize, filter, redraw or annotate them, and every label inside them is kept.
 
 | Fig. | File in `cst/` | Status |
@@ -38,10 +39,12 @@ does not resize, filter, redraw or annotate them, and every label inside them is
 | 1(b) | `cst_ms4x4_top_v2.jpg` | New (14 Nov) |
 | 3(a) | `cst_s11_no_ms_assumed.jpg` | New (14 Nov). **Assumed** to be the antenna without the metasurface; marked TO BE CONFIRMED in the paper. Set `S11_ALONE_ASSUMED = False` in `design.py` once confirmed |
 | 3(b) | `cst_s11_with_ms.jpg` | New (14 Nov). Same curve as the earlier with-metasurface run |
+| 4(a) | `cst_directivity_no_ms_assumed.png` | New (17 Nov). Directivity against frequency, maximum in the φ = 0° plane. The smooth curve (peak 5.2 dBi) is **assumed** to be the antenna alone; marked TO BE CONFIRMED |
+| 4(b) | `cst_directivity_with_ms_assumed.png` | New (17 Nov). The curve with dips near 7.5, 9.6 and 12 GHz (peak 7.0 dBi) is **assumed** to be the antenna with the metasurface. Set `DIR_ASSUMED = False` in `design.py` once confirmed |
 | 5(a), 5(b) | `cst_pattern_5p3GHz.jpg`, `cst_pattern_12p5GHz.jpg` | New (14 Nov). Directivity, φ = 90° cut. **Which model they come from is not known**; marked TO BE CONFIRMED. Set `PATTERN_MODEL_CONFIRMED = True` and state the model in the text once known |
 
-If the two S11 plots are the other way round, swap the two files (and their digitised CSVs) and rebuild: the text of
-Section III-A and Table II follow the data.
+If the two S11 plots, or the two directivity plots, are the other way round, swap the two files (and their digitised
+CSVs) and rebuild: the text of Sections III-A and III-B and Table II follow the data.
 
 ## 1. Confirm these dimensions (set `est=False` in `design.py` once checked)
 
@@ -80,8 +83,9 @@ All are *1D result → right-click → Export → Plot Data (ASCII)*, two column
 |---|---|---|
 | `s11_with_ms.txt` | S11 (dB), antenna + metasurface, 1–15 GHz | exact numbers instead of the digitized curve (the figure stays the screenshot) |
 | `s11_antenna_alone.txt` | S11 (dB), octagon antenna without the metasurface | the same for Table II row 1 |
-| `gain_antenna_alone.txt` | realized gain (dBi) vs frequency, broadside (θ = 0°), no metasurface | Fig. 4 |
-| `gain_with_ms.txt` | the same with the metasurface | Fig. 4 |
+
+Realized gain and efficiency against frequency, with and without the metasurface, are still missing (yellow in the
+abstract, Section III-B, Table III and the conclusion). Send them as CST screenshots, like the directivity plots.
 
 Still needed as CST screenshots (they go into `cst/` and are listed in `design.PATTERNS`): the patterns in the φ = 0°
 plane, a pattern in band II (near 9.9 GHz), and the same cuts for the other model (with / without the metasurface).
@@ -99,7 +103,9 @@ the real numbers.
    without the metasurface: 3.52–15 GHz with only a 0.2 dB excursion (−9.8 dB) near 5.5 GHz, against three separate
    bands with it. The paper says this plainly. The 5.3 GHz pattern is two-sided (lobes at 0° and 180°), so it does not
    show a reflector effect either. A reviewer's first question will be "what does the metasurface do?"; the answer
-   needs the realized gain with and without it (Fig. 4). If the gain does not rise, the paper needs a different story.
+   needs the realized gain with and without it. The directivity plots (Fig. 4) give a mixed answer: with the
+   metasurface the peak rises from 5.2 to 7.0 dBi and bands I and III improve, but over 70 % of band II the
+   directivity is lower, with dips to −2.8, −1.0 and −0.3 dBi. The paper reports this as it is.
 4. **The S11 numbers are digitized from screenshots.** Export the ASCII data for exact values.
 5. **CPW feed impedance.** With Wf = 3.0 mm and g = 0.5 mm on 1.6 mm FR-4, the conformal-mapping formula gives about
    **58 Ω** (`design.cpw_z0()`), not 50 Ω. Check *Port modes → Line impedance* in CST. A narrower slot (about 0.3 mm) or a

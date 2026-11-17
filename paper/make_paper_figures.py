@@ -6,10 +6,9 @@
 
 Run from the repo root:  uv run paper/make_paper_figures.py
 
-Only the schematic and summary figures are drawn here: the stack-up sketch (Fig. 2), the realized-gain plot
-(Fig. 4, a clearly labelled placeholder until exports/paper/gain_*.txt exist) and the applications chart (Fig. 6).
-The geometry, S11 and radiation-pattern figures (Figs. 1, 3 and 5) are the team's CST screenshots in paper/cst/;
-paper/build_paper.py places them unchanged and nothing here redraws them.
+Only the schematic and summary figures are drawn here: the stack-up sketch (Fig. 2) and the applications chart
+(Fig. 6). The geometry, S11, directivity and radiation-pattern figures (Figs. 1, 3, 4 and 5) are the team's CST
+screenshots in paper/cst/; paper/build_paper.py places them unchanged and nothing here redraws them.
 """
 from __future__ import annotations
 
@@ -112,34 +111,6 @@ def fig_stackup() -> Path:
     return save(fig, "fig2_stackup.png")
 
 
-# --------------------------------------------------------------------------- Fig. 4: realized gain
-def fig_gain() -> Path:
-    f, s, _ = d.s11_with_ms()
-    bands = d.bands(f, s)
-    fig, ax = plt.subplots(figsize=(COL_W, 2.0))
-    shade_bands(ax, bands, f[-1])
-    have = False
-    for path, label, color, ls in ((d.GAIN_ALONE_EXPORT, "Antenna alone", ORANGE, (0, (5, 2))),
-                                   (d.GAIN_MS_EXPORT, "Antenna with metasurface", BLUE, "-")):
-        if path.exists():
-            gf, gv = d.read_two_columns(path)
-            ax.plot(gf, gv, color=color, ls=ls, label=label)
-            have = True
-    ax.set_xlim(1, 15)
-    ax.set_xticks(range(1, 16, 2))
-    ax.set_ylim(-10, 12)
-    ax.set_xlabel("Frequency (GHz)")
-    ax.set_ylabel("Realized gain (dBi)")
-    grid(ax)
-    if have:
-        ax.legend(loc="lower right", frameon=True, framealpha=0.95, edgecolor=GRID)
-    else:
-        placeholder(ax, "PLACEHOLDER: realized gain vs frequency",
-                    "antenna alone vs with metasurface (broadside, CST)\n"
-                    "export to exports/paper/gain_antenna_alone.txt\nand exports/paper/gain_with_ms.txt")
-    return save(fig, "fig4_gain.png")
-
-
 # --------------------------------------------------------------------------- Fig. 6: applications
 def fig_applications() -> Path:
     f, s, _ = d.s11_with_ms()
@@ -178,5 +149,5 @@ def fig_applications() -> Path:
 
 if __name__ == "__main__":
     print("Writing paper figures:")
-    for fn in (fig_stackup, fig_gain, fig_applications):
+    for fn in (fig_stackup, fig_applications):
         fn()

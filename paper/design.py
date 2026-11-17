@@ -32,8 +32,15 @@ S11_MS_DIGITIZED = EXPORTS / "cst_s11_with_ms_digitized.csv"
 S11_ALONE_DIGITIZED = EXPORTS / "cst_s11_no_ms_assumed_digitized.csv"
 S11_MS_EXPORT = EXPORTS / "s11_with_ms.txt"
 S11_ALONE_EXPORT = EXPORTS / "s11_antenna_alone.txt"
-GAIN_ALONE_EXPORT = EXPORTS / "gain_antenna_alone.txt"   # realized gain (dBi) vs frequency, broadside
-GAIN_MS_EXPORT = EXPORTS / "gain_with_ms.txt"
+
+# Directivity against frequency (CST "Directivity, Phi=0.0, Max. Value (Subrange)": the highest directivity in the
+# phi = 0 deg plane at each frequency; not gain). Two screenshots; which model each belongs to is ASSUMED from the
+# curve shapes (the smooth one as the antenna alone) until the team confirms it.
+DIR_ALONE_SHOT = CST / "cst_directivity_no_ms_assumed.png"      # smooth curve, peak about 5.2 dBi near 13.1 GHz
+DIR_MS_SHOT = CST / "cst_directivity_with_ms_assumed.png"       # dips near 7.5, 9.6 and 12 GHz, peak 7.0 dBi
+DIR_ASSUMED = True                                              # set False once confirmed
+DIR_ALONE_DIGITIZED = EXPORTS / "cst_directivity_no_ms_assumed_digitized.csv"
+DIR_MS_DIGITIZED = EXPORTS / "cst_directivity_with_ms_assumed_digitized.csv"
 
 # Far-field directivity cuts (phi = 90 deg) supplied as CST screenshots. The values are the read-outs printed in the
 # screenshots themselves. Which model they come from (with or without the metasurface) is not confirmed.
@@ -117,6 +124,11 @@ def s11_with_ms() -> tuple[np.ndarray, np.ndarray, str]:
         return f, s, "CST export"
     f, s = read_two_columns(S11_MS_DIGITIZED)
     return f, s, "digitized from the CST screenshot"
+
+
+def directivity() -> tuple[tuple[np.ndarray, np.ndarray], tuple[np.ndarray, np.ndarray]]:
+    """(f, D) of the antenna alone and of the antenna with the metasurface, read from the two screenshots."""
+    return read_two_columns(DIR_ALONE_DIGITIZED), read_two_columns(DIR_MS_DIGITIZED)
 
 
 def s11_alone() -> tuple[np.ndarray, np.ndarray]:

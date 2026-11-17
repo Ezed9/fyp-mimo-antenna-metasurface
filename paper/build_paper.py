@@ -12,7 +12,7 @@ Layout follows the IEEE two-column conference template in Word, the format of S.
 US Letter, Times New Roman, single-column title and author block, two-column body, figures and tables at column
 width (the two S11 screenshots span both columns), numbered IEEE references.
 
-Figures 1, 3 and 5 are the team's CST screenshots in paper/cst/. They are placed as they are: shot() only crops blank
+Figures 1, 3, 4 and 5 are the team's CST screenshots in paper/cst/. They are placed as they are: shot() only crops blank
 margins, and nothing is resized, filtered, redrawn or annotated. The S11 numbers in the text are read from digitised
 copies of the same screenshots (paper/design.py).
 
@@ -22,8 +22,9 @@ Writing rules:
 * Every number comes from paper/design.py (CST S11, screenshot dimensions, analytical estimates), so text, tables
   and figures agree.
 * «...» marks text shown with a yellow highlight: dimensions read off the screenshots that the team must confirm, and
-  [xx] placeholders for CST results not available yet (gain). "TO BE CONFIRMED" marks the two attributions that the
-  team has not confirmed: which S11 screenshot is the antenna alone, and which model the patterns come from.
+  [xx] placeholders for CST results not available yet (realized gain). "TO BE CONFIRMED" marks the attributions the
+  team has not confirmed: which S11 and which directivity screenshot is the antenna alone, and which model the
+  patterns come from.
   Nothing is claimed about gain until that data exists.
 """
 from __future__ import annotations
@@ -78,6 +79,26 @@ A_FMIN, A_SMIN = min(A_DIPS, key=lambda x: x[1])
 A_GAP = d.peak_between(FA, SA, A1.hi, A2.lo)  # the short rise between its two bands
 ALONE_TBC = ("«TO BE CONFIRMED: Fig. 3(a) is taken here as the antenna without the metasurface.» "
              if d.S11_ALONE_ASSUMED else "")
+
+
+# Directivity against frequency (phi = 0 deg plane, maximum value), read from the two screenshots of Fig. 4.
+(FDA, DA), (FDM, DM) = d.directivity()
+DA_PEAK = (float(FDA[DA.argmax()]), float(DA.max()))
+DM_PEAK = (float(FDM[DM.argmax()]), float(DM.max()))
+DIR_TBC = ("«TO BE CONFIRMED: Fig. 4(a) is taken here as the antenna without the metasurface and Fig. 4(b) as "
+           "the antenna with it.» " if d.DIR_ASSUMED else "")
+
+
+def dir_band(lo: float, hi: float) -> tuple[float, float, float]:
+    """Mean directivity (dBi) alone and with the metasurface over lo..hi GHz, and the share (%) of that range in
+    which the metasurface curve is the lower one."""
+    g = np.arange(lo, hi + 1e-9, 0.02)
+    a, m = np.interp(g, FDA, DA), np.interp(g, FDM, DM)
+    return float(a.mean()), float(m.mean()), float(100 * (m < a).mean())
+
+
+DM_DIPS = [(float(FDM[i]), float(DM[i])) for i in range(25, len(DM) - 25)
+           if DM[i] < 0 and DM[i] == DM[i - 25:i + 26].min() and FDM[i] > 3]   # dips below 0 dBi above 3 GHz
 
 
 def at(f_arr, s_arr, f0: float) -> float:
@@ -381,8 +402,9 @@ def abstract(doc) -> None:
         f"{band_txt(B1)} ({num(B1.fbw, 1)} %), {band_txt(B2)} ({num(B2.fbw, 1)} %) and {band_txt(B3)}. "
         f"Throughout the resonating bands, the lowest reflection coefficient obtained is {num(SMIN, 1)} dB at "
         f"{num(FMIN)} GHz. An equivalent-circuit model places the in-phase reflection of the metasurface near "
-        f"{num(LC['f0'], 1)} GHz, inside the second band. The peak realized gain is {XX} dBi at {XX} GHz, compared "
-        f"with {XX} dBi for the antenna without the metasurface. The bands cover 5G NR n79, the upper part of "
+        f"{num(LC['f0'], 1)} GHz, inside the second band. The peak simulated directivity in the φ = 0° plane is "
+        f"{num(DM_PEAK[1], 1)} dBi at {num(DM_PEAK[0], 1)} GHz with the metasurface, compared with "
+        f"{num(DA_PEAK[1], 1)} dBi for the antenna without it. «Realized gain: TO BE ADDED.» The bands cover 5G NR n79, the upper part of "
         "n77/n78, WiMAX, 5 GHz WLAN, the C-band satellite downlink, X-band radar and satellite uplink, and the Ku-band "
         "satellite links, so the proposed antenna is suitable to implement in compact multi-standard communication "
         "and sensing terminals."), 9, bold=True)
@@ -527,6 +549,16 @@ def s11_figure(doc) -> None:
     columns(doc.add_section(WD_SECTION.CONTINUOUS), 2)
 
 
+def directivity_figure(doc) -> None:
+    """Fig. 4 across both columns: the two directivity screenshots, unchanged."""
+    columns(doc.add_section(WD_SECTION.CONTINUOUS), 1)
+    picture(doc, shot(d.DIR_ALONE_SHOT), 6.6, "(a)")
+    picture(doc, shot(d.DIR_MS_SHOT), 6.6, "(b)", before=0)
+    caption(doc, 4, "Simulated directivity against frequency, maximum value in the φ = 0° plane (CST Studio "
+            "Suite): (a) antenna without the metasurface, (b) antenna with the metasurface. " + DIR_TBC, CENTER)
+    columns(doc.add_section(WD_SECTION.CONTINUOUS), 2)
+
+
 def results(doc) -> None:
     h1(doc, "III", "Results and Discussion")
     h2(doc, "A", "Reflection Coefficient")
@@ -560,24 +592,38 @@ def results(doc) -> None:
         "alone is thus matched almost continuously, whereas the antenna with the metasurface has three separate "
         "bands."))
     table(doc, 2, "Simulated Performance of the Design Stages", [
-        ["Stage", "−10 dB band (GHz)", "FBW (%)", "Lowest |S_{11}| (dB)", "Peak gain (dBi)"],
+        ["Stage", "−10 dB band (GHz)", "FBW (%)", "Lowest |S_{11}| (dB)", "Peak directivity (dBi)"],
         ["1: antenna alone",
          f"{num(A1.lo)}–{num(A1.hi)}\n{num(A2.lo)}–>15",
          f"{num(A1.fbw, 1)}\n≥ {num(A2.fbw, 1)}",
-         f"{num(A_SMIN, 1)} at {num(A_FMIN)} GHz", XX],
+         f"{num(A_SMIN, 1)} at {num(A_FMIN)} GHz", f"{num(DA_PEAK[1], 1)} at {num(DA_PEAK[0], 1)} GHz"],
         ["2: with metasurface",
          f"{num(B1.lo)}–{num(B1.hi)}\n{num(B2.lo)}–{num(B2.hi)}\n{num(B3.lo)}–>15",
          f"{num(B1.fbw, 1)}\n{num(B2.fbw, 1)}\n≥ {num(B3.fbw, 1)}",
-         f"{num(SMIN, 1)} at {num(FMIN)} GHz", XX],
-    ], [0.85, 0.95, 0.5, 0.7, 0.45], header_col=True)
-    h2(doc, "B", "Gain")
+         f"{num(SMIN, 1)} at {num(FMIN)} GHz", f"{num(DM_PEAK[1], 1)} at {num(DM_PEAK[0], 1)} GHz"],
+    ], [0.8, 0.9, 0.48, 0.67, 0.65], header_col=True)
+    directivity_figure(doc)
+    h2(doc, "B", "Directivity")
+    (a1, m1, _), (a2, m2, low2), (a3, m3, _) = (dir_band(b.lo, min(b.hi, 15.0)) for b in (B1, B2, B3))
+    dip_txt = ", ".join(f"{num(dv, 1)} dBi at {num(df, 1)} GHz" for df, dv in DM_DIPS[:-1])
+    dip_txt += f" and {num(DM_DIPS[-1][1], 1)} dBi at {num(DM_DIPS[-1][0], 1)} GHz"
+    alone_txt = ", ".join(num(at(FDA, DA, df), 1) for df, _ in DM_DIPS[:-1]) + f" and {num(at(FDA, DA, DM_DIPS[-1][0]), 1)}"
     para(doc, (
-        "The simulated realized gain in the broadside direction, with and without the metasurface, is depicted in "
-        "Fig. 4. «[To be completed from the CST gain results: the peak realized gain with the metasurface is [xx] "
-        "dBi at [xx] GHz against [xx] dBi without it. The largest improvement is expected in band II, where the "
-        "metasurface reflects in phase (Section II-B); a reduction at frequencies where (6) is not met should be "
-        "reported as well.]»"))
-    figure(doc, "fig4_gain.png", 4, "Simulated realized gain of the antenna with and without the metasurface.")
+        "The simulated directivity against frequency is depicted in Fig. 4. The quantity plotted is the highest "
+        "directivity in the φ = 0° plane at each frequency. It does not include the losses or the mismatch, so it "
+        f"is not the realized gain. {DIR_TBC}Without the metasurface, the directivity varies smoothly and reaches "
+        f"its peak of {num(DA_PEAK[1], 1)} dBi at {num(DA_PEAK[0], 1)} GHz. With the metasurface, the peak "
+        f"directivity is {num(DM_PEAK[1], 1)} dBi at {num(DM_PEAK[0], 1)} GHz, which is "
+        f"{num(DM_PEAK[1] - DA_PEAK[1], 1)} dB higher."))
+    para(doc, (
+        f"The effect of the metasurface differs from band to band. In band I the mean directivity rises from "
+        f"{num(a1, 1)} to {num(m1, 1)} dBi, and in band III from {num(a3, 1)} to {num(m3, 1)} dBi. In band II, "
+        f"however, it falls from {num(a2, 1)} to {num(m2, 1)} dBi, and the directivity with the metasurface is the "
+        f"lower one over {num(low2, 0)} % of this band. With the metasurface the curve has sharp dips of "
+        f"{dip_txt}, where the antenna alone gives {alone_txt} dBi. The simple model of Section II-B places the "
+        "in-phase reflection inside band II, so this result does not follow it; the model ignores the near-field "
+        "coupling at such a small gap. «Realized gain and efficiency against frequency, with and without the "
+        "metasurface: TO BE ADDED.»"))
     h2(doc, "C", "Radiation Pattern")
     p1, p2 = d.PATTERNS
     tbc = ("" if d.PATTERN_MODEL_CONFIRMED else
@@ -659,8 +705,10 @@ def conclusion(doc) -> None:
         f"and a total profile of «{num(PROFILE, 1)}» mm, provides three impedance bands with |S_{{11}}| ≤ −10 dB: "
         f"{band_txt(B1)}, {band_txt(B2)} and {band_txt(B3)}, with a lowest reflection coefficient of "
         f"{num(SMIN, 1)} dB at {num(FMIN)} GHz. The equivalent-circuit model places the in-phase reflection of the "
-        f"metasurface near {num(LC['f0'], 1)} GHz, inside the second band. «[Gain sentence: the peak realized gain "
-        "is [xx] dBi, an improvement of [xx] dB over the antenna alone.]» The bands serve sub-6 GHz 5G, WLAN, X-band "
+        f"metasurface near {num(LC['f0'], 1)} GHz, inside the second band. The peak simulated directivity in the φ = 0° plane is "
+        f"{num(DM_PEAK[1], 1)} dBi with the metasurface against {num(DA_PEAK[1], 1)} dBi without it; it is higher in "
+        "the first and third bands but lower over most of the second band. «Realized gain: TO BE ADDED.» The bands "
+        "serve sub-6 GHz 5G, WLAN, X-band "
         "radar and satellite links and the Ku-band satellite links, so the proposed antenna is suitable to implement "
         "in compact multi-standard communication and sensing systems. Fabrication and measurement of the prototype "
         "are the next step of this work."))
