@@ -23,9 +23,8 @@ Writing rules:
   and figures agree.
 * «...» marks text shown with a yellow highlight: dimensions read off the screenshots that the team must confirm, and
   author e-mail placeholders. Realized gain is not reported (team decision): the paper uses directivity.
-  "TO BE CONFIRMED" marks the attributions the
-  team has not confirmed: which S11 and which directivity screenshot is the antenna alone, and which model the
-  patterns come from.
+  "TO BE CONFIRMED" marks the one detail the team has not confirmed: which face of the metasurface board carries
+  the patches.
   Nothing is claimed about gain until that data exists.
 """
 from __future__ import annotations
@@ -72,22 +71,18 @@ DIPS = d.dips(F, S)
 FMIN, SMIN = min(DIPS, key=lambda x: x[1])
 GAP1 = d.peak_between(F, S, B1.hi, B2.lo)     # worst point between band I and band II
 GAP2 = d.peak_between(F, S, B2.hi, B3.lo)
-FA, SA = d.s11_alone()                        # second S11 screenshot, taken as the antenna without the metasurface
+FA, SA = d.s11_alone()                        # antenna without the metasurface
 A_BANDS = d.bands(FA, SA)
 A1, A2 = A_BANDS[0], A_BANDS[1]
 A_DIPS = d.dips(FA, SA)
 A_FMIN, A_SMIN = min(A_DIPS, key=lambda x: x[1])
 A_GAP = d.peak_between(FA, SA, A1.hi, A2.lo)  # the short rise between its two bands
-ALONE_TBC = ("«TO BE CONFIRMED: Fig. 3(a) is taken here as the antenna without the metasurface.» "
-             if d.S11_ALONE_ASSUMED else "")
 
 
 # Directivity against frequency (phi = 0 deg plane, maximum value), read from the two screenshots of Fig. 4.
 (FDA, DA), (FDM, DM) = d.directivity()
 DA_PEAK = (float(FDA[DA.argmax()]), float(DA.max()))
 DM_PEAK = (float(FDM[DM.argmax()]), float(DM.max()))
-DIR_TBC = ("«TO BE CONFIRMED: Fig. 4(a) is taken here as the antenna without the metasurface and Fig. 4(b) as "
-           "the antenna with it.» " if d.DIR_ASSUMED else "")
 
 
 def dir_band(lo: float, hi: float) -> tuple[float, float, float]:
@@ -553,7 +548,7 @@ def s11_figure(doc) -> None:
     picture(doc, shot(d.S11_ALONE_SHOT), 6.6, "(a)")
     picture(doc, shot(d.S11_MS_SHOT), 6.6, "(b)", before=0)
     caption(doc, 3, "Simulated reflection coefficient S_{11} from 1 to 15 GHz (CST Studio Suite): (a) antenna "
-            "without the metasurface, (b) antenna with the metasurface. " + ALONE_TBC, CENTER)
+            "without the metasurface, (b) antenna with the metasurface.", CENTER)
     columns(doc.add_section(WD_SECTION.CONTINUOUS), 2)
 
 
@@ -563,7 +558,7 @@ def directivity_figure(doc) -> None:
     picture(doc, shot(d.DIR_ALONE_SHOT), 6.6, "(a)")
     picture(doc, shot(d.DIR_MS_SHOT), 6.6, "(b)", before=0)
     caption(doc, 4, "Simulated directivity against frequency, maximum value in the φ = 0° plane (CST Studio "
-            "Suite): (a) antenna without the metasurface, (b) antenna with the metasurface. " + DIR_TBC, CENTER)
+            "Suite): (a) antenna without the metasurface, (b) antenna with the metasurface.", CENTER)
     columns(doc.add_section(WD_SECTION.CONTINUOUS), 2)
 
 
@@ -574,7 +569,7 @@ def results(doc) -> None:
     a_others = [f for f, _ in A_DIPS if abs(f - A_FMIN) > 0.05]
     para(doc, (
         "The simulated reflection coefficients of the two design stages are depicted in Fig. 3 and summarized in "
-        f"Table II. {ALONE_TBC}Without the metasurface (Fig. 3(a)), |S_{{11}}| falls below −10 dB at "
+        f"Table II. Without the metasurface (Fig. 3(a)), |S_{{11}}| falls below −10 dB at "
         f"{num(A1.lo)} GHz and remains below it up to 15 GHz, the upper limit of the simulation, except from "
         f"{num(A1.hi)} to {num(A2.lo)} GHz, where it rises to {num(A_GAP[1], 1)} dB. The lowest reflection "
         f"coefficient is {num(A_SMIN, 1)} dB at {num(A_FMIN)} GHz, and further resonances appear at "
@@ -619,7 +614,7 @@ def results(doc) -> None:
     para(doc, (
         "The simulated directivity against frequency is depicted in Fig. 4. The quantity plotted is the highest "
         "directivity in the φ = 0° plane at each frequency; it does not include the losses or the mismatch of "
-        f"the antenna. {DIR_TBC}Without the metasurface, the directivity varies smoothly and reaches "
+        "the antenna. Without the metasurface, the directivity varies smoothly and reaches "
         f"its peak of {num(DA_PEAK[1], 1)} dBi at {num(DA_PEAK[0], 1)} GHz. With the metasurface, the peak "
         f"directivity is {num(DM_PEAK[1], 1)} dBi at {num(DM_PEAK[0], 1)} GHz, which is "
         f"{num(DM_PEAK[1] - DA_PEAK[1], 1)} dB higher."))
@@ -632,13 +627,10 @@ def results(doc) -> None:
         "radiator (Section II-B), so its effect on the directivity changes with frequency and is not a uniform "
         "increase."))
     h2(doc, "C", "Radiation Pattern")
-    pa, pm, p3 = d.PATTERNS            # 5.3 GHz alone (assumed), 5.3 GHz with metasurface (assumed), 12.5 GHz
-    tbc = ("" if d.PATTERN_MODEL_CONFIRMED else
-           "«TO BE CONFIRMED: Fig. 5(a) is taken here as the antenna without the metasurface and Fig. 5(b) as the "
-           "antenna with it; the model of Fig. 5(c) is not known.» ")
+    pa, pm = d.PATTERNS                # 5.3 GHz: antenna alone, antenna with the metasurface
     para(doc, (
-        "The simulated far-field directivity patterns in the φ = 90° plane are depicted in Fig. 5. "
-        f"{tbc}At {pa['f']:g} GHz both patterns have two broad lobes, one around θ = 0° and one around θ = 180°. "
+        f"The simulated far-field directivity patterns in the φ = 90° plane at {pa['f']:g} GHz are depicted in "
+        "Fig. 5. Both patterns have two broad lobes, one around θ = 0° and one around θ = 180°. "
         f"Without the metasurface (Fig. 5(a)), the main lobe points to θ = {pa['dir_deg']:g}° with a directivity "
         f"of {num(pa['main_dbi'])} dBi and a 3 dB angular width of {pa['width_deg']:g}°. With the metasurface "
         f"(Fig. 5(b)), the main lobe points to θ = {pm['dir_deg']:g}° with a directivity of {num(pm['main_dbi'])} "
@@ -646,16 +638,10 @@ def results(doc) -> None:
         f"{num(pm['sll_db'], 1)} dB. The metasurface therefore turns the main lobe to the front and raises the "
         f"directivity by {num(pm['main_dbi'] - pa['main_dbi'])} dB, but the opposite lobe is only "
         f"{num(-pm['sll_db'], 1)} dB below the main lobe, so the radiation remains two-sided at this frequency."))
-    para(doc, (
-        f"At {p3['f']:g} GHz (Fig. 5(c)) the pattern splits into several lobes. The main lobe has a directivity of "
-        f"{num(p3['main_dbi'])} dBi at θ = {p3['dir_deg']:g}°, a 3 dB angular width of {p3['width_deg']:g}° and a "
-        f"side-lobe level of {num(p3['sll_db'], 1)} dB."))
     picture(doc, shot(pa["shot"], CROP_PATTERN), 3.4, "(a)")
     picture(doc, shot(pm["shot"], CROP_PATTERN), 3.4, "(b)", before=0)
-    picture(doc, shot(p3["shot"], CROP_PATTERN), 3.4, "(c)", before=0)
-    caption(doc, 5, "Simulated far-field directivity in the φ = 90° plane (CST Studio Suite): "
-            f"(a) {pa['f']:g} GHz, antenna without the metasurface; (b) {pm['f']:g} GHz, antenna with the "
-            f"metasurface; (c) {p3['f']:g} GHz. {tbc}")
+    caption(doc, 5, f"Simulated far-field directivity in the φ = 90° plane at {pa['f']:g} GHz (CST Studio Suite): "
+            "(a) antenna without the metasurface, (b) antenna with the metasurface.")
     h2(doc, "D", "Comparison with Reported Works")
     lam = num(PROFILE / LAMBDA_LO, 3)
     para(doc, (

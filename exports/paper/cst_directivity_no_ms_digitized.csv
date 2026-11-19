@@ -1,4 +1,4 @@
-# Digitised from paper/cst/cst_directivity_no_ms_assumed.png with analysis/digitize_cst_plot.py
+# Digitised from paper/cst/cst_directivity_no_ms.png with analysis/digitize_cst_plot.py
 # axes: x 0..16, y -5..6 at the frame; gridline misfit 0.50 px; 1 px = 0.0171 in x, 0.0376 in y
 # red-pixel column centroids, resampled every 0.02
 f_GHz,directivity_dBi

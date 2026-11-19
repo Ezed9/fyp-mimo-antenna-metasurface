@@ -23,38 +23,31 @@ CST = PAPER / "cst"
 EXPORTS = ROOT / "exports" / "paper"
 
 # --------------------------------------------------------------------------- CST exports (optional, fill placeholders)
-# The S11 figures in the paper are the CST screenshots themselves (paper/cst/). Their numbers are read from the
-# digitised copies below (analysis/digitize_cst_plot.py); a CST "Plot Data (ASCII)" export, if present, is preferred.
-S11_MS_SHOT = CST / "cst_s11_with_ms.jpg"                # dips at 5.3, 9.0, 9.9 GHz: antenna with the metasurface
-S11_ALONE_SHOT = CST / "cst_s11_no_ms_assumed.jpg"       # dips at 4.1, 7.4, 12.4 GHz: ASSUMED antenna alone
-S11_ALONE_ASSUMED = True                                 # set False once the team confirms which model it is
+# The S11, directivity and pattern figures in the paper are the CST screenshots themselves (paper/cst/). Which model
+# each screenshot shows was confirmed by the team on 19 Nov 2026. The numbers in the text are read from digitised
+# copies (analysis/digitize_cst_plot.py); a CST "Plot Data (ASCII)" export, if present, is preferred for S11.
+S11_MS_SHOT = CST / "cst_s11_with_ms.jpg"                # antenna with the metasurface (dips at 5.3, 9.0, 9.9 GHz)
+S11_ALONE_SHOT = CST / "cst_s11_no_ms.jpg"               # antenna alone (dips at 4.1, 7.4, 12.4 GHz)
 S11_MS_DIGITIZED = EXPORTS / "cst_s11_with_ms_digitized.csv"
-S11_ALONE_DIGITIZED = EXPORTS / "cst_s11_no_ms_assumed_digitized.csv"
+S11_ALONE_DIGITIZED = EXPORTS / "cst_s11_no_ms_digitized.csv"
 S11_MS_EXPORT = EXPORTS / "s11_with_ms.txt"
 S11_ALONE_EXPORT = EXPORTS / "s11_antenna_alone.txt"
 
 # Directivity against frequency (CST "Directivity, Phi=0.0, Max. Value (Subrange)": the highest directivity in the
-# phi = 0 deg plane at each frequency; not gain). Two screenshots; which model each belongs to is ASSUMED from the
-# curve shapes (the smooth one as the antenna alone) until the team confirms it.
-DIR_ALONE_SHOT = CST / "cst_directivity_no_ms_assumed.png"      # smooth curve, peak about 5.2 dBi near 13.1 GHz
-DIR_MS_SHOT = CST / "cst_directivity_with_ms_assumed.png"       # dips near 7.5, 9.6 and 12 GHz, peak 7.0 dBi
-DIR_ASSUMED = True                                              # set False once confirmed
-DIR_ALONE_DIGITIZED = EXPORTS / "cst_directivity_no_ms_assumed_digitized.csv"
-DIR_MS_DIGITIZED = EXPORTS / "cst_directivity_with_ms_assumed_digitized.csv"
+# phi = 0 deg plane at each frequency; not gain).
+DIR_ALONE_SHOT = CST / "cst_directivity_no_ms.png"       # antenna alone: smooth curve, peak about 5.2 dBi
+DIR_MS_SHOT = CST / "cst_directivity_with_ms.png"        # with the metasurface: dips near 7.5, 9.6, 12 GHz, peak 7.0 dBi
+DIR_ALONE_DIGITIZED = EXPORTS / "cst_directivity_no_ms_digitized.csv"
+DIR_MS_DIGITIZED = EXPORTS / "cst_directivity_with_ms_digitized.csv"
 
-# Far-field directivity cuts (phi = 90 deg) supplied as CST screenshots. The values are the read-outs printed in the
-# screenshots themselves. Which model each comes from is not confirmed. For the two 5.3 GHz cuts the assignment
-# below is ASSUMED: the one whose main lobe points to the front (theta = 2 deg) and has the higher directivity is
-# taken as the antenna with the metasurface. "sll_db" is CST's side-lobe level (None when the screenshot gives none).
+# Far-field directivity cuts (phi = 90 deg) at 5.3 GHz, supplied as CST screenshots. The values are the read-outs
+# printed in the screenshots themselves. "sll_db" is CST's side-lobe level (None when the screenshot gives none).
 PATTERNS = [
-    {"f": 5.3, "model": "antenna without the metasurface", "shot": CST / "cst_pattern_5p3GHz_lobe176deg.jpg",
+    {"f": 5.3, "model": "antenna without the metasurface", "shot": CST / "cst_pattern_5p3GHz_no_ms.jpg",
      "main_dbi": 3.56, "dir_deg": 176.0, "width_deg": 71.7, "sll_db": None},
-    {"f": 5.3, "model": "antenna with the metasurface", "shot": CST / "cst_pattern_5p3GHz_lobe2deg.png",
+    {"f": 5.3, "model": "antenna with the metasurface", "shot": CST / "cst_pattern_5p3GHz_with_ms.png",
      "main_dbi": 3.88, "dir_deg": 2.0, "width_deg": 76.8, "sll_db": -1.3},
-    {"f": 12.5, "model": None, "shot": CST / "cst_pattern_12p5GHz.jpg",
-     "main_dbi": 1.02, "dir_deg": 132.0, "width_deg": 40.9, "sll_db": -2.6},
 ]
-PATTERN_MODEL_CONFIRMED = False
 
 
 # --------------------------------------------------------------------------- dimensions
