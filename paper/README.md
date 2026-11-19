@@ -81,7 +81,7 @@ Realized gain is not reported, by the team's decision (19 Nov): the paper uses d
 marks this work's value as directivity.
 
 Optional additions, as CST screenshots (they go into `cst/` and are listed in `design.PATTERNS`): the patterns in the
-φ = 0° plane, a pattern in band II (near 9.9 GHz), and the 12.5 GHz cut for the other model.
+φ = 0° plane and a pattern in band II (near 9.9 GHz), each without and with the metasurface.
 
 ## 3. Things the team should know (honest review)
 
