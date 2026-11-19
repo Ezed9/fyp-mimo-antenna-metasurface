@@ -71,42 +71,32 @@ def shade_bands(ax: plt.Axes, bands: list[d.Band], f_max: float) -> None:
 
 # --------------------------------------------------------------------------- Fig. 2: stack-up (side view)
 def fig_stackup() -> Path:
-    fig, ax = plt.subplots(figsize=(COL_W, 1.45))
-    wd = 6.0
-    ya, ta = 1.55, 0.22   # antenna substrate
-    ym, tm = 0.55, 0.22   # metasurface substrate
-    ax.add_patch(Rectangle((0, ya), wd, ta, fc=FR4, ec=INK, lw=0.5))
-    for x0, w in ((0.0, 2.55), (2.62, 0.76), (3.45, 2.55)):     # CPW grounds and feed / octagon (top copper)
-        ax.add_patch(Rectangle((x0, ya + ta), w, 0.05, fc=COPPER, ec=INK, lw=0.3))
-    ax.add_patch(Rectangle((0, ym), wd, tm, fc=FR4, ec=INK, lw=0.5))
-    n, pitch = 4, wd / 4
-    for i in range(n):   # square patches on top of the metasurface board
-        ax.add_patch(Rectangle((i * pitch + 0.06 * pitch, ym + tm), 0.88 * pitch, 0.05, fc=COPPER, ec=INK, lw=0.3))
-    if d.MS_COPPER_BACK:
-        ax.add_patch(Rectangle((0, ym - 0.05), wd, 0.05, fc=COPPER, ec=INK, lw=0.3))
-    xd = wd + 0.25
-    ax.add_patch(FancyArrowPatch((xd, ya), (xd, ym + tm + 0.05), arrowstyle="<|-|>", mutation_scale=6, lw=0.7,
-                                 color=INK, shrinkA=0, shrinkB=0))
-    ax.text(xd + 0.12, (ya + ym + tm) / 2, "$h$ (air)", va="center", fontsize=7.5)
-    xa = 3.0
-    ax.add_patch(FancyArrowPatch((xa - 0.4, ya + 0.32), (xa - 0.4, ya + 0.85), arrowstyle="-|>", mutation_scale=7,
-                                 lw=1.1, color=BLUE))
-    ax.add_patch(FancyArrowPatch((xa + 0.1, ya - 0.04), (xa + 0.1, ym + tm + 0.12), arrowstyle="-|>",
-                                 mutation_scale=7, lw=1.1, color=ORANGE))
-    ax.add_patch(FancyArrowPatch((xa + 0.45, ym + tm + 0.12), (xa + 0.45, ya + 0.85), arrowstyle="-|>",
-                                 mutation_scale=7, lw=1.1, color=BLUE, ls=(0, (3, 2))))
+    """Side view: antenna board on top, metasurface board directly behind it (no air gap, no ground plane)."""
+    fig, ax = plt.subplots(figsize=(COL_W, 1.2))
+    wd, ts, tc = 6.0, 0.3, 0.05           # board width, substrate thickness, copper thickness (drawing units)
+    ya = 1.0                              # bottom of the antenna substrate = top of the metasurface substrate
+    ax.add_patch(Rectangle((0, ya), wd, ts, fc=FR4, ec=INK, lw=0.5))
+    for x0, w in ((0.0, 2.45), (2.52, 0.66), (3.25, 2.75)):     # CPW grounds and feed (top copper)
+        ax.add_patch(Rectangle((x0, ya + ts), w, tc, fc=COPPER, ec=INK, lw=0.3))
+    ax.add_patch(Rectangle((0, ya - ts), wd, ts, fc=FR4, ec=INK, lw=0.5))
+    x_first, cell = 0.55, 1.22
+    for i in range(4):                    # the 4 patches of one row, on the face that touches the antenna board
+        ax.add_patch(Rectangle((x_first + i * cell, ya - tc / 2), 0.91 * cell, tc, fc=COPPER, ec=INK, lw=0.3,
+                               zorder=3))
     lab = dict(fontsize=7, color=INK, va="center")
-    ax.text(-0.1, ya + ta / 2, "antenna (FR-4)", ha="right", **lab)
-    ax.text(-0.1, ya + ta + 0.2, "octagon + CPW", ha="right", **lab)
-    ax.text(-0.1, ym + tm / 2 + 0.05, "metasurface (FR-4)", ha="right", **lab)
-    ax.text(-0.1, ym + tm + 0.22, "4 × 4 patches", ha="right", **lab)
-    ax.text(-0.1, ym - 0.12, "copper ground", ha="right", **lab)
-    ax.text(xa - 0.5, ya + 0.62, "forward", ha="right", **lab)
-    ax.text(xa + 0.55, ya + 0.62, "reflected", ha="left", **lab)
-    ax.text(xa + 0.0, (ya + ym + tm) / 2, "backward", ha="right", **lab)
-    ax.text(wd, 0.2, "side view, not to scale", ha="right", fontsize=6.5, color=MUTED, style="italic")
-    ax.set_xlim(-2.0, wd + 1.1)
-    ax.set_ylim(0.1, 2.45)
+    ax.text(-0.12, ya + ts + 0.17, "octagon + CPW (copper)", ha="right", **lab)
+    ax.text(-0.12, ya + ts / 2, "antenna substrate (FR-4)", ha="right", **lab)
+    ax.text(-0.12, ya - ts / 2, "metasurface substrate (FR-4)", ha="right", **lab)
+    ax.annotate("4 × 4 patches (copper)", (x_first + 0.45, ya), (-0.12, ya - ts - 0.2), ha="right", va="center",
+                fontsize=7, color=INK, arrowprops=dict(arrowstyle="-", lw=0.5, color=INK))
+    for y0, sym in ((ya, "$h_s$"), (ya - ts, "$t$")):
+        ax.add_patch(FancyArrowPatch((wd + 0.2, y0), (wd + 0.2, y0 + ts), arrowstyle="<|-|>", mutation_scale=5,
+                                     lw=0.6, color=INK, shrinkA=0, shrinkB=0))
+        ax.text(wd + 0.32, y0 + ts / 2, sym, va="center", fontsize=7.5)
+    ax.text(wd, ya - ts - 0.2, "no air gap, no ground plane; not to scale", ha="right", va="center", fontsize=6.5,
+            color=MUTED, style="italic")
+    ax.set_xlim(-3.1, wd + 0.75)
+    ax.set_ylim(ya - ts - 0.35, ya + ts + 0.35)
     ax.axis("off")
     return save(fig, "fig2_stackup.png")
 

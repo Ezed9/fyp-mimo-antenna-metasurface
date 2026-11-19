@@ -22,7 +22,8 @@ Writing rules:
 * Every number comes from paper/design.py (CST S11, screenshot dimensions, analytical estimates), so text, tables
   and figures agree.
 * «...» marks text shown with a yellow highlight: dimensions read off the screenshots that the team must confirm, and
-  [xx] placeholders for CST results not available yet (realized gain). "TO BE CONFIRMED" marks the attributions the
+  author e-mail placeholders. Realized gain is not reported (team decision): the paper uses directivity.
+  "TO BE CONFIRMED" marks the attributions the
   team has not confirmed: which S11 and which directivity screenshot is the antenna alone, and which model the
   patterns come from.
   Nothing is claimed about gain until that data exists.
@@ -106,9 +107,11 @@ def at(f_arr, s_arr, f0: float) -> float:
 
 
 RAY = d.ray_lower_edge()
-LC = d.patch_ms_lc()
-RT = d.round_trip_deg(LC["f0"], d.v("h"))
-PROFILE = d.v("h_{s}") + d.v("h") + d.v("t")
+GRID = d.patch_grid()
+PROFILE = d.v("h_{s}") + d.AIR_GAP + d.v("t")
+FACE_TBC = ("" if d.MS_PATCH_FACE_CONFIRMED else
+            "«TO BE CONFIRMED: the patches are taken to be on the face of the metasurface board that touches the "
+            "antenna substrate.» ")
 LAMBDA_LO = d.wavelength_mm(B1.lo)
 COV = {lab: 100 * d.coverage(lo, hi, BANDS) for lab, lo, hi in d.SERVICES}
 
@@ -131,7 +134,6 @@ def band_txt(b: d.Band) -> str:
 
 EST_ANY = any(x.est for x in d.ANTENNA + d.METASURFACE)
 SIZE = f"{val('W_{s}')} mm × {val('L_{s}')} mm × {val('h_{s}')} mm"
-BACK = "«with a full copper ground on its back»" if d.MS_COPPER_BACK_EST else "with a full copper ground on its back"
 
 # ============================================================================= references (IEEE)
 EXTRA_REFS = {
@@ -396,15 +398,14 @@ def abstract(doc) -> None:
     runs(p, (
         "In the present manuscript, a compact coplanar waveguide (CPW) fed octagonal monopole antenna backed by a "
         "4 × 4 square-patch metasurface is proposed for multiband wireless applications. The radiator is printed on a "
-        f"low-cost FR-4 substrate of {SIZE}, and a metasurface of the same footprint is placed {val('h')} mm behind "
-        "it across an air gap. The structure is designed and investigated in the electromagnetic simulator CST "
+        f"low-cost FR-4 substrate of {SIZE}, and a metasurface of the same footprint, without a ground plane, is "
+        "placed directly behind it with no air gap. The structure is designed and investigated in the electromagnetic simulator CST "
         "Studio Suite. With the metasurface, the antenna resonates in three bands with |S_{11}| ≤ −10 dB: "
         f"{band_txt(B1)} ({num(B1.fbw, 1)} %), {band_txt(B2)} ({num(B2.fbw, 1)} %) and {band_txt(B3)}. "
         f"Throughout the resonating bands, the lowest reflection coefficient obtained is {num(SMIN, 1)} dB at "
-        f"{num(FMIN)} GHz. An equivalent-circuit model places the in-phase reflection of the metasurface near "
-        f"{num(LC['f0'], 1)} GHz, inside the second band. The peak simulated directivity in the φ = 0° plane is "
+        f"{num(FMIN)} GHz. The peak simulated directivity in the φ = 0° plane is "
         f"{num(DM_PEAK[1], 1)} dBi at {num(DM_PEAK[0], 1)} GHz with the metasurface, compared with "
-        f"{num(DA_PEAK[1], 1)} dBi for the antenna without it. «Realized gain: TO BE ADDED.» The bands cover 5G NR n79, the upper part of "
+        f"{num(DA_PEAK[1], 1)} dBi for the antenna without it. The bands cover 5G NR n79, the upper part of "
         "n77/n78, WiMAX, 5 GHz WLAN, the C-band satellite downlink, X-band radar and satellite uplink, and the Ku-band "
         "satellite links, so the proposed antenna is suitable to implement in compact multi-standard communication "
         "and sensing terminals."), 9, bold=True)
@@ -447,7 +448,8 @@ def introduction(doc) -> None:
         "sub-6 GHz, X-band and Ku-band links together has received little attention."))
     para(doc, (
         "The primary intent of the present manuscript is to propose a compact CPW-fed octagonal monopole on FR-4 and "
-        f"to back it with a 4 × 4 square-patch metasurface placed {val('h')} mm behind it. Section II describes the "
+        "to back it with a 4 × 4 square-patch metasurface placed directly behind it, without an air gap or a "
+        "ground plane. Section II describes the "
         "design and the analytical estimates, Section III discusses the simulated results, Section IV presents the "
         "applications and Section V concludes the paper."))
 
@@ -461,8 +463,9 @@ def design_section(doc) -> None:
         f"FR-4 substrate (ε_{{r}} = {d.FR4_EPS:g}, tan δ = {d.FR4_TAND:g}) of width W_{{s}} = {val('W_{s}')} mm, "
         f"length L_{{s}} = {val('L_{s}')} mm and thickness h_{{s}} = {val('h_{s}')} mm. The octagon is fed by a CPW line of width W_{{f}} = {val('W_{f}')} mm, "
         f"separated from the two coplanar ground planes by slots of g = {val('g')} mm; the feed and slot widths are "
-        "selected for impedance matching to the 50 Ω port. Each ground plane is "
-        f"W_{{g}} = {val('W_{g}')} mm wide and L_{{g}} = {val('L_{g}')} mm long, and the lower vertex of the octagon "
+        "selected for impedance matching to the 50 Ω port. The left ground plane is "
+        f"W_{{g1}} = {val('W_{g1}')} mm wide and the right ground plane is W_{{g2}} = {val('W_{g2}')} mm wide; both "
+        f"are L_{{g}} = {val('L_{g}')} mm long. The lower vertex of the octagon "
         f"lies p = {val('p')} mm above the ground edge. Since the CPW grounds carry current and take part in the "
         "radiation, their length and the patch-to-ground gap mainly control the matching at the lower end of the "
         "band [@simons]."))
@@ -489,43 +492,48 @@ def design_section(doc) -> None:
     para(doc, (
         f"The metasurface of Fig. 1(b) is a 4 × 4 array of square copper patches of side W_{{p}} = {val('W_{p}')} mm "
         f"and period P = {val('P')} mm, so that adjacent patches are separated by s = {val('s')} mm. It is printed "
-        f"on a {val('t')} mm FR-4 board of nearly the same footprint as the antenna (W_{{m}} × L_{{m}}), {BACK}. Such a surface behaves as a "
-        "parallel LC resonator [@sievenpiper]: the gaps between the patches provide the capacitance, and the current "
-        "loop through the ground provides the inductance,"))
-    equation(doc, [mr("L"), up(" = "), sub("μ", "0"), mr("t")], 3)
+        f"on a {val('t')} mm FR-4 board of the same footprint as the antenna (W_{{m}} × L_{{m}}) and does not have "
+        "a copper ground on its back. The board is placed directly behind the antenna substrate, with no air gap "
+        f"between them, as depicted in Fig. 2. {FACE_TBC}The total thickness of the structure is therefore "
+        f"h_{{s}} + t = {num(PROFILE, 1)} mm."))
+    figure(doc, "fig2_stackup.png", 2, (
+        "Side view of the proposed structure: the metasurface board lies directly behind the antenna substrate, "
+        "with no air gap and no ground plane (schematic, not to scale)."))
+    para(doc, (
+        "Since there is no ground plane behind the patches, the surface does not form the resonant circuit of a "
+        "high-impedance surface. It behaves as a capacitive sheet, in which the narrow gaps between neighbouring "
+        "patches provide the capacitance [@sievenpiper]"))
     equation(doc, [mr("C"), up(" = "),
-                   mf([sub("W", "p", False), sub("ε", "0"), md([up("1 + "), sub("ε", "r", False)])], [up("π")]),
-                   msup([up("cosh")], [up("−1")]), md([mf([mr("P")], [mr("s")])])], 4)
-    equation(doc, [sub("f", "0"), up(" = "), mf([up("1")], [up("2π"), mrad(mr("L"), mr("C"))]), up(" ,   "),
-                   up("BW = "), mf([up("1")], [sub("η", "0")]), mrad(mf([mr("L")], [mr("C")]))], 5)
+                   mf([sub("W", "p", False), sub("ε", "0"), md([sub("ε", "1"), up(" + "), sub("ε", "2")])],
+                      [up("π")]),
+                   msup([up("cosh")], [up("−1")]), md([mf([mr("P")], [mr("s")])])], 3)
     para(doc, (
-        "where t is the thickness of the metasurface substrate and η_{0} ≈ 377 Ω is the free-space impedance. With "
-        f"the dimensions of Table I, (3)–(5) give L = {num(LC['L_nH'])} nH, C = {num(LC['C_pF'], 3)} pF and "
-        f"f_{{0}} ≈ {num(LC['f0'], 1)} GHz, with a reflection phase within ±90° over about {num(LC['bw'], 0)} % "
-        f"({num(LC['f_lo'], 1)}–{num(LC['f_hi'], 1)} GHz). Near f_{{0}} the surface reflects in phase, whereas a "
-        "metal plate reflects with a phase reversal of 180°."))
+        "where ε_{1} and ε_{2} are the relative permittivities of the media on the two sides of the patches. With "
+        f"FR-4 on both sides (ε_{{1}} = ε_{{2}} = {d.FR4_EPS:g}) and the dimensions of Table I, (3) gives "
+        f"C ≈ {num(GRID['C_between_pF'])} pF. A plane wave that falls on an unbounded sheet of this kind is partly "
+        "reflected, with a reflection magnitude of"))
+    equation(doc, [md([mr("Γ")], "|", "|"), up(" = "), mf([mr("b")], [mrad(up("4 + "), msup([mr("b")], [up("2")]))]),
+                   up(",   "),
+                   mr("b"), up(" = "), mr("ω"), mr("C"), sub("η", "0")], 4)
     para(doc, (
-        "The wave radiated backwards crosses the air gap h, is reflected by the metasurface and returns to the "
-        "antenna. It reinforces the forward radiation when [@hussain2023]"))
-    equation(doc, [sub("φ", "MS"), up(" − 2"), sub("k", "0"), mr("h"), up(" = 2"), mr("n"), up("π,   "), mr("n"),
-                   up(" = 0, 1, …")], 6)
-    para(doc, (
-        "where φ_{MS} is the reflection phase of the metasurface and k_{0} = 2π/λ_{0}. At f_{0}, φ_{MS} ≈ 0 and "
-        f"h = {val('h')} mm gives 2k_{{0}}h ≈ {num(RT, 0)}°, so the reflected wave returns within ±90° of the "
-        "forward wave across the in-phase band of the metasurface. A metal plate at the same gap (φ = 180°) would "
-        "cancel the forward wave instead."))
+        "where ω is the angular frequency and η_{0} ≈ 377 Ω is the free-space impedance (the substrates are "
+        f"ignored). Equation (4) gives |Γ| ≈ {num(GRID['gamma'](B1.lo))} at {num(B1.lo)} GHz and "
+        f"{num(GRID['gamma'](10.0))} at 10 GHz, so the reflection grows with frequency. These values are an upper "
+        f"limit for the present structure. The array has only 4 × 4 cells and is {num(GRID['span_mm'], 1)} mm "
+        f"across, about {num(GRID['span_mm'] / LAMBDA_LO)} of the free-space wavelength at {num(B1.lo)} GHz, and it "
+        "lies in the reactive near field of the radiator. It therefore acts mainly as a capacitive loading of the "
+        "antenna, which changes its current distribution and input impedance, and its effect is evaluated by "
+        "full-wave simulation in Section III."))
     table(doc, 1, "Dimensions of the Proposed Antenna and Metasurface (mm)", _dims_rows(),
           [0.74] + [0.46] * 6, header_rows=(0, 2, 4), header_col=True)
+    runs(fmt(doc.add_paragraph(), LEFT, after=4), "W_{g1}, W_{g2}: widths of the left and right ground planes.", 7.5)
     h2(doc, "C", "Design Stages")
     para(doc, (
-        "The design is carried out in two stages, as depicted in Fig. 2. In stage 1, the octagonal antenna is "
-        "designed alone and its ground and patch are tuned for impedance matching. In stage 2, the metasurface is "
-        "placed behind the antenna across the air gap h and the complete structure is simulated again. The "
+        "The design is carried out in two stages. In stage 1, the octagonal antenna is "
+        "designed alone and its ground and patch are tuned for impedance matching. In stage 2, the metasurface "
+        "board is placed directly behind the antenna substrate and the complete structure is simulated again. The "
         "simulations use the frequency-domain solver of CST Studio Suite with a waveguide port at the CPW feed, from "
         "1 to 15 GHz."))
-    figure(doc, "fig2_stackup.png", 2, (
-        "Side view of the proposed structure: the backward wave of the antenna is reflected by the metasurface and "
-        "adds to the forward wave (schematic, not to scale)."))
 
 
 def _dims_rows() -> list[list[str]]:
@@ -610,8 +618,8 @@ def results(doc) -> None:
     alone_txt = ", ".join(num(at(FDA, DA, df), 1) for df, _ in DM_DIPS[:-1]) + f" and {num(at(FDA, DA, DM_DIPS[-1][0]), 1)}"
     para(doc, (
         "The simulated directivity against frequency is depicted in Fig. 4. The quantity plotted is the highest "
-        "directivity in the φ = 0° plane at each frequency. It does not include the losses or the mismatch, so it "
-        f"is not the realized gain. {DIR_TBC}Without the metasurface, the directivity varies smoothly and reaches "
+        "directivity in the φ = 0° plane at each frequency; it does not include the losses or the mismatch of "
+        f"the antenna. {DIR_TBC}Without the metasurface, the directivity varies smoothly and reaches "
         f"its peak of {num(DA_PEAK[1], 1)} dBi at {num(DA_PEAK[0], 1)} GHz. With the metasurface, the peak "
         f"directivity is {num(DM_PEAK[1], 1)} dBi at {num(DM_PEAK[0], 1)} GHz, which is "
         f"{num(DM_PEAK[1] - DA_PEAK[1], 1)} dB higher."))
@@ -620,10 +628,9 @@ def results(doc) -> None:
         f"{num(a1, 1)} to {num(m1, 1)} dBi, and in band III from {num(a3, 1)} to {num(m3, 1)} dBi. In band II, "
         f"however, it falls from {num(a2, 1)} to {num(m2, 1)} dBi, and the directivity with the metasurface is the "
         f"lower one over {num(low2, 0)} % of this band. With the metasurface the curve has sharp dips of "
-        f"{dip_txt}, where the antenna alone gives {alone_txt} dBi. The simple model of Section II-B places the "
-        "in-phase reflection inside band II, so this result does not follow it; the model ignores the near-field "
-        "coupling at such a small gap. «Realized gain and efficiency against frequency, with and without the "
-        "metasurface: TO BE ADDED.»"))
+        f"{dip_txt}, where the antenna alone gives {alone_txt} dBi. The metasurface lies in the near field of the "
+        "radiator (Section II-B), so its effect on the directivity changes with frequency and is not a uniform "
+        "increase."))
     h2(doc, "C", "Radiation Pattern")
     pa, pm, p3 = d.PATTERNS            # 5.3 GHz alone (assumed), 5.3 GHz with metasurface (assumed), 12.5 GHz
     tbc = ("" if d.PATTERN_MODEL_CONFIRMED else
@@ -642,8 +649,7 @@ def results(doc) -> None:
     para(doc, (
         f"At {p3['f']:g} GHz (Fig. 5(c)) the pattern splits into several lobes. The main lobe has a directivity of "
         f"{num(p3['main_dbi'])} dBi at θ = {p3['dir_deg']:g}°, a 3 dB angular width of {p3['width_deg']:g}° and a "
-        f"side-lobe level of {num(p3['sll_db'], 1)} dB. These values are directivity; «the realized gain and the "
-        "patterns in the φ = 0° plane are to be added.»"))
+        f"side-lobe level of {num(p3['sll_db'], 1)} dB."))
     picture(doc, shot(pa["shot"], CROP_PATTERN), 3.4, "(a)")
     picture(doc, shot(pm["shot"], CROP_PATTERN), 3.4, "(b)", before=0)
     picture(doc, shot(p3["shot"], CROP_PATTERN), 3.4, "(c)", before=0)
@@ -654,11 +660,13 @@ def results(doc) -> None:
     lam = num(PROFILE / LAMBDA_LO, 3)
     para(doc, (
         "Table III compares the proposed antenna with reported printed antennas that use a reflector or a "
-        f"metamaterial layer. The total profile of the proposed structure is «{num(PROFILE, 1)}» mm (about «{lam}» "
+        f"metamaterial layer. The total profile of the proposed structure is {num(PROFILE, 1)} mm (about {lam} "
         f"λ_{{0}} at {num(B1.lo)} GHz), lower than that of the FSS-backed designs [@algburi2022, hussain2023, "
         "hammache2024], and its metasurface is no larger than the antenna itself. The metamaterial of "
         "[@rajalakshmi] is thinner still, as it is etched on the antenna substrate, but it serves two narrow Wi-Fi "
-        f"bands. The gain of the proposed antenna, {XX} dBi, is to be compared once the CST results are available."))
+        "bands. For the proposed antenna the table gives the peak simulated directivity, which does not include "
+        "the losses, whereas the other works report gain; the two quantities are therefore not directly "
+        "comparable."))
     table(doc, 3, "Comparison with Reported Antennas", [
         ["Ref.", "Antenna; reflector", "Size (mm)", "Gap (mm)", "Band (GHz)", "Peak gain (dBi)"],
         ["[@algburi2022]", "CPW ring monopole; 19 × 19 FSS", "50 × 50", "10 (total)", "2.2–11.9", "11.3 (meas.)"],
@@ -666,9 +674,10 @@ def results(doc) -> None:
         ["[@hammache2024]", "CPW hexagon; 7 × 7 FSS", "30 × 30", "20", "UWB", "8.4"],
         ["[@aboelhassan2025]", "CPW octagon; 5 × 5 AMC", "27 × 37; AMC 70 × 70", "air gap", "3.5–6.5", "9.9–11.5"],
         ["[@rajalakshmi]", "Cross patch; 2 × 2 hexagonal CSRR array", "20 × 25", "0", "2.4, 5", "6, 10 (meas.)"],
-        ["This work", "CPW octagon; 4 × 4 patch metasurface", f"{val('W_{s}')} × {val('L_{s}')}", f"{val('h')}",
-         f"{num(B1.lo)}–{num(B1.hi)}\n{num(B2.lo)}–{num(B2.hi)}\n{num(B3.lo)}–>15", XX],
+        ["This work", "CPW octagon; 4 × 4 patch metasurface", f"{val('W_{s}')} × {val('L_{s}')}", "0",
+         f"{num(B1.lo)}–{num(B1.hi)}\n{num(B2.lo)}–{num(B2.hi)}\n{num(B3.lo)}–>15", f"{num(DM_PEAK[1], 1)}^{{†}}"],
     ], [0.43, 0.82, 0.6, 0.45, 0.65, 0.55], header_col=False)
+    runs(fmt(doc.add_paragraph(), LEFT, after=4), "^{†}Simulated directivity (gain not evaluated).", 7.5)
 
 
 def applications(doc) -> None:
@@ -699,10 +708,8 @@ def applications(doc) -> None:
         "band I and an X-band sensing or satellite link of band II. For short-range sensing, two identical antennas "
         "can act as the transmitter and receiver of an X-band radar, in the way UWB antennas are used in "
         "surface-penetrating radar [@bhattacharya, kundu_triple]: the transmission coefficient S_{21} between them "
-        "is recorded with and without a target, and the difference reveals the target. The metasurface directs the "
-        "radiation away from the ground side, which reduces coupling to the electronics placed behind the antenna "
-        "«(TO BE CONFIRMED: in Fig. 5(b) the opposite lobe at 5.3 GHz is only 1.3 dB below the main lobe, so this "
-        "benefit is small at that frequency)». "
+        "is recorded with and without a target, and the difference reveals the target. The radiation of the "
+        "structure remains two-sided (Fig. 5), so clearance should be kept on both sides of the board. "
         f"Since bands I and II are separated by the "
         f"unmatched region of {num(B1.hi)}–{num(B2.lo)} GHz, the antenna is not intended for impulse (UWB) radar."))
 
@@ -712,12 +719,12 @@ def conclusion(doc) -> None:
     para(doc, (
         "A compact CPW-fed octagonal monopole antenna backed by a 4 × 4 square-patch metasurface has been proposed. "
         f"The outcomes demonstrate that the structure, with a footprint of {val('W_{s}')} mm × {val('L_{s}')} mm "
-        f"and a total profile of «{num(PROFILE, 1)}» mm, provides three impedance bands with |S_{{11}}| ≤ −10 dB: "
+        f"and a total thickness of {num(PROFILE, 1)} mm, provides three impedance bands with |S_{{11}}| ≤ −10 dB: "
         f"{band_txt(B1)}, {band_txt(B2)} and {band_txt(B3)}, with a lowest reflection coefficient of "
-        f"{num(SMIN, 1)} dB at {num(FMIN)} GHz. The equivalent-circuit model places the in-phase reflection of the "
-        f"metasurface near {num(LC['f0'], 1)} GHz, inside the second band. The peak simulated directivity in the φ = 0° plane is "
+        f"{num(SMIN, 1)} dB at {num(FMIN)} GHz. The metasurface has no ground plane and lies directly behind the "
+        "antenna substrate, where it acts as a capacitive loading of the radiator. The peak simulated directivity in the φ = 0° plane is "
         f"{num(DM_PEAK[1], 1)} dBi with the metasurface against {num(DA_PEAK[1], 1)} dBi without it; it is higher in "
-        "the first and third bands but lower over most of the second band. «Realized gain: TO BE ADDED.» The bands "
+        "the first and third bands but lower over most of the second band. The bands "
         "serve sub-6 GHz 5G, WLAN, X-band "
         "radar and satellite links and the Ku-band satellite links, so the proposed antenna is suitable to implement "
         "in compact multi-standard communication and sensing systems. Fabrication and measurement of the prototype "

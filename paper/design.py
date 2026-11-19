@@ -66,32 +66,36 @@ class Dim:
     est: bool        # True: read off the screenshot, to be confirmed by the team
 
 
+# Confirmed by the team on 19 Nov 2026, except R (still read off the screenshot).
 ANTENNA = [
-    Dim("W_{s}", "substrate width", 27.0, True),
-    Dim("L_{s}", "substrate length", 31.0, True),
+    Dim("W_{s}", "substrate width", 27.0, False),
+    Dim("L_{s}", "substrate length", 30.0, False),
     Dim("h_{s}", "substrate thickness", 1.6, False),
     Dim("R", "octagon circumradius", 8.7, True),
-    Dim("W_{f}", "CPW feed width", 3.0, True),
-    Dim("g", "CPW slot width", 0.5, True),
-    Dim("L_{g}", "ground length", 11.0, True),
-    Dim("W_{g}", "ground width (each side)", 11.5, True),
-    Dim("p", "patch-to-ground gap", 0.5, True),
+    Dim("W_{f}", "CPW feed width", 3.0, False),
+    Dim("g", "CPW slot width", 0.3, False),
+    Dim("L_{g}", "ground length (both grounds)", 11.0, False),
+    Dim("W_{g1}", "left ground width", 11.2, False),
+    Dim("W_{g2}", "right ground width", 12.2, False),
+    Dim("p", "patch-to-ground gap", 0.22, False),
 ]
 
 METASURFACE = [
-    Dim("W_{m}", "metasurface width", 27.0, True),
-    Dim("L_{m}", "metasurface length", 31.0, True),
-    Dim("t", "metasurface substrate thickness", 1.6, True),
-    Dim("W_{p}", "square patch side", 4.8, True),
-    Dim("s", "gap between patches", 0.7, True),
-    Dim("P", "period (W_{p} + s)", 5.5, True),
-    Dim("h", "air gap, antenna to metasurface", 2.0, True),
+    Dim("W_{m}", "metasurface width", 27.0, False),
+    Dim("L_{m}", "metasurface length", 30.0, False),
+    Dim("t", "metasurface substrate thickness", 1.6, False),
+    Dim("W_{p}", "square patch side", 5.0, False),
+    Dim("s", "gap between patches", 0.5, False),
+    Dim("P", "period (W_{p} + s)", 5.5, False),
 ]
 
 FR4_EPS = 4.3          # CST "FR-4 (lossy)", as in the rest of the repo
 FR4_TAND = 0.025
-MS_COPPER_BACK = True  # assumed (not visible in the screenshot); the LC estimate below needs it
-MS_COPPER_BACK_EST = True
+AIR_GAP = 0.0          # mm: the metasurface board lies directly behind the antenna substrate (confirmed)
+MS_COPPER_BACK = False  # confirmed: no copper ground on the back of the metasurface board
+# Not stated by the team: which face of the metasurface board carries the patches. Taken as the face that touches
+# the antenna substrate (the board's "front"); the paper marks this TO BE CONFIRMED.
+MS_PATCH_FACE_CONFIRMED = False
 
 
 def dim(symbol: str) -> Dim:
@@ -217,24 +221,25 @@ def ray_lower_edge(k: float = 1.15) -> dict[str, float]:
     return {"l": l, "r": r, "p": p, "k": k, "A": octagon_area(R), "f": f}
 
 
-def patch_ms_lc() -> dict[str, float]:
-    """Square-patch metasurface on a copper-backed substrate as a parallel LC (Sievenpiper et al., 1999).
+def patch_grid() -> dict[str, float]:
+    """The ungrounded square-patch array as a capacitive sheet.
 
-    L = mu0 t, C = Wp eps0 (1 + er) / pi * acosh(P / s), f0 = 1 / (2 pi sqrt(LC)), relative bandwidth of the
-    +/-90 deg reflection phase = sqrt(L / C) / eta0.
+    Capacitance between neighbouring patches (Sievenpiper et al., 1999): C = Wp eps0 (e1 + e2) / pi * acosh(P / s),
+    with e1, e2 the relative permittivities on the two sides of the patches (FR-4 on both sides when the patches lie
+    between the two boards). Without a ground plane there is no inductive return path, so the sheet does not resonate
+    as a high-impedance surface. For a plane wave on an unbounded sheet (substrates ignored) the reflection magnitude
+    is |Gamma| = b / sqrt(4 + b^2), b = omega C eta0.
     """
-    t, wp, s, per = v("t") * 1e-3, v("W_{p}") * 1e-3, v("s") * 1e-3, v("P") * 1e-3
-    L = MU0 * t
-    C = wp * EPS0 * (1 + FR4_EPS) / math.pi * math.acosh(per / s)
-    f0 = 1 / (2 * math.pi * math.sqrt(L * C)) / 1e9
-    bw = math.sqrt(L / C) / ETA0
-    return {"L_nH": L * 1e9, "C_pF": C * 1e12, "f0": f0, "bw": 100 * bw,
-            "f_lo": f0 * (1 - bw / 2), "f_hi": f0 * (1 + bw / 2)}
+    wp, s, per = v("W_{p}") * 1e-3, v("s") * 1e-3, v("P") * 1e-3
+    k = wp * EPS0 / math.pi * math.acosh(per / s)
+    c_between, c_outer = k * 2 * FR4_EPS, k * (1 + FR4_EPS)
 
+    def gamma(f_ghz: float, c: float) -> float:
+        b = 2 * math.pi * f_ghz * 1e9 * c * ETA0
+        return b / math.sqrt(4 + b * b)
 
-def round_trip_deg(f_ghz: float, h_mm: float) -> float:
-    """2 k0 h in degrees: phase the backward wave gains crossing the air gap h and coming back."""
-    return 720.0 * h_mm / (C0 / (f_ghz * 1e9) * 1e3)
+    return {"C_between_pF": c_between * 1e12, "C_outer_pF": c_outer * 1e12, "gamma": lambda f: gamma(f, c_between),
+            "span_mm": 4 * v("W_{p}") + 3 * v("s")}
 
 
 def wavelength_mm(f_ghz: float) -> float:
@@ -289,8 +294,9 @@ if __name__ == "__main__":
         print(f"  band {i}: {b.lo:.2f}-{b.hi:.2f}{top} GHz, FBW {b.fbw:.1f} %")
     print("  dips:", ", ".join(f"{a:.2f} GHz ({b:.1f} dB)" for a, b in dips(f, s)))
     print("  Ray lower edge:", {k: round(x, 3) for k, x in ray_lower_edge().items()})
-    print("  patch LC:", {k: round(x, 3) for k, x in patch_ms_lc().items()})
-    print(f"  2k0h at 8 GHz, h = {v('h')} mm: {round_trip_deg(8, v('h')):.1f} deg")
+    pg = patch_grid()
+    print(f"  patch grid: C = {pg['C_between_pF']:.3f} pF between two FR-4 boards, {pg['C_outer_pF']:.3f} pF facing air; "
+          f"array span {pg['span_mm']:g} mm")
     z, e = cpw_z0()
     print(f"  CPW feed: Z0 = {z:.1f} ohm, eps_eff = {e:.2f}")
     bb = bands(f, s)
