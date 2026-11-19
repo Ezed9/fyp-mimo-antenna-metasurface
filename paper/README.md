@@ -2,11 +2,12 @@
 
 `Paper.docx` / `Paper.pdf` is a two-column IEEE-style paper (the Word template family of S. Bhattacharya *et al.*,
 AJEC 2025), written in the voice and section pattern of that paper:
-Abstract → I. Introduction → II. Antenna Design and Analysis → III. Results and Discussion → IV. Applications →
-V. Conclusion → References. The analysis and comparison sections follow Rajalakshmi & Gunavathi (PIER-L, 2018).
+Abstract → I. Introduction → II. Antenna Design and Analysis → III. Results and Discussion → IV. Conclusion →
+References. The analysis and comparison sections follow Rajalakshmi & Gunavathi (PIER-L, 2018).
 
-**Yellow text in the paper = not final.** Either a dimension estimated from the screenshots or an `[xx]` placeholder
-for a CST result that has not been exported yet. Nothing about gain is claimed until the gain data exists.
+**Final version (19 Nov 2026).** The team confirmed every dimension, the layer order and the figure assignments, so
+the paper has no yellow text left. By the team's decision it reports directivity and no realized gain, has no
+Applications section and no author e-mail lines.
 
 ## Rebuild
 
@@ -22,7 +23,7 @@ given PDFs (e.g. the two reference papers). The body text must report 0, and it 
 | File | Role |
 |---|---|
 | `design.py` | **All numbers**: dimensions (with `est` flags), S11 band analysis, the Ray and LC estimates, service list |
-| `make_paper_figures.py` | Only the drawn figures: stack-up sketch (Fig. 2) and applications chart (Fig. 6) |
+| `make_paper_figures.py` | The one drawn figure: the side-view sketch (Fig. 2) |
 | `build_paper.py` | The text, tables, equations and references, then the docx and PDF. It places the CST screenshots as Figs. 1, 3, 4 and 5 |
 | `cst/` | The team's CST screenshots, stored byte-for-byte as received |
 | `../exports/paper/cst_s11_*_digitized.csv` | The two S11 curves read from the screenshots (±0.02 GHz, ±0.1 dB); used for the numbers only |
@@ -48,6 +49,7 @@ The 12.5 GHz pattern was removed at the team's request (19 Nov).
 | Symbol | Meaning | Value (mm) |
 |---|---|---|
 | Ws × Ls × hs | FR-4 antenna substrate | 27 × 30 × 1.6 |
+| R | octagon circumradius | 9 |
 | Wf, g | CPW feed width, slot width | 3.0, 0.3 |
 | Wg1, Wg2 | left and right ground width | 11.2, 12.2 |
 | Lg | ground length (both) | 11 |
@@ -55,18 +57,27 @@ The 12.5 GHz pattern was removed at the team's request (19 Nov).
 | Wm × Lm, t | metasurface board (FR-4) | 27 × 30, 1.6 |
 | Wp, s, P | patch side, gap between patches, period | 5.0, 0.5, 5.5 |
 | — | air gap between antenna and metasurface | none |
-| — | copper ground on the back of the metasurface | none |
+| — | copper ground | none |
 
-Still **not confirmed** (yellow in the paper):
+**Layer order, top to bottom (confirmed):**
 
-- **R, the octagon circumradius.** 8.7 mm is read off the old screenshot. Set `est=False` in `design.py` once given.
-- **Which face of the metasurface board carries the patches.** The paper and Fig. 2 take it as the face that touches
-  the antenna substrate. If the patches are on the outer face, set the capacitance case in `design.patch_grid()`
-  (0.23 pF instead of 0.37 pF), redraw Fig. 2 and set `MS_PATCH_FACE_CONFIRMED = True`.
+1. 4 × 4 copper patches, on the outer face of the metasurface board
+2. metasurface substrate (FR-4, t = 1.6 mm)
+3. octagon + CPW copper, at the interface between the two substrates
+4. antenna substrate (FR-4, hs = 1.6 mm)
 
-Because the metasurface has no ground plane and no air gap, the earlier reflector model (LC resonance near 8 GHz and
-the gap condition) no longer applies and was removed. Section II-B now treats the patch array as a capacitive sheet
-in the near field of the antenna.
+There is no air gap and no ground plane; the total thickness is 3.2 mm. The antenna copper is enclosed between the two
+FR-4 layers, so the paper's title says "loaded with" a metasurface, not "backed by".
+
+Two estimates in Section II-B follow from this order (`design.py`):
+
+- **Feed line:** with FR-4 on both sides of the CPW, the effective permittivity rises from about 2.4 to about 3.8 and
+  the line impedance falls from about 50 Ω to about 40 Ω (`cpw_z0(covered=True)`).
+- **Patch capacitance:** the patches have FR-4 on one side and air on the other, so C ≈ 0.23 pF (`patch_grid()`).
+  It was 0.37 pF while the patches were wrongly taken to lie between the two boards.
+
+The earlier reflector model (LC resonance near 8 GHz and the gap condition) does not apply to a structure with no
+ground plane and no gap, and was removed.
 
 ## 2. Export these from CST and drop them into `exports/paper/`
 
@@ -101,5 +112,5 @@ Optional additions, as CST screenshots (they go into `cst/` and are listed in `d
    work's directivity with other works' gain and says so in a footnote; do not call the 7.0 dBi "gain".
 6. **Simulation only.** That is acceptable for AJEC-level journals and conferences (the Bhattacharya paper is simulation
    only). IEEE AWPL, PIER and similar venues expect a fabricated prototype with measured S11, gain and patterns.
-7. **Authors.** Order, e-mails and the corresponding author are placeholders. The current order is the four students,
-   then the co-guide, then the guide.
+7. **Authors.** The order is the four students, then the co-guide, then the guide. There are no e-mail lines, by the
+   team's decision; most journals still ask for a corresponding author's e-mail at submission.

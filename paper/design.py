@@ -59,12 +59,12 @@ class Dim:
     est: bool        # True: read off the screenshot, to be confirmed by the team
 
 
-# Confirmed by the team on 19 Nov 2026, except R (still read off the screenshot).
+# All confirmed by the team (19 Nov 2026).
 ANTENNA = [
     Dim("W_{s}", "substrate width", 27.0, False),
     Dim("L_{s}", "substrate length", 30.0, False),
     Dim("h_{s}", "substrate thickness", 1.6, False),
-    Dim("R", "octagon circumradius", 8.7, True),
+    Dim("R", "octagon circumradius", 9.0, False),
     Dim("W_{f}", "CPW feed width", 3.0, False),
     Dim("g", "CPW slot width", 0.3, False),
     Dim("L_{g}", "ground length (both grounds)", 11.0, False),
@@ -84,11 +84,11 @@ METASURFACE = [
 
 FR4_EPS = 4.3          # CST "FR-4 (lossy)", as in the rest of the repo
 FR4_TAND = 0.025
-AIR_GAP = 0.0          # mm: the metasurface board lies directly behind the antenna substrate (confirmed)
+AIR_GAP = 0.0          # mm: the metasurface board lies directly on the antenna, no air gap (confirmed)
 MS_COPPER_BACK = False  # confirmed: no copper ground on the back of the metasurface board
-# Not stated by the team: which face of the metasurface board carries the patches. Taken as the face that touches
-# the antenna substrate (the board's "front"); the paper marks this TO BE CONFIRMED.
-MS_PATCH_FACE_CONFIRMED = False
+# Layer order, top to bottom (confirmed): 4 x 4 patches on the OUTER face of the metasurface board; metasurface
+# substrate (t); octagon + CPW copper at the interface between the two substrates; antenna substrate (h_s).
+# So the patches have FR-4 on one side and air on the other, and the antenna copper has FR-4 on both sides.
 
 
 def dim(symbol: str) -> Dim:
@@ -218,48 +218,26 @@ def patch_grid() -> dict[str, float]:
     """The ungrounded square-patch array as a capacitive sheet.
 
     Capacitance between neighbouring patches (Sievenpiper et al., 1999): C = Wp eps0 (e1 + e2) / pi * acosh(P / s),
-    with e1, e2 the relative permittivities on the two sides of the patches (FR-4 on both sides when the patches lie
-    between the two boards). Without a ground plane there is no inductive return path, so the sheet does not resonate
-    as a high-impedance surface. For a plane wave on an unbounded sheet (substrates ignored) the reflection magnitude
-    is |Gamma| = b / sqrt(4 + b^2), b = omega C eta0.
+    with e1, e2 the relative permittivities on the two sides of the patches. The patches are on the outer face of
+    the metasurface board, so e1 = FR-4 and e2 = air. Without a ground plane there is no inductive return path, so
+    the sheet does not resonate as a high-impedance surface. For a plane wave on an unbounded sheet (substrates
+    ignored) the reflection magnitude is |Gamma| = b / sqrt(4 + b^2), b = omega C eta0.
     """
     wp, s, per = v("W_{p}") * 1e-3, v("s") * 1e-3, v("P") * 1e-3
-    k = wp * EPS0 / math.pi * math.acosh(per / s)
-    c_between, c_outer = k * 2 * FR4_EPS, k * (1 + FR4_EPS)
+    c = wp * EPS0 * (FR4_EPS + 1) / math.pi * math.acosh(per / s)
 
-    def gamma(f_ghz: float, c: float) -> float:
+    def gamma(f_ghz: float) -> float:
         b = 2 * math.pi * f_ghz * 1e9 * c * ETA0
         return b / math.sqrt(4 + b * b)
 
-    return {"C_between_pF": c_between * 1e12, "C_outer_pF": c_outer * 1e12, "gamma": lambda f: gamma(f, c_between),
-            "span_mm": 4 * v("W_{p}") + 3 * v("s")}
+    return {"C_pF": c * 1e12, "gamma": gamma, "span_mm": 4 * v("W_{p}") + 3 * v("s")}
 
 
 def wavelength_mm(f_ghz: float) -> float:
     return C0 / (f_ghz * 1e9) * 1e3
 
 
-# --------------------------------------------------------------------------- services the bands serve (Fig. 6, Table IV)
-SERVICES = [  # (label, lo, hi) GHz
-    ("5G NR n77 (incl. n78)", 3.3, 4.2),
-    ("WiMAX 3.5 GHz", 3.4, 3.6),
-    ("C-band satellite downlink", 3.7, 4.2),
-    ("5G NR n79", 4.4, 5.0),
-    ("5 GHz WLAN", 5.15, 5.85),
-    ("X-band satellite uplink", 7.9, 8.4),
-    ("X-band radar", 8.0, 12.0),
-    ("Ku-band satellite downlink", 10.7, 12.75),
-    ("Ku-band VSAT uplink", 14.0, 14.5),
-]
-
-
-def coverage(lo: float, hi: float, bands_: list[Band], f_max: float = 15.0) -> float:
-    """Fraction of [lo, hi] inside the -10 dB bands (an open-top band is taken to run to f_max)."""
-    covered = sum(max(0.0, min(hi, f_max if b.open_top else b.hi) - max(lo, b.lo)) for b in bands_)
-    return covered / (hi - lo)
-
-
-# --------------------------------------------------------------------------- CPW line (team check, not in the paper)
+# --------------------------------------------------------------------------- CPW feed line
 def _ellip_k(k: float) -> float:
     a, b = 1.0, math.sqrt(1 - k * k)
     for _ in range(30):
@@ -267,16 +245,21 @@ def _ellip_k(k: float) -> float:
     return math.pi / (2 * a)
 
 
-def cpw_z0() -> tuple[float, float]:
-    """Characteristic impedance and effective permittivity of the CPW feed on a finite-thickness substrate
-    (conformal mapping, Simons 2001): strip W_f, slots g, substrate h_s, no back metal."""
-    S, W, h = v("W_{f}"), v("g"), v("h_{s}")
+def cpw_z0(covered: bool = False) -> tuple[float, float]:
+    """Characteristic impedance (ohm) and effective permittivity of the CPW feed, by conformal mapping (Simons 2001):
+    strip W_f, slots g, FR-4 of thickness h_s under the line, no back metal. covered=True adds a second FR-4 layer
+    of thickness t on top of the line (the metasurface board), i.e. the line between two dielectric layers."""
+    S, W = v("W_{f}"), v("g")
     k0 = S / (S + 2 * W)
-    k1 = math.sinh(math.pi * S / (4 * h)) / math.sinh(math.pi * (S + 2 * W) / (4 * h))
     kp = lambda k: math.sqrt(1 - k * k)  # noqa: E731
-    q = _ellip_k(kp(k0)) / _ellip_k(k0)
-    eeff = 1 + (FR4_EPS - 1) / 2 * (_ellip_k(k1) / _ellip_k(kp(k1))) * q
-    return 30 * math.pi / math.sqrt(eeff) * q, eeff
+    q0 = _ellip_k(kp(k0)) / _ellip_k(k0)
+
+    def fill(h: float) -> float:        # partial filling factor of one dielectric layer of thickness h
+        k1 = math.sinh(math.pi * S / (4 * h)) / math.sinh(math.pi * (S + 2 * W) / (4 * h))
+        return 0.5 * _ellip_k(k1) / _ellip_k(kp(k1)) * q0
+
+    eeff = 1 + (FR4_EPS - 1) * (fill(v("h_{s}")) + (fill(v("t")) if covered else 0.0))
+    return 30 * math.pi / math.sqrt(eeff) * q0, eeff
 
 
 if __name__ == "__main__":
@@ -288,10 +271,8 @@ if __name__ == "__main__":
     print("  dips:", ", ".join(f"{a:.2f} GHz ({b:.1f} dB)" for a, b in dips(f, s)))
     print("  Ray lower edge:", {k: round(x, 3) for k, x in ray_lower_edge().items()})
     pg = patch_grid()
-    print(f"  patch grid: C = {pg['C_between_pF']:.3f} pF between two FR-4 boards, {pg['C_outer_pF']:.3f} pF facing air; "
-          f"array span {pg['span_mm']:g} mm")
-    z, e = cpw_z0()
-    print(f"  CPW feed: Z0 = {z:.1f} ohm, eps_eff = {e:.2f}")
-    bb = bands(f, s)
-    for lab, lo, hi in SERVICES:
-        print(f"  {lab}: {100 * coverage(lo, hi, bb):.0f} % covered")
+    print(f"  patch grid (FR-4 / air): C = {pg['C_pF']:.3f} pF; |Gamma| = {pg['gamma'](3.42):.2f} at 3.42 GHz, "
+          f"{pg['gamma'](10):.2f} at 10 GHz; array span {pg['span_mm']:g} mm")
+    for cov in (False, True):
+        z, e = cpw_z0(cov)
+        print(f"  CPW feed, {'between two FR-4 layers' if cov else 'antenna alone'}: Z0 = {z:.1f} ohm, eps_eff = {e:.2f}")
