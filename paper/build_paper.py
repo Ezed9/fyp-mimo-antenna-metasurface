@@ -625,22 +625,31 @@ def results(doc) -> None:
         "coupling at such a small gap. «Realized gain and efficiency against frequency, with and without the "
         "metasurface: TO BE ADDED.»"))
     h2(doc, "C", "Radiation Pattern")
-    p1, p2 = d.PATTERNS
+    pa, pm, p3 = d.PATTERNS            # 5.3 GHz alone (assumed), 5.3 GHz with metasurface (assumed), 12.5 GHz
     tbc = ("" if d.PATTERN_MODEL_CONFIRMED else
-           "«TO BE CONFIRMED: the model (with or without the metasurface) from which these patterns are taken.» ")
+           "«TO BE CONFIRMED: Fig. 5(a) is taken here as the antenna without the metasurface and Fig. 5(b) as the "
+           "antenna with it; the model of Fig. 5(c) is not known.» ")
     para(doc, (
-        f"The simulated far-field directivity patterns in the φ = 90° plane at {p1['f']:g} and {p2['f']:g} GHz "
-        f"are depicted in Fig. 5. {tbc}At {p1['f']:g} GHz the pattern has two broad lobes, one around θ = 0° and "
-        f"one around θ = 180°, so the radiation is two-sided. The main lobe has a directivity of "
-        f"{num(p1['main_dbi'])} dBi in the direction θ = {p1['dir_deg']:g}°, with a 3 dB angular width of "
-        f"{p1['width_deg']:g}°. At {p2['f']:g} GHz the pattern splits into several lobes. The main lobe has a "
-        f"directivity of {num(p2['main_dbi'])} dBi at θ = {p2['dir_deg']:g}°, a 3 dB angular width of "
-        f"{p2['width_deg']:g}° and a side-lobe level of {num(p2['sll_db'], 1)} dB. These values are directivity; "
-        "«the realized gain and the patterns in the φ = 0° plane are to be added.»"))
-    picture(doc, shot(p1["shot"], CROP_PATTERN), 3.4, "(a)")
-    picture(doc, shot(p2["shot"], CROP_PATTERN), 3.4, "(b)", before=0)
-    caption(doc, 5, f"Simulated far-field directivity in the φ = 90° plane (CST Studio Suite): (a) {p1['f']:g} GHz, "
-            f"(b) {p2['f']:g} GHz. {tbc}")
+        "The simulated far-field directivity patterns in the φ = 90° plane are depicted in Fig. 5. "
+        f"{tbc}At {pa['f']:g} GHz both patterns have two broad lobes, one around θ = 0° and one around θ = 180°. "
+        f"Without the metasurface (Fig. 5(a)), the main lobe points to θ = {pa['dir_deg']:g}° with a directivity "
+        f"of {num(pa['main_dbi'])} dBi and a 3 dB angular width of {pa['width_deg']:g}°. With the metasurface "
+        f"(Fig. 5(b)), the main lobe points to θ = {pm['dir_deg']:g}° with a directivity of {num(pm['main_dbi'])} "
+        f"dBi and a 3 dB angular width of {pm['width_deg']:g}°, and the side-lobe level is "
+        f"{num(pm['sll_db'], 1)} dB. The metasurface therefore turns the main lobe to the front and raises the "
+        f"directivity by {num(pm['main_dbi'] - pa['main_dbi'])} dB, but the opposite lobe is only "
+        f"{num(-pm['sll_db'], 1)} dB below the main lobe, so the radiation remains two-sided at this frequency."))
+    para(doc, (
+        f"At {p3['f']:g} GHz (Fig. 5(c)) the pattern splits into several lobes. The main lobe has a directivity of "
+        f"{num(p3['main_dbi'])} dBi at θ = {p3['dir_deg']:g}°, a 3 dB angular width of {p3['width_deg']:g}° and a "
+        f"side-lobe level of {num(p3['sll_db'], 1)} dB. These values are directivity; «the realized gain and the "
+        "patterns in the φ = 0° plane are to be added.»"))
+    picture(doc, shot(pa["shot"], CROP_PATTERN), 3.4, "(a)")
+    picture(doc, shot(pm["shot"], CROP_PATTERN), 3.4, "(b)", before=0)
+    picture(doc, shot(p3["shot"], CROP_PATTERN), 3.4, "(c)", before=0)
+    caption(doc, 5, "Simulated far-field directivity in the φ = 90° plane (CST Studio Suite): "
+            f"(a) {pa['f']:g} GHz, antenna without the metasurface; (b) {pm['f']:g} GHz, antenna with the "
+            f"metasurface; (c) {p3['f']:g} GHz. {tbc}")
     h2(doc, "D", "Comparison with Reported Works")
     lam = num(PROFILE / LAMBDA_LO, 3)
     para(doc, (
@@ -692,7 +701,8 @@ def applications(doc) -> None:
         "surface-penetrating radar [@bhattacharya, kundu_triple]: the transmission coefficient S_{21} between them "
         "is recorded with and without a target, and the difference reveals the target. The metasurface directs the "
         "radiation away from the ground side, which reduces coupling to the electronics placed behind the antenna "
-        "«(TO BE CONFIRMED: the pattern of Fig. 5(a) at 5.3 GHz is two-sided, so this benefit is not shown yet)». "
+        "«(TO BE CONFIRMED: in Fig. 5(b) the opposite lobe at 5.3 GHz is only 1.3 dB below the main lobe, so this "
+        "benefit is small at that frequency)». "
         f"Since bands I and II are separated by the "
         f"unmatched region of {num(B1.hi)}–{num(B2.lo)} GHz, the antenna is not intended for impulse (UWB) radar."))
 

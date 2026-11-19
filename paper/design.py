@@ -43,12 +43,16 @@ DIR_ALONE_DIGITIZED = EXPORTS / "cst_directivity_no_ms_assumed_digitized.csv"
 DIR_MS_DIGITIZED = EXPORTS / "cst_directivity_with_ms_assumed_digitized.csv"
 
 # Far-field directivity cuts (phi = 90 deg) supplied as CST screenshots. The values are the read-outs printed in the
-# screenshots themselves. Which model they come from (with or without the metasurface) is not confirmed.
+# screenshots themselves. Which model each comes from is not confirmed. For the two 5.3 GHz cuts the assignment
+# below is ASSUMED: the one whose main lobe points to the front (theta = 2 deg) and has the higher directivity is
+# taken as the antenna with the metasurface. "sll_db" is CST's side-lobe level (None when the screenshot gives none).
 PATTERNS = [
-    {"f": 5.3, "shot": CST / "cst_pattern_5p3GHz.jpg", "main_dbi": 3.56, "dir_deg": 176.0, "width_deg": 71.7,
-     "sll_db": None},
-    {"f": 12.5, "shot": CST / "cst_pattern_12p5GHz.jpg", "main_dbi": 1.02, "dir_deg": 132.0, "width_deg": 40.9,
-     "sll_db": -2.6},
+    {"f": 5.3, "model": "antenna without the metasurface", "shot": CST / "cst_pattern_5p3GHz_lobe176deg.jpg",
+     "main_dbi": 3.56, "dir_deg": 176.0, "width_deg": 71.7, "sll_db": None},
+    {"f": 5.3, "model": "antenna with the metasurface", "shot": CST / "cst_pattern_5p3GHz_lobe2deg.png",
+     "main_dbi": 3.88, "dir_deg": 2.0, "width_deg": 76.8, "sll_db": -1.3},
+    {"f": 12.5, "model": None, "shot": CST / "cst_pattern_12p5GHz.jpg",
+     "main_dbi": 1.02, "dir_deg": 132.0, "width_deg": 40.9, "sll_db": -2.6},
 ]
 PATTERN_MODEL_CONFIRMED = False
 

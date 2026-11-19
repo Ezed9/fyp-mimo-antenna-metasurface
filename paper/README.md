@@ -41,7 +41,9 @@ does not resize, filter, redraw or annotate them, and every label inside them is
 | 3(b) | `cst_s11_with_ms.jpg` | New (14 Nov). Same curve as the earlier with-metasurface run |
 | 4(a) | `cst_directivity_no_ms_assumed.png` | New (17 Nov). Directivity against frequency, maximum in the φ = 0° plane. The smooth curve (peak 5.2 dBi) is **assumed** to be the antenna alone; marked TO BE CONFIRMED |
 | 4(b) | `cst_directivity_with_ms_assumed.png` | New (17 Nov). The curve with dips near 7.5, 9.6 and 12 GHz (peak 7.0 dBi) is **assumed** to be the antenna with the metasurface. Set `DIR_ASSUMED = False` in `design.py` once confirmed |
-| 5(a), 5(b) | `cst_pattern_5p3GHz.jpg`, `cst_pattern_12p5GHz.jpg` | New (14 Nov). Directivity, φ = 90° cut. **Which model they come from is not known**; marked TO BE CONFIRMED. Set `PATTERN_MODEL_CONFIRMED = True` and state the model in the text once known |
+| 5(a) | `cst_pattern_5p3GHz_lobe176deg.jpg` | 14 Nov. Directivity, φ = 90° cut, 5.3 GHz, main lobe at 176° (3.56 dBi). **Assumed** antenna without the metasurface |
+| 5(b) | `cst_pattern_5p3GHz_lobe2deg.png` | New (19 Nov). Same cut, main lobe at 2° (3.88 dBi, side-lobe level −1.3 dB). **Assumed** antenna with the metasurface |
+| 5(c) | `cst_pattern_12p5GHz.jpg` | 14 Nov. 12.5 GHz. **Model not known.** All three are marked TO BE CONFIRMED; set `PATTERN_MODEL_CONFIRMED = True` and fix the `model` entries in `design.PATTERNS` once known |
 
 If the two S11 plots, or the two directivity plots, are the other way round, swap the two files (and their digitised
 CSVs) and rebuild: the text of Sections III-A and III-B and Table II follow the data.
@@ -101,8 +103,8 @@ the real numbers.
    the sweep to 18 GHz and refine the mesh before relying on it.
 3. **The metasurface's benefit is still unproven.** If Fig. 3(a) is the antenna alone, the antenna is matched *better*
    without the metasurface: 3.52–15 GHz with only a 0.2 dB excursion (−9.8 dB) near 5.5 GHz, against three separate
-   bands with it. The paper says this plainly. The 5.3 GHz pattern is two-sided (lobes at 0° and 180°), so it does not
-   show a reflector effect either. A reviewer's first question will be "what does the metasurface do?"; the answer
+   bands with it. The paper says this plainly. At 5.3 GHz the pattern stays two-sided: with the metasurface (as
+   assumed) the main lobe turns to the front, but the opposite lobe is only 1.3 dB lower, so the reflector effect is weak. A reviewer's first question will be "what does the metasurface do?"; the answer
    needs the realized gain with and without it. The directivity plots (Fig. 4) give a mixed answer: with the
    metasurface the peak rises from 5.2 to 7.0 dBi and bands I and III improve, but over 70 % of band II the
    directivity is lower, with dips to −2.8, −1.0 and −0.3 dBi. The paper reports this as it is.
