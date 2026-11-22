@@ -7,6 +7,7 @@ overwrite them with the CST ASCII exports (same two columns) and re-run to get t
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import matplotlib
@@ -32,9 +33,17 @@ plt.rcParams.update({
 
 
 def load(name: str) -> tuple[np.ndarray, np.ndarray]:
-    rows = [line.split(",") for line in (DATA / f"{name}.csv").read_text().splitlines()
-            if line and (line[0].isdigit() or line[0] == "-")]
+    # Accepts the digitised CSV and a CST "Plot Data (ASCII)" export alike: comment and header lines are skipped,
+    # columns may be separated by commas, tabs or spaces.
+    rows = []
+    for line in (DATA / f"{name}.csv").read_text().splitlines():
+        cells = re.split(r"[,;\s]+", line.strip())
+        try:
+            rows.append((float(cells[0]), float(cells[1])))
+        except (ValueError, IndexError):
+            continue                                  # comment, header or separator line
     arr = np.array(rows, dtype=float)
+    arr = arr[np.argsort(arr[:, 0])]
     return arr[:, 0], arr[:, 1]
 
 
