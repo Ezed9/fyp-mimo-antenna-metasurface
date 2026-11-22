@@ -119,6 +119,63 @@ def magnitude_figures(mag: dict[str, np.ndarray], out: Path) -> dict[str, Path]:
     return made
 
 
+def two_port_bounds(mag: dict[str, np.ndarray]) -> dict:
+    """Ports 1 and 2 from magnitudes alone. The ECC of [Blanch 2003] and the CCL contain the phase only through
+    |S11* S12 + S21* S22|, which lies between (|S11| - |S22|)|S21| and (|S11| + |S22|)|S21|; the upper limit gives
+    the largest ECC and the largest CCL that any phase could produce."""
+    f = mag["f"]
+    a11, a22, a21 = (10 ** (mag[k] / 20) for k in ("s11", "s22", "s21"))
+    cross_hi = ((a11 + a22) * a21) ** 2
+    den = (1 - a11 ** 2 - a21 ** 2) * (1 - a22 ** 2 - a21 ** 2)
+    ecc = cross_hi / den
+    ccl = -np.log2(np.clip(den - cross_hi, 1e-9, None))
+    matched = (mag["s11"] <= -10.0) & (mag["s22"] <= -10.0)
+    lower = float(f[np.argmax(matched)])
+    band = f >= lower
+    k_e, k_c, k_i = (int(np.argmax(np.where(band, v, -np.inf))) for v in (ecc, ccl, mag["s21"]))
+    return {"f": f, "ecc": ecc, "ccl": ccl, "lower_edge": lower, "band": band,
+            "ecc_max": (float(f[k_e]), float(ecc[k_e])), "ecc_share_001": float(np.mean(ecc[band] < 0.01)),
+            "dg_min": float(10 * np.sqrt(1 - ecc[band].max())),
+            "ccl_max": (float(f[k_c]), float(ccl[k_c])), "ccl_share_04": float(np.mean(ccl[band] < 0.4)),
+            "ccl_above_04": _ranges(f, (ccl >= 0.4) & band),
+            "s21_max": (float(f[k_i]), float(mag["s21"][k_i])),
+            "s21_share_15": float(np.mean(mag["s21"][band] <= -15.0)),
+            "s21_above_m10": _ranges(f, (mag["s21"] > -10.0) & band),
+            "s21_above_m15": _ranges(f, (mag["s21"] > -15.0) & band),
+            "s22_matched": _ranges(f, mag["s22"] <= -10.0)}
+
+
+def two_port_figures(mag: dict[str, np.ndarray], bounds: dict, out: Path) -> dict[str, Path]:
+    out.mkdir(parents=True, exist_ok=True)
+    made = {}
+    fig, ax = _axes("S-parameter (dB)", height=2.05)
+    for k, key in enumerate(("s11", "s22", "s21")):
+        ax.plot(mag["f"], mag[key], color=COLORS[k], linestyle=STYLES[k], linewidth=1.1,
+                label=f"$|S_{{{key[1:]}}}|$")
+    ax.axhline(-10, color=INK, linewidth=0.6, linestyle=(0, (1, 1.5)))
+    ax.set_xticks(range(1, 16, 2))
+    ax.set_xlim(1, 15)
+    ax.set_ylim(-50, 0)
+    ax.legend(ncol=3, loc="lower left", frameon=True, framealpha=0.92, edgecolor=GRID, columnspacing=1.0)
+    fig.tight_layout(pad=0.3)
+    made["sparams"] = out / "fig_two_port_sparams.png"
+    fig.savefig(made["sparams"])
+    plt.close(fig)
+    fig, ax = _axes("Upper bound of ECC", height=1.85)
+    shown = bounds["f"] >= bounds["lower_edge"]
+    ax.semilogy(bounds["f"][shown], np.clip(bounds["ecc"][shown], 1e-6, None), color="#1c5cab", linewidth=1.1)
+    ax.axhline(0.5, color=INK, linewidth=0.6, linestyle=(0, (1, 1.5)))
+    ax.text(14.8, 0.36, "0.5", fontsize=7, color="#52514e", ha="right", va="top")
+    ax.set_xticks(range(1, 16, 2))
+    ax.set_xlim(1, 15)
+    ax.set_ylim(1e-5, 1)
+    fig.tight_layout(pad=0.3)
+    made["ecc"] = out / "fig_two_port_ecc_bound.png"
+    fig.savefig(made["ecc"])
+    plt.close(fig)
+    return made
+
+
 def diversity_gain(ecc: np.ndarray) -> np.ndarray:
     """Apparent diversity gain in dB, 10*sqrt(1 - rho_e), with rho_e the envelope correlation coefficient."""
     return 10 * np.sqrt(1 - np.clip(ecc, 0, 1))

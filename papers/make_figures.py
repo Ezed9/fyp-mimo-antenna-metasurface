@@ -179,6 +179,25 @@ def paper1_geometry(shots: Path, out_dir: Path) -> None:
     plt.close(fig)
 
 
+def paper2_layout(shots: Path, out_dir: Path) -> None:
+    """Paper 2, Fig. 1(a): the CST top view with the port numbers (1 lower left, 2 lower right, 3 upper left,
+    4 upper right, as given by the authors)."""
+    image = Image.open(shots / "mimo_design_without_metasurface.png").convert("RGB")
+    w, h = image.size
+    pad = 46
+    fig, ax = plt.subplots(figsize=(1.65, 1.65 * (h + 2 * pad) / w))
+    ax.imshow(image, extent=(0, w, h, 0), interpolation="lanczos")
+    ax.set_xlim(0, w)
+    ax.set_ylim(h + pad, -pad)
+    ax.axis("off")
+    for label, x, y, va in (("Port 1", 110, h + 8, "top"), ("Port 2", 297, h + 8, "top"),
+                            ("Port 3", 100, -8, "bottom"), ("Port 4", 286, -8, "bottom")):
+        ax.text(x, y, label, ha="center", va=va, fontsize=7.5, color=INK)
+    fig.subplots_adjust(0, 0, 1, 1)
+    fig.savefig(out_dir / "fig_layout_ports.png")
+    plt.close(fig)
+
+
 def main() -> None:
     p1, p2 = HERE / "paper1", HERE / "paper2"
     s11_overlay("p1", p1 / "figures" / "fig_s11.png", "with the metasurface board", "antenna alone", (-50, 0), True)
@@ -193,6 +212,7 @@ def main() -> None:
          (0, 40, 362, 383), (286, 28, 480, 66))
     crop(p1 / "cst_screenshots" / "pattern_5p3GHz_with.png", p1 / "figures" / "fig_pattern_with.png",
          (0, 40, 362, 383), (286, 28, 480, 66))
+    paper2_layout(p2 / "cst_screenshots", p2 / "figures")
     shots = p2 / "cst_screenshots"
     polar = (690, 0, 1600, 959)                     # the polar plot without the legend and the lobe read-out
     crop(shots / "7p4GHz_radiation_pattern_port1_without_metasurface.png", p2 / "figures" / "fig_pattern_without.png",
