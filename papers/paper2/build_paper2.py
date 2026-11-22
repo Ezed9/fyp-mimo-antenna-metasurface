@@ -131,7 +131,19 @@ def build(exports: Path, out: Path) -> tuple[Path, list[str]]:
     mimo_data = mimo_results.load(exports)
     mimo = mimo_results.analyse(mimo_data) if mimo_data else None
     mimo_figs = mimo_results.figures(mimo, out.parent / "figures") if mimo else {}   # next to the output file
-    if not mimo:
+    mag_data = None if mimo else mimo_results.load_magnitudes()
+    mag = mimo_results.analyse_magnitudes(mag_data) if mag_data else None
+    mag_figs = mimo_results.magnitude_figures(mag_data, out.parent / "figures") if mag else {}
+    bad_ports = [k for k in (1, 2, 3, 4) if k not in mag["valid_ports"]] if mag else []
+    if bad_ports:
+        todo.insert(0, "PORTS " + " and ".join(map(str, bad_ports)) + " ARE NOT VALID: their reflection coefficient "
+                    "exceeds 0 dB (a passive antenna cannot reflect more power than it receives) and stays above "
+                    "-10 dB up to about 10.5 GHz. Check the port definition and the port mode, then re-simulate")
+    if mag:
+        todo.append("ECC, diversity gain, TARC and CCL need the phase: export the complex S-matrix (Touchstone) of "
+                    f"BOTH models to {exports}/mimo_noMS.s4p and {exports}/mimo_MS.s4p. The screenshots give "
+                    "magnitudes with the metasurface only")
+    if not mimo and not mag:
         todo.append(f"Coupling and diversity results: export the 4 x 4 S-matrix of both models to "
                     f"{exports}/mimo_noMS.s4p and {exports}/mimo_MS.s4p (Sections III-B and III-E are placeholders)")
     partial = d["lo"] > m0["fmin"] + 0.5 or d["hi"] < m0["fmax"] - 0.5
@@ -163,6 +175,15 @@ def build(exports: Path, out: Path) -> tuple[Path, list[str]]:
         mimo_abstract = (f"The lowest isolation between two ports is {db(-w0['coupling'])} dB without the "
                          f"metasurface and {db(-w1['coupling'])} dB with it, and the envelope correlation "
                          f"coefficient computed from the S-parameters stays below {max(e0, e1):.3f}. ")
+    elif mag:
+        w21 = mag["pairs"][(2, 1)]
+        mimo_abstract = (
+            f"With the metasurface, port 2 is matched from {mag['ports'][2]['matched'][0][0]:.2f} GHz upwards, and "
+            f"the isolation between ports 1 and 2 falls to {db(-w21['coupling'])} dB at {w21['f_coupling']:.2f} GHz "
+            f"and is at least 15 dB over {100 * w21['share_15dB']:.0f}% of the matched range. "
+            + ("[[Ports " + " and ".join(map(str, bad_ports)) + " are not valid in the present simulation and are "
+               "not reported; the envelope correlation coefficient needs the complex S-matrix.]] " if bad_ports else
+               "[[Envelope correlation coefficient: needs the complex S-matrix.]] "))
     else:
         mimo_abstract = ("[[Isolation and envelope-correlation sentence: to be generated from the four-port "
                          "S-matrix.]] ")
@@ -324,6 +345,54 @@ def build(exports: Path, out: Path) -> tuple[Path, list[str]]:
                          f"{db(b['coupling'])} at {b['f_coupling']:.2f}", f"{a['ecc']:.4f}", f"{b['ecc']:.4f}"])
         p.table("Highest Coupling and Envelope Correlation Coefficient Inside the Matched Range", rows,
                 [0.42, 0.85, 0.85, 0.62, 0.62])
+    elif mag:
+        pt, w21 = mag["ports"], mag["pairs"][(2, 1)]
+        span = lambda rs: " and ".join(f"from {a:.2f} to {b:.2f} GHz" for a, b in rs)
+        p.body(
+            "The reflection coefficients of the four ports with the metasurface are shown in Fig. 3. Port 2, the "
+            f"second element of the lower row, is matched from {pt[2]['matched'][0][0]:.2f} GHz to beyond "
+            f"{mag['upper']:.0f} GHz and follows port 1 closely.")
+        if bad_ports:
+            k = bad_ports[0]
+            p.body(
+                "[[Ports " + " and ".join(map(str, bad_ports)) + ", the two elements of the upper row, are not "
+                f"valid in the present simulation. Their reflection coefficient stays above −10 dB up to "
+                f"{pt[k]['matched'][0][0]:.1f} GHz and exceeds 0 dB {span(pt[k]['above_0dB'])}, reaching "
+                f"{signed(pt[k]['max'][1])} dB at {pt[k]['max'][0]:.1f} GHz, so that the sum of |*S*_{{i" + str(k) +
+                "}}|^{2} over the four ports reaches " + f"{pt[k]['power_sum_max']:.2f}. A passive antenna cannot "
+                "return more power than it receives; the port definition or the port mode of these two ports has to "
+                "be corrected and the model simulated again. Every value below that involves port "
+                + " or ".join(map(str, bad_ports)) + " is provisional.]]")
+        p.figure(mag_figs["reflection"],
+                 "Simulated reflection coefficients of the four ports with the metasurface. The dotted line marks "
+                 "−10 dB." + (" [[Ports " + " and ".join(map(str, bad_ports)) + ": not valid, see text.]]"
+                              if bad_ports else ""), width_in=3.4)
+        last15 = w21["above_m15"][-1][1]
+        p.body(
+            "The transmission coefficients between the ports with the metasurface are shown in Fig. 4, and Table I "
+            f"lists their highest values above the lower band edge, {m1['bands'][0][0]:.2f} GHz. The strongest "
+            "coupling is between ports 1 and 2, the two elements of the lower row, which are parallel, have the same "
+            f"polarisation and share one ground conductor: |*S*_{{21}}| reaches {db(w21['coupling'])} dB at "
+            f"{w21['f_coupling']:.2f} GHz, where {100 * 10 ** (w21['coupling'] / 10):.0f}% of the power incident at "
+            f"port 1 is delivered to port 2, and it is above −10 dB {span(w21['above_m10'])}. The isolation between "
+            f"these two ports is at least 15 dB over {100 * w21['share_15dB']:.0f}% of the range, and at all "
+            f"frequencies above {last15:.1f} GHz. The transmission coefficients that involve ports 3 and 4 are below "
+            f"{db(max(q['coupling'] for pr, q in mag['pairs'].items() if pr != (2, 1)))} dB"
+            + ("; [[they cannot be interpreted as long as these ports reflect most of the incident power]]."
+               if bad_ports else ".") +
+            " [[The transmission coefficients without the metasurface have not been exported, so the effect of the "
+            "metasurface on the coupling is not known.]]")
+        p.figure(mag_figs["coupling"],
+                 "Simulated transmission coefficients between the ports with the metasurface. The dotted line marks "
+                 "−15 dB.", width_in=3.4)
+        rows = [["Ports", "Highest |*S*_{ij}| (dB)", "at (GHz)", "Share of the range with isolation ≥ 15 dB"]]
+        for (i, j), q in mag["pairs"].items():
+            flag = "^{†}" if (i in bad_ports or j in bad_ports) else ""
+            rows.append([f"{j}–{i}{flag}", db(q["coupling"]), f"{q['f_coupling']:.2f}",
+                         f"{100 * q['share_15dB']:.0f}%"])
+        p.table("Highest Coupling With the Metasurface Above the Lower Band Edge", rows, [0.5, 0.95, 0.7, 1.25],
+                note=("^{†}Provisional: involves a port that is not valid in the present simulation."
+                      if bad_ports else None))
     else:
         p.body(
             "[[The transmission coefficients between the ports have not been exported from the simulation. This "
@@ -343,7 +412,7 @@ def build(exports: Path, out: Path) -> tuple[Path, list[str]]:
     p.subheading("C. Directivity")
     part = (f" With the metasurface the result is available from {d['lo']:.0f} to {d['hi']:.0f} GHz only, so the "
             "comparison is limited to that range." if partial else "")
-    fig_no = 4 if mimo else 3
+    fig_no = 5 if mag else 4 if mimo else 3
     p.body(
         f"Fig. {fig_no} shows the simulated directivity of port 1 against frequency. The quantity plotted is the highest "
         "directivity found in the *φ* = 0° plane at each frequency; it is not the directivity in a fixed "
@@ -423,9 +492,10 @@ def build(exports: Path, out: Path) -> tuple[Path, list[str]]:
                  "S-parameters with (2).", width_in=3.4)
     else:
         p.body(
-            "[[The ECC, the diversity gain, the TARC and the CCL of the two models are generated by the build "
-            "script from the same four-port S-matrix as Section III-B, together with the ECC figure. Far-field "
-            "ECC needs the complex far fields of all four ports.]]")
+            "[[The ECC, the diversity gain, the TARC and the CCL are generated by the build script from the complex "
+            "four-port S-matrix of the two models (Touchstone export), together with the ECC figure. "
+            + ("The magnitudes of Section III-B are not sufficient: (2) needs the phase. " if mag else "") +
+            "Far-field ECC needs the complex far fields of all four ports.]]")
     # --- discussion ---
     p.subheading("F. Discussion and Limitations")
     p.body(
@@ -442,14 +512,18 @@ def build(exports: Path, out: Path) -> tuple[Path, list[str]]:
         "realised gain and the efficiency, which include the loss of FR-4 and the power coupled into the other "
         "ports, are not known. " + (f"With the metasurface, the directivity is available for "
                                     f"{d['lo']:.0f}–{d['hi']:.0f} GHz only. " if partial else "") +
-        ("The coupling between the ports and the diversity metrics remain to be computed. " if not mimo else "") +
+        ("The coupling is known with the metasurface only and in magnitude only, so the diversity metrics cannot "
+         "be computed yet" + (", and the two upper-row ports are not valid in the present simulation. " if bad_ports
+                              else ". ") if mag else
+         "The coupling between the ports and the diversity metrics remain to be computed. " if not mimo else "") +
         "The effect of the rings has not been separated from that of the board that carries them; simulations "
         "with a bare FR-4 board and with a plain copper plate at the same position are needed for that. Finally, "
         "the model has not been verified against a second solver or a measurement.")
     # --- comparison ---
     p.subheading("G. Comparison with Reported Works")
-    p.body(comparison_text(c, "II" if mimo else "I"))
-    iso = f"{db(-w1['coupling'])}" if mimo else "[[–]]"
+    p.body(comparison_text(c, "II" if (mimo or mag) else "I"))
+    iso = (f"{db(-w1['coupling'])}" if mimo else
+           f"> {db(-mag['pairs'][(2, 1)]['coupling'])}^{{§}}" if mag else "[[–]]")
     ecc = f"< {max(e0, e1):.3f}" if mimo else "[[–]]"
     rows = [["Ref.", "Ports; element", "Size (mm)", "Added surface; gap (mm)", "Band (GHz)", "Isolation (dB)",
              "ECC", "Peak gain (dBi)"]]
@@ -458,7 +532,8 @@ def build(exports: Path, out: Path) -> tuple[Path, list[str]]:
                  f"{m1['bands'][0][0]:.2f} to >{m1['fmax']:.0f}^{{‡}}", iso, ecc, f"{d['peak1'][1]:.1f}^{{†}}"])
     p.table("Comparison with Reported Four-Port Antennas", rows, [0.5, 1.2, 0.9, 1.35, 0.85, 0.7, 0.65, 0.85],
             note=f"–: not available.  ^{{†}}Simulated directivity in the *φ* = 0° plane (gain not evaluated).  "
-                 f"^{{‡}}Port 1, except {gap1[0]:.2f}–{gap1[1]:.2f} GHz; simulation only.", wide=True)
+                 f"^{{‡}}Port 1, except {gap1[0]:.2f}–{gap1[1]:.2f} GHz; simulation only."
+                 + ("  ^{§}Between ports 1 and 2." if mag else ""), wide=True)
 
     # ------------------------------------------------------------------------------------------------ IV
     p.heading("IV. Conclusion")
@@ -467,12 +542,17 @@ def build(exports: Path, out: Path) -> tuple[Path, list[str]]:
         f"6 × 5 double-ring metasurface. Port 1 is matched {band_phrase(m1)} with the metasurface, and the match "
         f"is practically the same without it. " +
         (f"The lowest isolation is {db(-w1['coupling'])} dB and the highest ECC {e1:.3f}. " if mimo else
-         "[[One sentence on isolation and ECC.]] ") +
+         (f"With the metasurface, the isolation between the two lower-row ports falls to "
+          f"{db(-mag['pairs'][(2, 1)]['coupling'])} dB at {mag['pairs'][(2, 1)]['f_coupling']:.2f} GHz and is at "
+          f"least 15 dB over {100 * mag['pairs'][(2, 1)]['share_15dB']:.0f}% of the matched range"
+          + ("; [[the two upper-row ports are not valid in the present simulation]]. " if bad_ports else ". ")
+          if mag else "[[One sentence on isolation and ECC.]] ")) +
         f"Over {d['lo']:.0f}–{d['hi']:.0f} GHz the metasurface changes the mean directivity by "
         f"{signed(d['mean_diff'])} dB and its peak from {d['peak0'][1]:.1f} to {d['peak1'][1]:.1f} dBi, and at "
         f"{PATTERN['f']} GHz it moves the largest lobe of the *φ* = 90° plane towards the front of the board. In "
         "the range evaluated, the double-ring metasurface in its present form therefore does not act as a "
-        "gain-enhancing reflector. Control simulations with a bare board and a copper plate, the evaluation of "
+        "gain-enhancing reflector. " + ("A decoupling structure between the two lower-row elements, " if mag else "") +
+        ("control" if mag else "Control") + " simulations with a bare board and a copper plate, the evaluation of "
         "the realised gain and efficiency of all ports, a cell with an in-phase reflection band inside the "
         "operating range, and the fabrication and measurement of a prototype are the next steps of this work.")
     p.references(c.listing())

@@ -2,7 +2,7 @@
 # requires-python = ">=3.10"
 # dependencies = ["numpy>=1.26", "pillow>=10"]
 # ///
-"""Digitise a CST 1D result plot (red curve, solid frame, dotted grid) from a screenshot.
+"""Digitise a CST 1D result plot (coloured curve, solid frame, dotted grid) from a screenshot.
 
 CST draws a 1D result as a red polyline inside a solid dark frame with dotted gridlines. This finds the frame and the
 gridlines, maps pixels to axis values from the axis limits printed at the frame edges (one straight-line fit through
@@ -31,7 +31,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw
 
-RED_MIN = 0.15   # a curve pixel: (R − max(G, B)) / 255 above this
+RED_MIN = 0.15   # a curve pixel: colour saturation (max − min) / 255 above this
 EDGE_PX = 4      # columns this close to a vertex are left out of the segment fits
 
 
@@ -59,8 +59,11 @@ class Plot:
 
 
 def _weights(path: Path) -> tuple[np.ndarray, np.ndarray]:
+    """Curve weight and frame/grid weight of every pixel. The curve is any saturated colour (CST draws S1,1 red, but
+    other curves green, blue, orange, brown or magenta); for a pure red curve this equals the old red-only weight.
+    A black curve cannot be told from the frame: use the reciprocal curve (S2,3 for S3,2) instead."""
     rgb = np.asarray(Image.open(path).convert("RGB")).astype(float)
-    red = np.clip((rgb[..., 0] - np.maximum(rgb[..., 1], rgb[..., 2])) / 255, 0, 1)
+    red = np.clip((rgb.max(axis=2) - rgb.min(axis=2)) / 255, 0, 1)
     dark = np.clip((200 - rgb.mean(axis=2)) / 200, 0, 1) * (red < 0.2)
     return red, dark
 

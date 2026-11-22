@@ -27,6 +27,35 @@ updates itself; Paper 1's text is typed, so any number that changed must be edit
 
 ## 2. Paper 2: what is needed, in order
 
+### 2.0 What the S-parameter screenshots of the model with the metasurface show
+
+Sixteen magnitude plots were supplied (`paper2/cst_screenshots/sparams_with_metasurface/`), digitised into
+`data/p2_ms_s??.csv`, and are in the draft (Section III-B, two figures, one table).
+
+| Finding | Numbers |
+|---|---|
+| Ports 1 and 2 (lower row, 15 mm patches) are matched | port 1 from 1.71 GHz except 5.48–5.73 GHz; port 2 from 1.72 GHz to beyond 15 GHz |
+| **Ports 3 and 4 (upper row, 14 mm patches) are not valid** | \|S33\|, \|S44\| above −10 dB up to 10.5 GHz and **above 0 dB from 7.3 to 9.8 GHz** (+2.4 dB at 9.1 GHz); the power sum of the port-3 column reaches 1.75 |
+| Isolation between ports 1 and 2 is poor at the low end | \|S21\| = −7.6 dB at 1.80 GHz (18 % of the power goes to port 2); above −10 dB over 1.72–2.04 and 4.38–4.62 GHz; ≥ 15 dB over 79 % of the range |
+| Couplings involving ports 3 and 4 are below −21 dB | not interpretable while those ports reflect almost everything |
+
+A passive antenna cannot reflect more than it receives, so the port-3 and port-4 results are a modelling error, not a
+property of the design. All curves that involve those ports have a kink at 9.8 GHz and behave normally above it,
+which is what a waveguide port does when the mode it uses is below cut-off: the most likely cause is that the ports
+of the upper row do not excite the CPW mode. Check, for ports 3 and 4:
+
+1. that the port face is centred on the feed strip of the upper row (the upper feed lines are offset by about 3.3 mm
+   from the lower ones; a port copied from the lower row would sit beside the strip);
+2. the port mode picture and the line impedance (Navigation tree → Ports → port mode): it must be the quasi-TEM CPW
+   mode with a line impedance near 50 Ω, as for ports 1 and 2;
+3. that the port touches both ground planes and the substrate, that its orientation points into the structure, and
+   that the feed strip actually reaches the 14 mm patch;
+4. the adaptive frequency sweep of the frequency-domain solver (more samples, or repeat with the time-domain solver).
+
+What the screenshots cannot give: the phase (so no ECC, diversity gain, TARC, CCL) and the case without the
+metasurface (so no statement on what the metasurface does to the coupling). Both come with the Touchstone export of
+section 2.3.
+
 ### 2.1 Fix the model first (the screenshots show it is not what a paper can describe)
 
 Measured on `paper2/cst_screenshots/mimo_design_without_metasurface.png` at 3.73 px/mm (±0.3 mm):

@@ -1,8 +1,12 @@
-"""Coupling and diversity results of the four-port antenna, from the CST Touchstone exports.
+"""Coupling and diversity results of the four-port antenna.
 
-Reads exports/mimo_noMS.s4p (antenna alone) and exports/mimo_MS.s4p (with the metasurface): the 4 x 4 S-matrix of an
-"All Ports" run, normalised to 50 ohm (see CST_GUIDE.md, section 7). Returns None while the files are missing, and
-build_paper2.py then prints highlighted placeholders instead of numbers.
+Two sources, in order of preference:
+  1. exports/mimo_noMS.s4p and exports/mimo_MS.s4p: the complex 4 x 4 S-matrix of an "All Ports" run, normalised to
+     50 ohm (see CST_GUIDE.md, section 7). Gives coupling, ECC, diversity gain, TARC and CCL for both models.
+  2. papers/data/p2_ms_s??.csv: the magnitudes of the S-parameters with the metasurface, digitised from screenshots.
+     Gives the reflection of the four ports and the coupling, but no ECC (that needs the phase) and no comparison
+     with the antenna alone.
+While neither exists, build_paper2.py prints highlighted placeholders instead of numbers.
 """
 from __future__ import annotations
 
@@ -25,6 +29,94 @@ CASES = {"noMS": "without the metasurface", "MS": "with the metasurface"}
 COLORS = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300"]
 STYLES = ["-", "--", "-.", ":", (0, (5, 1)), (0, (3, 1, 1, 1, 1, 1))]
 GRID, INK = "#d9d8d2", "#0b0b0b"
+
+
+PAIRS = [(2, 1), (3, 1), (4, 1), (3, 2), (4, 2), (4, 3)]          # S_ij as (i, j)
+DATA = ROOT / "papers" / "data"
+
+
+def load_magnitudes() -> dict[str, np.ndarray] | None:
+    """|S| in dB with the metasurface on a common frequency grid, keys 'f', 's11', 's21', ...; None if incomplete."""
+    sys.path.insert(0, str(ROOT / "papers"))
+    from check_numbers import load as load_curve
+
+    names = {"s11": "p2_s11_ms", **{f"s{k}{k}": f"p2_ms_s{k}{k}" for k in (2, 3, 4)},
+             **{f"s{i}{j}": f"p2_ms_s{i}{j}" for i, j in PAIRS}}
+    if not all((DATA / f"{name}.csv").exists() for name in names.values()):
+        return None
+    grid = np.arange(1.0, 15.0001, 0.02)
+    out = {"f": grid}
+    for key, name in names.items():
+        f, v = load_curve(name)
+        out[key] = np.interp(grid, f, v)
+    return out
+
+
+def _ranges(f: np.ndarray, mask: np.ndarray) -> list[tuple[float, float]]:
+    out, i = [], 0
+    while i < len(f):
+        if not mask[i]:
+            i += 1
+            continue
+        j = i
+        while j + 1 < len(f) and mask[j + 1]:
+            j += 1
+        out.append((float(f[i]), float(f[j])))
+        i = j + 1
+    return out
+
+
+def analyse_magnitudes(mag: dict[str, np.ndarray]) -> dict:
+    f = mag["f"]
+    ports = {}
+    for k in (1, 2, 3, 4):
+        s = mag[f"s{k}{k}"]
+        column = sum(10 ** (mag[key] / 10) for key in mag
+                     if key != "f" and (key[2] == str(k) or (key[1] == str(k) and key[1] != key[2])))
+        ports[k] = {"matched": _ranges(f, s <= -10.0), "max": (float(f[s.argmax()]), float(s.max())),
+                    "above_0dB": _ranges(f, s > 0.0), "power_sum_max": float(column.max())}
+    lower = ports[1]["matched"][0][0]
+    band = f >= lower
+    pairs = {}
+    for i, j in PAIRS:
+        c = mag[f"s{i}{j}"]
+        k = int(np.argmax(np.where(band, c, -np.inf)))
+        pairs[(i, j)] = {"coupling": float(c[k]), "f_coupling": float(f[k]),
+                         "share_15dB": float(np.mean(c[band] <= -15.0)),
+                         "above_m10": _ranges(f, (c > -10.0) & band), "above_m15": _ranges(f, (c > -15.0) & band)}
+    return {"f": f, "lower_edge": float(lower), "upper": float(f[-1]), "ports": ports, "pairs": pairs,
+            "valid_ports": [k for k in ports if not ports[k]["above_0dB"] and ports[k]["power_sum_max"] <= 1.0]}
+
+
+def magnitude_figures(mag: dict[str, np.ndarray], out: Path) -> dict[str, Path]:
+    out.mkdir(parents=True, exist_ok=True)
+    made = {}
+    fig, ax = _axes("Reflection coefficient (dB)")
+    for k in (1, 2, 3, 4):
+        ax.plot(mag["f"], mag[f"s{k}{k}"], color=COLORS[k - 1], linestyle=STYLES[k - 1], linewidth=1.05,
+                label=f"$S_{{{k}{k}}}$")
+    ax.axhline(-10, color=INK, linewidth=0.6, linestyle=(0, (1, 1.5)))
+    ax.axhline(0, color=INK, linewidth=0.4)
+    ax.set_xlim(1, 15)
+    ax.set_ylim(-40, 5)
+    ax.legend(ncol=2, loc="lower left", frameon=True, framealpha=0.92, edgecolor=GRID, columnspacing=0.9)
+    fig.tight_layout(pad=0.3)
+    made["reflection"] = out / "fig_reflection_ports_MS.png"
+    fig.savefig(made["reflection"])
+    plt.close(fig)
+    fig, ax = _axes("Transmission coefficient (dB)")
+    for k, (i, j) in enumerate(PAIRS):
+        ax.plot(mag["f"], mag[f"s{i}{j}"], color=COLORS[k], linestyle=STYLES[k], linewidth=1.0,
+                label=f"$S_{{{i}{j}}}$")
+    ax.axhline(-15, color=INK, linewidth=0.6, linestyle=(0, (1, 1.5)))
+    ax.set_xlim(1, 15)
+    ax.set_ylim(-100, 0)
+    ax.legend(ncol=3, loc="lower right", frameon=True, framealpha=0.92, edgecolor=GRID, columnspacing=0.9)
+    fig.tight_layout(pad=0.3)
+    made["coupling"] = out / "fig_coupling_magnitude_MS.png"
+    fig.savefig(made["coupling"])
+    plt.close(fig)
+    return made
 
 
 def diversity_gain(ecc: np.ndarray) -> np.ndarray:
