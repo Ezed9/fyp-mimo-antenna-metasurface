@@ -29,20 +29,28 @@ DESIGN = {
     "W_f": "3",                                  # CPW strip width (repo)
     "g": "0.3",                                  # CPW slot width (authors: "feed gap 0.3 mm" is the slot)
     "L_g": "18",                                 # CST: ground from y = -25 to -7 mm
-    "W_g": Unknown("23", "repo value; upper-row grounds measure about 21 mm on the screenshot"),
+    "W_g_lower": Unknown("23.2", "authors: lower-row ground from x = -25 to -1.5 mm. With the 3 mm strip and the "
+                                 "0.3 mm slot the ground edge is at -1.8 mm, i.e. 23.2 mm wide; if the copper really "
+                                 "ends at -1.5 mm there is no slot. Read the exact x of the ground edge"),
+    "W_g_upper": "21.5",                         # authors: upper-row ground from x = 48.5 to 70 mm
     "p_lower": Unknown("0.73", "follows from R = 15 mm with the patch centre 8 mm above the element centre and the "
                                "ground edge at -7 mm (repo); about 0.5 mm on the screenshot"),
     "p_upper": Unknown("1.69", "follows from R = 14 mm on the same patch centre; about 1.6 mm on the screenshot"),
     # --- four-port layout ----------------------------------------------------------------------------------------
     "board": "105.5 mm × 100.5",                 # CST: x from -30.5 to 75 mm, y from -25 to 75.5 mm
-    "board_step": Unknown("5.5", "the lower half starts at x = -25 mm (the single-element board) and the outline at "
-                                 "-30.5 mm, so the upper half is displaced by 5.5 mm; 4.8 mm on the screenshot"),
-    "pitch": Unknown("50", "px: feed-to-feed spacing within a row (the single-element board is 50 mm wide)"),
+    "board_step": Unknown("about 5", "lower half x = -25 to 75 mm (two 50 mm tiles); the outline starts at -30.5 mm "
+                                     "and the upper-row ground ends at 70 mm, so the upper half is displaced by "
+                                     "5-5.5 mm; 4.8 mm on the screenshot"),
+    "feed_offset": Unknown("3.3", "upper-right feed axis at x = 48.5 - 0.3 - 1.5 = 46.7 mm against 50 mm in the "
+                                  "lower row; 2.9 mm on the screenshot"),
+    "pitch": "50",                               # lower row: two 50 mm tiles from x = -25 to 75 mm (authors)
     "d_face": Unknown("2.4", "px: flat-edge-to-flat-edge spacing of the two patches that face each other"),
     "ground_statement": Unknown(
-        "the coplanar grounds of the two rows are not connected to each other",
-        "px: upper-row grounds are 4 mm apart, lower-row grounds touch or are split by a hairline, and the two rows "
-        "are not connected. State what the model really has; a common ground is what reviewers expect"),
+        "the adjacent grounds of the two lower-row elements meet and form one conductor, those of the upper row are "
+        "about 3.4 mm apart, and the grounds of the two rows are not connected to each other",
+        "derived: lower-row grounds both reach the tile edge at x = 25 mm (on the screenshot they touch or are split "
+        "by a hairline); upper-row grounds are 21.5 mm wide, which leaves 3.4 mm between neighbours (4 mm on the "
+        "screenshot). A common ground for all four ports is what reviewers expect"),
     # authors: port 1 bottom left, port 2 bottom right, port 3 top left, port 4 top right
     "port_map": "ports 1 and 2 feed the left and right elements of the lower row and ports 3 and 4 those of the "
                 "upper row",
@@ -54,15 +62,17 @@ DESIGN = {
     "split_in": "0.3",
     "pitch_x": "17",                             # centre to centre along the rows of six
     "pitch_y": Unknown("18.5", "px, scaled on the confirmed 17 mm: 18.2-18.5 mm along the columns of five"),
-    "ms_board": Unknown("105.5 mm × 100.5", "px: at least as large as the antenna board"),
+    "ms_board": "105.5 mm × 100.5",              # authors: same as the antenna board
     "ms_ground": "has no copper on its rear face",   # authors
     "gap": "4.5",                                # authors
     # --- simulation ----------------------------------------------------------------------------------------------
     "solver": "frequency-domain",                # authors
-    "cst_version": Unknown("2019", "repo"),
+    "cst_version": "2019",                       # authors
     "port1_position": "the lower-left element",
     "theta0_side": Unknown("the copper side of the antenna board, away from the metasurface",
-                           "the pattern with the metasurface peaks at theta = 6 deg; confirm the axes in CST"),
+                           "guessed from the pattern with the metasurface, which peaks at theta = 6 deg. To confirm: "
+                           "read the z-coordinates of the metasurface board in CST. If they are lower (more "
+                           "negative) than those of the antenna board, this text is right"),
 }
 
 

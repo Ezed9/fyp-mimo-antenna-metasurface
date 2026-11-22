@@ -37,7 +37,7 @@ TITLE = ("A Four-Port CPW-Fed Decagonal Monopole MIMO Antenna and the Effect of 
          "A Simulation Study")
 AFFIL = ("Department of Electronics and Communication Engineering", "National Institute of Technology Silchar",
          "Silchar, Assam 788010, India")
-# Copied from Paper 1 as a starting point: confirm the author list and order for this paper.
+# Same author list as Paper 1 (confirmed by the authors).
 AUTHORS = [[("Chanswarang Boro", *AFFIL), ("Nishit Baishya", *AFFIL), ("Anushka Dam", *AFFIL)],
            [("Sanjana", *AFFIL), ("Sovan Bhattacharya", *AFFIL), ("Ujjal Chakraborty", *AFFIL)]]
 
@@ -215,8 +215,8 @@ def build(exports: Path, out: Path) -> tuple[Path, list[str]]:
         f"circumradius is *R* = {v('R_lower')} mm for the two elements of the lower row and {v('R_upper')} mm for the "
         f"two of the upper row. Each element is fed by a CPW line with a strip of width *W*_{{f}} = {v('W_f')} mm and "
         f"slots of *g* = {v('g')} mm (a line impedance of about {z0:.0f} Ω from the conformal-mapping expressions of "
-        f"{c('simons')}), between two ground planes of width *W*_{{g}} = {v('W_g')} mm and length "
-        f"*L*_{{g}} = {v('L_g')} mm. The side of the decagon that faces the feed lies *p* = {v('p_lower')} mm from the "
+        f"{c('simons')}), between two ground planes of length *L*_{{g}} = {v('L_g')} mm and of width "
+        f"*W*_{{g}} = {v('W_g_lower')} mm in the lower row and {v('W_g_upper')} mm in the upper row. The side of the decagon that faces the feed lies *p* = {v('p_lower')} mm from the "
         f"ground edge in the lower row and {v('p_upper')} mm in the upper row, and the back of the substrate carries "
         "no copper. The lower edge of the band of such a monopole can be estimated by replacing the patch with a "
         f"cylindrical monopole of the same height and area {c('ray')}:")
@@ -235,7 +235,8 @@ def build(exports: Path, out: Path) -> tuple[Path, list[str]]:
         f"have the same polarisation. The feed lines of a row are {v('pitch')} mm apart, which is "
         f"{guess('pitch') / lam(f_lo):.2f} free-space wavelength at {f_lo:.2f} GHz, and the facing patches are "
         f"separated by {v('d_face')} mm. The board fits in an outline of {v('board')} mm; its upper half is displaced "
-        f"sideways by {v('board_step')} mm with respect to the lower half. In the present model "
+        f"sideways by {v('board_step')} mm with respect to the lower half, so that the feed lines of the upper row "
+        f"are offset by {v('feed_offset')} mm from those of the lower row. In the present model "
         f"{v('ground_statement')}, and {v('port_map')}.")
     p.figure([SHOTS / "mimo_design_without_metasurface.png", SHOTS / "metasurface_design.png"],
              "Top views of the simulated model (CST Studio Suite): (a) four-port antenna, (b) 6 × 5 double-ring "

@@ -49,17 +49,22 @@ Cheapest route to a publishable design, by benefit per hour:
 ### 2.2 Facts of the CST model
 
 Confirmed by the authors and entered in `paper2/design.py`: patch radii 15 mm (lower row) and 14 mm (upper row),
-ground length 18 mm, CPW slot 0.3 mm, board outline 105.5 mm × 100.5 mm, ring radii 7.0–7.5 mm and 5.0–5.5 mm, splits
-0.4 mm and 0.3 mm, cell pitch 17 mm along the rows, air gap 4.5 mm, **no copper on the back of the metasurface
-board**, frequency-domain solver, ports 1/2 on the lower-left/right elements and 3/4 on the upper-left/right.
+ground length 18 mm, upper-row ground width 21.5 mm, CPW slot 0.3 mm, board outline 105.5 mm × 100.5 mm, ring radii
+7.0–7.5 mm and 5.0–5.5 mm, splits 0.4 mm and 0.3 mm, cell pitch 17 mm along the rows, metasurface board the same size
+as the antenna board, air gap 4.5 mm, **no copper on the back of the metasurface board**, CST 2019, frequency-domain
+solver, ports 1/2 on the lower-left/right elements and 3/4 on the upper-left/right, same authors as Paper 1.
 
-Still highlighted in the paper, because they were measured on the screenshots or taken from the single-element stage:
+Still highlighted in the paper, because they were derived from those numbers or measured on the screenshots:
 
-- ground width; the patch-to-ground gap of each row; feed-to-feed spacing; spacing of the facing patches; how the
-  grounds of neighbouring elements are joined; the sideways step of the board outline;
-- cell pitch along the columns (about 18.5 mm); size of the metasurface board;
-- which side *θ* = 0° is; the CST version; mesh cell count; whether S-parameters are normalised to a fixed 50 Ω;
-- the author list for this paper (the Paper 1 list was copied as a starting point).
+- lower-row ground width (23.2 mm if the ground edge is at x = −1.8 mm; the value given, −1.5 mm, would leave no slot);
+- the patch-to-ground gap of each row (0.73 and 1.69 mm); the spacing of the facing patches (2.4 mm);
+- how the grounds are joined (lower row: neighbours meet; upper row: 3.4 mm apart; rows not connected);
+- the sideways step of the board outline (about 5 mm) and the offset of the upper feed lines (3.3 mm);
+- cell pitch along the columns (about 18.5 mm);
+- which side *θ* = 0° is. To settle it, read the z-coordinates of the metasurface board: if they are lower than those
+  of the antenna board, *θ* = 0° is the copper side of the antenna, away from the metasurface, as the text says.
+
+To verify in CST: that the S-parameters are normalised to a fixed 50 Ω, and the mesh cell count.
 
 The two patch radii are kept as they are by the authors' decision, without a stated reason. A reviewer will ask why
 the rows differ, and the S11 of port 1 (a 15 mm element) does not describe ports 3 and 4 (14 mm, 1.7 mm feed gap).
