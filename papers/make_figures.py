@@ -180,22 +180,27 @@ def paper1_geometry(shots: Path, out_dir: Path) -> None:
 
 
 def paper2_layout(shots: Path, out_dir: Path) -> None:
-    """Paper 2, Fig. 1(a): the CST top view with the port numbers (1 lower left, 2 lower right, 3 upper left,
-    4 upper right, as given by the authors)."""
-    image = Image.open(shots / "mimo_design_without_metasurface.png").convert("RGB")
-    w, h = image.size
-    pad = 46
-    fig, ax = plt.subplots(figsize=(1.65, 1.65 * (h + 2 * pad) / w))
-    ax.imshow(image, extent=(0, w, h, 0), interpolation="lanczos")
-    ax.set_xlim(0, w)
-    ax.set_ylim(h + pad, -pad)
-    ax.axis("off")
-    for label, x, y, va in (("Port 1", 110, h + 8, "top"), ("Port 2", 297, h + 8, "top"),
-                            ("Port 3", 100, -8, "bottom"), ("Port 4", 286, -8, "bottom")):
-        ax.text(x, y, label, ha="center", va=va, fontsize=7.5, color=INK)
-    fig.subplots_adjust(0, 0, 1, 1)
-    fig.savefig(out_dir / "fig_layout_ports.png")
-    plt.close(fig)
+    """Paper 2, Fig. 1: the two CST top views on canvases of the same size, so that the panels line up and nothing
+    is cut. (a) carries the port numbers (1 lower left, 2 lower right, 3 upper left, 4 upper right; authors)."""
+    labels = (("Port 1", 110, "below"), ("Port 2", 297, "below"), ("Port 3", 100, "above"), ("Port 4", 286, "above"))
+    pad, canvas_w, canvas_h = 40, 400, 372 + 2 * 40
+    for name, out_name, with_ports in (("mimo_design_without_metasurface.png", "fig_layout_ports.png", True),
+                                       ("metasurface_design.png", "fig_metasurface_panel.png", False)):
+        image = Image.open(shots / name).convert("RGB")
+        w, h = image.size
+        x0, y0 = (canvas_w - w) / 2, pad + (372 - h) / 2
+        fig, ax = plt.subplots(figsize=(1.7, 1.7 * canvas_h / canvas_w))
+        ax.imshow(image, extent=(x0, x0 + w, y0 + h, y0), interpolation="lanczos")
+        ax.set_xlim(0, canvas_w)
+        ax.set_ylim(canvas_h, 0)
+        ax.axis("off")
+        if with_ports:
+            for label, x, where in labels:
+                ax.text(x0 + x, y0 + h + 6 if where == "below" else y0 - 6, label, ha="center",
+                        va="top" if where == "below" else "bottom", fontsize=7.5, color=INK)
+        fig.subplots_adjust(0, 0, 1, 1)
+        fig.savefig(out_dir / out_name)
+        plt.close(fig)
 
 
 def main() -> None:

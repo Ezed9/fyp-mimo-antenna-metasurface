@@ -259,9 +259,9 @@ def build(exports: Path, out: Path) -> tuple[Path, list[str]]:
         f"sideways by {v('board_step')} mm with respect to the lower half, so that the feed lines of the upper row "
         f"are offset by {v('feed_offset')} mm from those of the lower row. In the present model "
         f"{v('ground_statement')}, and {v('port_map')}.")
-    p.figure([SHOTS / "mimo_design_without_metasurface.png", SHOTS / "metasurface_design.png"],
+    p.figure([FIG / "fig_layout_ports.png", FIG / "fig_metasurface_panel.png"],
              "Top views of the simulated model (CST Studio Suite): (a) four-port antenna, (b) 6 × 5 double-ring "
-             "metasurface.", width_in=1.62, sublabels=True, side_by_side=True)
+             "metasurface.", width_in=1.58, sublabels=True, side_by_side=True)
     p.subheading("C. Metasurface")
     p.body(
         "The metasurface of Fig. 1(b) is a 6 × 5 array of cells, each made of two concentric copper rings of strip "

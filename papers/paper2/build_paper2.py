@@ -246,9 +246,9 @@ def build() -> Path:
         f"board is displaced sideways by about {v('board_step')} mm. These two elements are present in every "
         "simulation reported here, with their ports terminated, but they are not evaluated in this paper: the "
         "results concern ports 1 and 2.")
-    p.figure([FIG / "fig_layout_ports.png", SHOTS / "metasurface_design.png"],
+    p.figure([FIG / "fig_layout_ports.png", FIG / "fig_metasurface_panel.png"],
              "Top views of the simulated model (CST Studio Suite): (a) antenna board with the port numbers, "
-             "(b) 6 × 5 double-ring metasurface.", width_in=1.62, sublabels=True, side_by_side=True)
+             "(b) 6 × 5 double-ring metasurface.", width_in=2.1, sublabels=True, side_by_side=True, wide=True)
     p.subheading("C. Metasurface")
     cell_lo = min(number("pitch_x"), number("pitch_y")) / lam(d["lo"])
     cell_hi = max(number("pitch_x"), number("pitch_y")) / lam(d["hi"])
@@ -399,19 +399,7 @@ def build() -> Path:
              f"Simulated directivity pattern of port 1 in the *φ* = 90° plane at {PATTERN['f']} GHz (CST Studio "
              "Suite): (a) without, (b) with the metasurface. The radial scales of the two plots differ. The circle "
              "and the straight lines are the markers of the main lobe and its half-power width.",
-             width_in=2.2, sublabels=True)
-    p.table("Summary of the Simulated Results", [
-        ["Quantity", "Without metasurface", "With metasurface"],
-        ["|*S*_{11}| ≤ −10 dB (GHz)", band_cell(m0), band_cell(m1)],
-        ["|*S*_{22}| ≤ −10 dB (GHz)", "–", f"{tp['s22_matched'][0][0]:.2f} to >{m1['fmax']:.0f}"],
-        ["Lowest isolation (dB)", "–", f"{db(-s21[1])} at {s21[0]:.2f} GHz"],
-        ["Highest ECC, bound (3)", "–", f"{tp['ecc_max'][1]:.2f} at {tp['ecc_max'][0]:.2f} GHz"],
-        [f"Mean directivity, {d['lo']:.0f}–{d['hi']:.0f} GHz (dBi)", f"{d['mean0']:.1f}", f"{d['mean1']:.1f}"],
-        [f"Peak directivity, {d['lo']:.0f}–{d['hi']:.0f} GHz (dBi)", f"{d['peak0'][1]:.1f} at {d['peak0'][0]:.1f} GHz",
-         f"{d['peak1'][1]:.1f} at {d['peak1'][0]:.1f} GHz"],
-        [f"Largest lobe, {PATTERN['f']} GHz, *φ* = 90°", f"{a['mag']} dBi at *θ* = {a['dir']}°",
-         f"{b['mag']} dBi at *θ* = {b['dir']}°"],
-    ], [1.3, 1.05, 1.05], bold_first_col=True, note="–: not evaluated.")
+             width_in=1.9, sublabels=True)
     p.subheading("F. Discussion and Limitations")
     p.body(
         "Taken together, the results show a metasurface that changes the pattern at individual frequencies but not "
@@ -436,7 +424,7 @@ def build() -> Path:
         "ports 1 and 2 has not been assessed.")
     p.subheading("G. Comparison with Reported Works")
     p.body(
-        "Table III compares the antenna with reported multi-port designs. The antennas without an added surface "
+        "Table II compares the antenna with reported multi-port designs. The antennas without an added surface "
         f"occupy boards of 38–65 mm side and isolate their ports by more than 17 dB {c('yin', 'wu', 'zhang', 'ahmad')}, "
         "mostly through orthogonal placement; those with a conductor-backed surface or an FSS reach gains of about "
         f"8–10 dBi {c('hasan', 'alekya', 'kumar')}. The present antenna is larger, because its element was sized for "

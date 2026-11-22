@@ -178,7 +178,7 @@ def build() -> Path:
     p.figure([FIG / "fig_geometry_antenna.png", FIG / "fig_geometry_metasurface.png"],
              "Top views of the proposed structure (CST Studio Suite model): (a) CPW-fed octagonal monopole, "
              "(b) 4 × 4 square-patch metasurface. The dimensions are listed in Table I.",
-             width_in=1.62, sublabels=True, side_by_side=True)
+             width_in=1.58, sublabels=True, side_by_side=True)
     p.table("Dimensions of the Proposed Antenna and Metasurface (mm)", [
         ["Parameter", "*W*_{s}", "*L*_{s}", "*h*_{s}", "*R*", "*W*_{f}", "*g*"],
         ["Value", "27", "30", "1.6", "9", "3", "0.3"],
@@ -323,7 +323,7 @@ def build() -> Path:
     p.figure([FIG / "fig_pattern_without.png", FIG / "fig_pattern_with.png"],
              "Simulated directivity pattern in the *φ* = 90° plane at 5.3 GHz: (a) antenna alone, (b) with the "
              "metasurface board. The circle and the straight lines are the CST Studio Suite markers of the main "
-             "lobe and its half-power width.", width_in=1.66, sublabels=True, side_by_side=True)
+             "lobe and its half-power width.", width_in=1.58, sublabels=True, side_by_side=True)
     p.subheading("D. Limitations")
     p.body(
         "Four limits of the present results should be kept in mind. First, only the directivity has been evaluated, "

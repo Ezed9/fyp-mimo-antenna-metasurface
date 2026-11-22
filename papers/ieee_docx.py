@@ -46,6 +46,14 @@ def latex_to_omml(latex: str) -> etree._Element:
         found = etree.fromstring(xml).find(f".//{{{M_NS}}}oMath")
         if found is None:
             raise ValueError(f"pandoc produced no equation for: {latex}")
+        for d_pr in found.iter(f"{{{M_NS}}}dPr"):          # pandoc writes begChr, endChr, sepChr; the schema
+            beg, sep = d_pr.find(f"{{{M_NS}}}begChr"), d_pr.find(f"{{{M_NS}}}sepChr")    # wants sepChr second
+            if beg is not None and sep is not None:
+                beg.addnext(sep)
+        for r_pr in found.iter(f"{{{M_NS}}}rPr"):          # \text{..}: pandoc writes nor and sty; keep nor only
+            if r_pr.find(f"{{{M_NS}}}nor") is not None:
+                for sty in r_pr.findall(f"{{{M_NS}}}sty"):
+                    r_pr.remove(sty)
         _omml_cache[key] = found
     return copy.deepcopy(_omml_cache[key])
 
@@ -82,7 +90,8 @@ class Paper:
         if n > 1:
             cols.set(qn("w:num"), str(n))
         cols.set(qn("w:space"), "360")
-        sect.append(cols)
+        grid = sect.find(qn("w:docGrid"))                 # schema order: cols comes before docGrid
+        (grid.addprevious(cols) if grid is not None else sect.append(cols))
 
     def end_section(self, cols: int) -> None:
         """Close the section written so far as a `cols`-column section; what follows starts a new continuous one."""
@@ -146,7 +155,9 @@ class Paper:
         tbl_pr = table._tbl.tblPr
         for old in tbl_pr.findall(qn("w:tblW")):
             tbl_pr.remove(old)
-        tbl_pr.append(parse_xml(f'<w:tblW {nsdecls("w")} w:w="{round(sum(widths_in) * 1440)}" w:type="dxa"/>'))
+        tbl_w = parse_xml(f'<w:tblW {nsdecls("w")} w:w="{round(sum(widths_in) * 1440)}" w:type="dxa"/>')
+        style = tbl_pr.find(qn("w:tblStyle"))             # schema order: tblStyle, tblW, jc, ..., tblLayout, tblLook
+        (style.addnext(tbl_w) if style is not None else tbl_pr.insert(0, tbl_w))
         for col, width in zip(table._tbl.tblGrid.findall(qn("w:gridCol")), widths_in):
             col.set(qn("w:w"), str(round(width * 1440)))
         for row in table.rows:
@@ -237,11 +248,20 @@ class Paper:
                     lab.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
                     lab.paragraphs[0].paragraph_format.keep_with_next = True
                     self.runs(lab.paragraphs[0], f"({chr(97 + c)})", size=8)
-            # No cell margins: with the default 0.075 in margins the cell would clip the right edge of the image.
-            table._tbl.tblPr.append(parse_xml(
-                f'<w:tblCellMar {nsdecls("w")}><w:left w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/>'
-                '</w:tblCellMar>'))
-            self._fix_widths(table, [width_in + 0.06] * len(images))
+            # A cell clips an image that is wider than the cell minus its margins. The margins are set to zero on
+            # every cell (in schema order), and the cell is also made 0.17 in wider than the image, because
+            # LibreOffice keeps the default 0.075 in margins of the table style: two images of up to 1.58 in fit
+            # side by side in a 3.5 in column.
+            self._fix_widths(table, [width_in + 0.17] * len(images))
+            for row in table.rows:
+                for cell in row.cells:
+                    tc_pr = cell._tc.get_or_add_tcPr()
+                    for old in tc_pr.findall(qn("w:tcMar")):
+                        tc_pr.remove(old)
+                    tc_w = tc_pr.find(qn("w:tcW"))
+                    margins = parse_xml(f'<w:tcMar {nsdecls("w")}><w:left w:w="0" w:type="dxa"/>'
+                                        '<w:right w:w="0" w:type="dxa"/></w:tcMar>')
+                    (tc_w.addnext(margins) if tc_w is not None else tc_pr.insert(0, margins))
         else:
             for k, img in enumerate(images):
                 self._picture(self._par(WD_ALIGN_PARAGRAPH.CENTER, before=4, keep=True), img, width_in)
@@ -273,10 +293,10 @@ class Paper:
             for c, text in enumerate(row):
                 cell = table.cell(r, c)
                 cell.width = Inches(widths_in[c])
-                cell.vertical_alignment = 1
                 margins = parse_xml(f'<w:tcMar {nsdecls("w")}><w:left w:w="50" w:type="dxa"/>'
                                     '<w:right w:w="50" w:type="dxa"/></w:tcMar>')
-                cell._tc.get_or_add_tcPr().append(margins)
+                cell._tc.get_or_add_tcPr().append(margins)      # before vAlign: schema order
+                cell.vertical_alignment = 1
                 lines = text.split("\n")
                 for k, line in enumerate(lines):
                     par = cell.paragraphs[0] if k == 0 else cell.add_paragraph()
