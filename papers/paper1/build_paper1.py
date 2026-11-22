@@ -49,7 +49,7 @@ REFS = [
     "pp. 1296–1300, 2017, doi: 10.1002/mop.30527.",
     "A. J. A. Al-Gburi, I. B. M. Ibrahim, Z. Zakaria, B. H. Ahmad, N. A. B. Shairi, and M. Y. Zeain, “High gain "
     "of UWB planar antenna utilising FSS reflector for UWB applications,” *Comput. Mater. Contin.*, vol. 70, "
-    "no. 1, pp. 1425–1436, 2022, doi: 10.32604/cmc.2022.019741.",
+    "no. 1, pp. 1419–1436, 2022, doi: 10.32604/cmc.2022.019741.",
     "M. Hussain, M. A. Sufian, M. S. Alzaidi, S. I. Naqvi, N. Hussain, D. H. Elkamchouchi, M. F. A. Sree, and "
     "S. Y. A. Fatah, “Bandwidth and gain enhancement of a CPW antenna using frequency selective surface for UWB "
     "applications,” *Micromachines*, vol. 14, no. 3, Art. no. 591, Feb. 2023, doi: 10.3390/mi14030591.",
@@ -75,26 +75,34 @@ REFS = [
 ]
 
 
+# The authors' title. A reviewer may object to "tri-band" (the antenna alone is matched over more spectrum) and to
+# "metasurface" (4 x 4 ungrounded cells); the alternative below claims only what the data show.
+TITLE = "A Compact Tri-Band CPW-Fed Octagonal Monopole Antenna Loaded with a 4 × 4 Square-Patch Metasurface"
+ALT_TITLE = ("Effect of a Zero-Gap 4 × 4 Patch-Array Cover Board on a CPW-Fed Octagonal Wideband Monopole Antenna: "
+             "A Simulation Study")
+
+
 def build() -> Path:
     p = Paper()
-    p.title("A Compact Tri-Band CPW-Fed Octagonal Monopole Antenna Loaded with a 4 × 4 Square-Patch Metasurface")
+    p.title(TITLE)
     p.authors(AUTHORS)
     # -- abstract ------------------------------------------------------------------------------------------------
     p.abstract(
         "A compact coplanar-waveguide (CPW)-fed octagonal monopole antenna loaded with a 4 × 4 square-patch "
-        "metasurface is presented and studied by full-wave simulation in CST Studio Suite. The radiator is printed "
-        "on a 27 mm × 30 mm × 1.6 mm FR-4 substrate. A second FR-4 board of the same footprint lies directly on the "
-        "radiator, with no air gap, and carries the patches on its outer face; neither board has a ground plane, and "
-        "the total thickness is 3.2 mm. Alone, the antenna is matched (|*S*_{11}| ≤ −10 dB) from 3.52 GHz to beyond "
-        "15 GHz, except for 5.21–5.79 GHz. With the board it has three bands: 3.42–6.13 GHz (56.7 %), "
-        "7.63–13.23 GHz (53.7 %) and 13.95 GHz to beyond 15 GHz, the upper limit of the simulation, with a lowest "
-        "|*S*_{11}| of −27.8 dB at 5.26 GHz. The peak simulated directivity rises from 5.2 dBi at 13.1 GHz to "
-        "7.0 dBi at 13.9 GHz; it is higher in the first and third bands and lower over most of the second. The first "
-        "band contains the 5G NR band n79, the 5 GHz WLAN band and the C-band satellite downlink, the second "
-        "contains the X band, and the third lies in the Ku band. The board therefore acts as a dielectric and "
-        "capacitive loading that reshapes the match and the directivity of the monopole within a 3.2 mm profile.")
-    p.keywords("CPW-fed antenna, octagonal monopole, metasurface, parasitic patch array, tri-band antenna, 5G, "
-               "WLAN, X band, Ku band")
+        "metasurface is studied by full-wave simulation. The radiator is printed on a 27 mm × 30 mm × 1.6 mm FR-4 "
+        "substrate. A second FR-4 board of the same footprint lies directly on the radiator, with no air gap, and "
+        "carries the patches on its outer face; neither board has a backing conductor, and the total thickness is "
+        "3.2 mm. Alone, the antenna is matched (|*S*_{11}| ≤ −10 dB) from 3.52 GHz to beyond the 15 GHz limit of "
+        "the simulation, except for 5.21–5.79 GHz, where |*S*_{11}| reaches −9.8 dB. With the board, the match near "
+        "5.3 GHz improves to −27.8 dB, but two mismatched regions appear (−6.5 dB at 6.96 GHz and −8.4 dB at "
+        "13.54 GHz). Three bands result: 3.42–6.13 GHz (56.7%), 7.63–13.23 GHz (53.7%) and a marginal band from "
+        "13.95 GHz to beyond 15 GHz. The maximum directivity in the *φ* = 0° plane rises by 0.6 dB on average in "
+        "the first band and by 2.1 dB in the third, where it reaches 7.0 dBi at 13.9 GHz against 4.5 dBi for the "
+        "antenna alone, but it falls by 1.4 dB on average in the second band. The first band contains the 5G NR "
+        "band n79 and the 5 GHz WLAN band, and the second contains the X band. The board acts as a dielectric and "
+        "capacitive loading of the monopole and not as a reflector. Gain and efficiency are not evaluated.")
+    p.keywords("5G, CPW-fed antenna, metasurface, octagonal monopole, parasitic patch array, tri-band antenna, "
+               "WLAN, X band")
     # -- I --------------------------------------------------------------------------------------------------------
     p.heading("I. Introduction")
     p.body(
@@ -119,14 +127,14 @@ def build() -> Path:
         "radiation [18]. Rajalakshmi and Gunavathi etched a 2 × 2 hexagonal metamaterial array behind a "
         "cross-shaped patch and increased its gain at 2.4 and 5 GHz to 6 and 10 dBi [19].")
     p.body(
-        "Most of these surfaces sit 9–20 mm from the antenna, are several times larger than the radiator, and "
-        "target one wide band. The opposite limit, in which a small surface of the same footprint as the antenna is "
-        "laid directly on it, has received little attention in the works reviewed. In that limit the surface lies in "
-        "the reactive near field and cannot act as a reflector; what it does to the match and to the radiation of "
-        "a CPW monopole is the subject of this paper.")
+        "Most of these surfaces sit 9–20 mm from the antenna and are larger than the radiator, so the gain is paid "
+        "for in volume. This paper examines the opposite limit, in which a small patch array of the same footprint "
+        "as the antenna is laid directly on it. In that limit the array lies in the reactive near field and cannot "
+        "act as a reflector; what it does to the match and to the radiation of a CPW monopole is the question "
+        "addressed here.")
     p.body(
         "A compact CPW-fed octagonal monopole on FR-4 is designed, and a second FR-4 board carrying a 4 × 4 "
-        "square-patch array on its outer face is placed on it without an air gap or a ground plane. The antenna is "
+        "square-patch array on its outer face is placed on it without an air gap or a backing conductor. The antenna is "
         "simulated with and without the board, and the two cases are compared over 1–15 GHz. Section II describes "
         "the design and the analytical estimates, Section III discusses the simulated results and their "
         "limitations, and Section IV concludes the paper.")
@@ -143,7 +151,7 @@ def build() -> Path:
         "the feed line and the octagon are offset by 0.5 mm from the centre line of the board. The lower vertex of "
         "the octagon lies *p* = 0.22 mm above the ground edge. The back of the substrate carries no copper. Since "
         "the CPW grounds carry current and take part in the radiation, their length and the patch-to-ground gap "
-        "mainly control the matching at the lower end of the band [5].")
+        "mainly control the matching at the lower end of the band [20].")
     p.figure([FIG / "fig_geometry_antenna.png", FIG / "fig_geometry_metasurface.png"],
              "Top views of the proposed structure (CST Studio Suite model): (a) CPW-fed octagonal monopole, "
              "(b) 4 × 4 square-patch metasurface. The dimensions are listed in Table I.",
@@ -157,15 +165,16 @@ def build() -> Path:
         "where *l* = 2*R* = 18.0 mm is the height of the octagon, *A* = 2√2*R*^{2} = 229.1 mm^{2} its area, "
         "*r* = 2.03 mm the radius of the equivalent cylinder and *p* = 0.22 mm the gap to the ground, all taken in "
         "centimetres in (1); *k* = 1.15 is the empirical factor for an FR-4 substrate [20]. Equation (1) gives "
-        "*f*_{L} ≈ 3.09 GHz, which is 12 % below the simulated lower edge of the antenna alone, 3.52 GHz "
-        "(Section III). A difference of this size is expected, because (1) is an empirical estimate for a monopole "
-        "above a large ground, whereas the CPW ground here is only 11 mm long.")
+        "*f*_{L} ≈ 3.09 GHz, about 12% below the simulated lower edge of the antenna alone, 3.52 GHz "
+        "(Section III). Equation (1) is used here only as a first check of the size of the radiator: it is an "
+        "empirical estimate for a monopole above a large ground, whereas the CPW ground here is only 11 mm long.")
     p.subheading("B. Metasurface Design")
     p.body(
         "The metasurface of Fig. 1(b) is a 4 × 4 array of square copper patches of side *W*_{p} = 5 mm and period "
-        "*P* = 5.5 mm, so that adjacent patches are separated by *s* = 0.5 mm and the array is 21.5 mm across. It is "
-        "printed on a 1.6 mm FR-4 board of the same footprint as the antenna (*W*_{m} × *L*_{m}) and has no copper "
-        "ground. The board is placed directly on the copper side of the antenna, with no air gap, as shown in "
+        "*a* = 5.5 mm, so that adjacent patches are separated by *s* = 0.5 mm and the array is 21.5 mm across. It is "
+        "printed on a 1.6 mm FR-4 board of width *W*_{m} and length *L*_{m}, the same footprint as the antenna, and "
+        "has no backing conductor. The board is placed directly on the copper side of the antenna, with no air gap, "
+        "as shown in "
         "Fig. 2. From top to bottom, the structure consists of the patches on the outer face, the metasurface "
         "substrate of thickness *t*, the octagon and the CPW feed at the interface between the two substrates, and "
         "the antenna substrate of thickness *h*_{s}. The radiator is thus enclosed between the two FR-4 layers, the "
@@ -176,33 +185,33 @@ def build() -> Path:
         "The added board loads the antenna in two ways. First, the octagon and the CPW line, which lie on an "
         "air–FR-4 boundary in the antenna alone, now have FR-4 on both sides. From the conformal-mapping "
         "expressions for a CPW between two dielectric layers of finite thickness [5], the effective permittivity of "
-        "the feed line rises from 2.4 to 3.8, and its characteristic impedance falls from 50 Ω to 40 Ω. The "
-        "resonances of the antenna are therefore shifted downwards, and the feed is no longer matched to the port.")
+        "the feed line rises from 2.4 to 3.8, and its characteristic impedance falls from 50 Ω to 40 Ω (a slot of "
+        "about 0.65 mm would restore 50 Ω). The phase velocity on the covered line falls by the factor "
+        "√(2.4/3.8) = 0.79, so the resonances of the antenna are expected to move downwards, and the feed line is "
+        "no longer matched to the port; a 40 Ω line on a 50 Ω port alone limits |*S*_{11}| to about −19 dB.")
     p.body(
-        "Second, the patch array adds a capacitive surface close to the radiator. Since there is no ground plane, "
-        "the array does not form the resonant circuit of a high-impedance surface. It behaves as a capacitive sheet, "
-        "in which the narrow gaps between neighbouring patches provide the capacitance [10]")
-    p.equation(r"C = \frac{W_p\,\varepsilon_0\,(\varepsilon_1 + \varepsilon_2)}{\pi}\cosh^{-1}\!\left(\frac{P}{s}\right)")
+        "Second, the patch array adds a capacitive surface close to the radiator. Since it has no backing "
+        "conductor, the array does not form the resonant circuit of a high-impedance surface [10]. At frequencies "
+        "at which the patches are small compared with the wavelength, it behaves as a capacitive sheet, in which "
+        "the narrow gaps between neighbouring patches provide the capacitance [10]")
+    p.equation(r"C = \frac{W_p\,\varepsilon_0\,(\varepsilon_1 + \varepsilon_2)}{\pi}\cosh^{-1}\!\left(\frac{a}{s}\right)")
     p.body(
         "where *ε*_{1} and *ε*_{2} are the relative permittivities of the media on the two sides of the patches. The "
         "patches have FR-4 on one side and air on the other (*ε*_{1} = 4.3, *ε*_{2} = 1), so with the dimensions of "
-        "Table I, (3) gives *C* ≈ 0.23 pF. A plane wave that falls on an unbounded sheet of this capacitance in free "
-        "space is partly reflected, with a reflection magnitude of")
-    p.equation(r"|\Gamma| = \frac{b}{\sqrt{4 + b^2}},\quad b = \omega C \eta_0")
-    p.body(
-        "where *ω* is the angular frequency and *η*_{0} ≈ 377 Ω is the free-space impedance. Equation (4) gives "
-        "|Γ| ≈ 0.68 at 3.42 GHz and 0.94 at 10 GHz, so the reflection grows with frequency. These values are an "
-        "upper limit and not a prediction for the present structure: the array has only 4 × 4 cells and is "
-        "0.25 free-space wavelength across at 3.42 GHz, and it lies 1.6 mm from the radiator, in its reactive near "
-        "field. The patches therefore couple to the radiator through the metasurface substrate and act mainly as a "
-        "capacitive loading that changes the current distribution and the input impedance. The combined effect of "
-        "the two loadings is evaluated by full-wave simulation in Section III.")
+        "Table I, (3) gives *C* ≈ 0.23 pF, a sheet reactance of 1/(*ωC*) ≈ 200 Ω at 3.42 GHz and 70 Ω at 10 GHz. "
+        "This sheet is not a reflector for the antenna. The array has only 4 × 4 cells and is 0.25 free-space "
+        "wavelength across at 3.42 GHz, and it lies 1.6 mm from the radiator, in its reactive near field. The "
+        "patches therefore couple to the radiator through the metasurface substrate and act as a capacitive "
+        "loading that changes the current distribution and the input impedance. Equation (3) also loses its "
+        "validity towards the upper end of the range, where a 5 mm patch approaches half a wavelength in the "
+        "dielectric (14.5 GHz for *ε*_{r} = 4.3). The combined effect of the two loadings is therefore evaluated by "
+        "full-wave simulation in Section III.")
     p.table("Dimensions of the Proposed Antenna and Metasurface (mm)", [
         ["Parameter", "*W*_{s}", "*L*_{s}", "*h*_{s}", "*R*", "*W*_{f}", "*g*"],
         ["Value", "27", "30", "1.6", "9", "3", "0.3"],
         ["Parameter", "*L*_{g}", "*W*_{g1}", "*W*_{g2}", "*p*", "*W*_{m}", "*L*_{m}"],
         ["Value", "11", "11.2", "12.2", "0.22", "27", "30"],
-        ["Parameter", "*t*", "*W*_{p}", "*s*", "*P*", "", ""],
+        ["Parameter", "*t*", "*W*_{p}", "*s*", "*a*", "", ""],
         ["Value", "1.6", "5", "0.5", "5.5", "", ""],
     ], [0.74, 0.44, 0.44, 0.44, 0.44, 0.44, 0.44], header_rows=0, bold_first_col=True)
     p.subheading("C. Simulation Setup")
@@ -212,37 +221,45 @@ def build() -> Path:
         "its ground and patch are tuned for impedance matching. In stage 2 the metasurface board is placed on the "
         "copper side of the antenna, with the patches on its outer face, and the complete structure is simulated "
         "again without retuning. In stage 2 the feed line, and therefore the port, lies at the interface between "
-        "the two substrates. The far-field quantity evaluated is the directivity, which does not include the "
-        "dielectric and conductor losses or the mismatch.")
+        "the two substrates. The board lies in the *xy* plane with the feed line along *y*, so that *θ* = 0° is "
+        "the normal to the board on the [[patch side — confirm in the CST model]]. The far-field quantity "
+        "evaluated is the directivity, which does not include the dielectric and conductor losses or the "
+        "mismatch.")
     # -- III ------------------------------------------------------------------------------------------------------
     p.heading("III. Results and Discussion")
     p.subheading("A. Reflection Coefficient")
     p.body(
         "The simulated reflection coefficients of the two stages are compared in Fig. 3 and summarized in Table II. "
         "Without the metasurface board, |*S*_{11}| falls below −10 dB at 3.52 GHz and remains below it up to "
-        "15 GHz, the upper limit of the simulation, except from 5.21 to 5.79 GHz, where it rises to −9.8 dB. The "
-        "lowest reflection coefficient is −36.6 dB at 12.44 GHz, and further resonances appear at 4.08 and "
-        "7.42 GHz.")
+        "15 GHz, the upper limit of the simulation, except from 5.21 to 5.79 GHz, where it rises to −9.8 dB, only "
+        "0.2 dB above the limit. The lowest reflection coefficient is −36.6 dB at 12.44 GHz, and further "
+        "resonances appear at 4.08 and 7.42 GHz.")
     p.figure(FIG / "fig_s11.png",
              "Simulated reflection coefficient of the antenna alone and with the metasurface board. The shaded "
              "regions are the −10 dB bands with the board.", width_in=3.4)
     p.body(
         "With the board, the structure has three −10 dB bands: band I from 3.42 to 6.13 GHz, band II from 7.63 to "
         "13.23 GHz and band III from 13.95 GHz to beyond 15 GHz. The fractional bandwidths of bands I and II are "
-        "56.7 % and 53.7 %. The lowest reflection coefficient is −27.8 dB at 5.26 GHz, and further resonances "
+        "56.7% and 53.7%. The lowest reflection coefficient is −27.8 dB at 5.26 GHz, and further resonances "
         "appear at 3.94, 9.04, 9.90 and 12.84 GHz. Between the bands, |*S*_{11}| rises to −6.5 dB at 6.96 GHz and "
         "to −8.4 dB at 13.54 GHz. These regions are not designed notches; they are the frequencies at which the "
-        "loaded antenna is mismatched. Band III stays only about 1 dB below the −10 dB level and is cut off by the "
-        "simulation limit, so it is marginal and its upper edge is not known.")
+        "loaded antenna is mismatched. In band III, |*S*_{11}| stays between −10 and −11.5 dB up to the simulation "
+        "limit, so this band is marginal and its upper edge is not known.")
     p.body(
         "A comparison of the two curves shows what the board changes. Both the FR-4 layer over the radiator and "
-        "the patches on it are added in stage 2, so the changes are the sum of the two effects of Section II-B. "
-        "The lower band edge moves only from 3.52 to 3.42 GHz. Near 5.3 GHz the match improves from −9.8 dB to "
-        "−27.8 dB, which closes the gap of the antenna alone at 5.21–5.79 GHz, and new resonances appear at 9.04 "
-        "and 9.90 GHz. On the other hand, the resonances of the antenna alone at 7.42 and 12.44 GHz are not "
-        "retained: with the board, |*S*_{11}| is −8.3 dB and −13.0 dB at these frequencies. The board thus trades "
-        "the almost continuous match of the antenna alone for three separate bands, of which the first is wider "
-        "and better matched than the corresponding band of the antenna alone (3.52–5.21 GHz, 38.7 %).")
+        "the patches on it are added in stage 2, so the changes are the sum of the two effects of Section II-B and "
+        "cannot be assigned to the patches alone. The lower band edge moves only from 3.52 to 3.42 GHz. Near "
+        "5.3 GHz the match improves from −9.8 dB to −27.8 dB, which closes the gap of the antenna alone at "
+        "5.21–5.79 GHz, and resonances appear at 9.04 and 9.90 GHz. The resonances of the antenna alone at 7.42 and "
+        "12.44 GHz are not retained: with the board, |*S*_{11}| is −8.3 dB and −13.0 dB at these frequencies. The "
+        "ratio 9.90/12.44 = 0.80 equals the change of the phase velocity on the covered line (Section II-B), so "
+        "the resonance at 9.90 GHz may be that of the antenna alone at 12.44 GHz moved down by the dielectric "
+        "cover.")
+    p.body(
+        "In total, the antenna alone is matched over 10.9 GHz of the 3.42–15 GHz range and the antenna with the "
+        "board over 9.4 GHz. The board thus trades the almost continuous match of the antenna alone for three "
+        "separate bands, of which the first is wider and better matched than the corresponding band of the antenna "
+        "alone (3.52–5.21 GHz, 38.7%).")
     p.table("Simulated Performance of the Two Stages", [
         ["Stage", "−10 dB band (GHz)", "FBW (%)", "Lowest |*S*_{11}| (dB)", "Peak directivity (dBi)"],
         ["1: antenna alone", "3.52–5.21\n5.79–>15", "38.7\n≥ 88.6", "−36.6 at 12.44 GHz", "5.2 at 13.1 GHz"],
@@ -252,44 +269,51 @@ def build() -> Path:
     p.subheading("B. Directivity")
     p.body(
         "The simulated directivity against frequency is shown in Fig. 4. The quantity plotted is the highest "
-        "directivity found in the *φ* = 0° plane at each frequency, so the direction to which it refers changes "
-        "with frequency. Without the board, the directivity varies smoothly and reaches its peak of 5.2 dBi at "
-        "13.1 GHz. With the board, the peak is 7.0 dBi at 13.9 GHz, which is 1.8 dB higher.")
+        "directivity found in the *φ* = 0° plane at each frequency. It is not the directivity in a fixed direction, "
+        "and where it is low the main radiation lies outside this plane. Without the board, it varies smoothly and "
+        "reaches its peak of 5.2 dBi at 13.1 GHz. With the board, the peak is 7.0 dBi at 13.9 GHz, at the lower "
+        "edge of band III, where the antenna alone gives 4.5 dBi; at 13.1 GHz, on the other hand, the value with "
+        "the board is 3.6 dBi.")
     p.figure(FIG / "fig_directivity.png",
              "Simulated directivity (maximum in the *φ* = 0° plane) of the antenna alone and with the metasurface "
              "board.", width_in=3.4)
     p.body(
         "The effect of the board differs from band to band. Averaged over band I, the directivity rises from 3.2 to "
         "3.8 dBi, and over band III from 3.2 to 5.3 dBi. Over band II, however, it falls from 3.2 to 1.9 dBi, and "
-        "the directivity with the board is the lower one over 70 % of this band. With the board the curve has sharp "
+        "the directivity with the board is the lower one over 70% of this band. With the board the curve has sharp "
         "dips to −2.8 dBi at 7.5 GHz, −1.0 dBi at 9.6 GHz and −0.3 dBi at 12.0 GHz, where the antenna alone gives "
-        "4.4, 2.5 and 3.5 dBi. The first dip lies outside the operating bands, but the other two lie inside "
-        "band II. Since the patches are in the near field of the radiator (Section II-B), they redistribute the "
-        "current with frequency, and the result is not a uniform increase of directivity.")
+        "4.4, 2.5 and 3.5 dBi. The first dip lies between bands I and II, but the other two lie inside band II. "
+        "Averaged over 3.42–15 GHz, the directivity is 3.5 dBi without the board and 3.0 dBi with it. Since the "
+        "patches are in the near field of the radiator (Section II-B), they redistribute the current with "
+        "frequency, and the result is not a uniform increase of directivity. The rise in band III coincides with "
+        "the frequency range in which the patches approach their own resonance.")
     p.subheading("C. Radiation Pattern")
     p.body(
         "The simulated directivity patterns in the *φ* = 90° plane at 5.3 GHz, close to the best-matched frequency "
         "of band I, are shown in Fig. 5. Both patterns have two broad lobes, one around *θ* = 0° and one around "
-        "*θ* = 180°, as expected of a planar monopole without a ground plane. Without the board, the main lobe "
-        "points to *θ* = 176° with a directivity of 3.56 dBi and a 3 dB width of 71.7°. With the board, the main "
-        "lobe points to *θ* = 2° with a directivity of 3.88 dBi and a 3 dB width of 76.8°, and the opposite lobe is "
-        "1.3 dB lower. The board therefore moves the stronger lobe to the opposite side of the antenna and raises "
-        "the directivity by 0.32 dB, but the radiation remains two-sided at this frequency.")
+        "*θ* = 180°, as expected of a planar monopole without a backing conductor. Without the board, the two "
+        "lobes are almost equal; the larger one points to *θ* = 176° with a directivity of 3.56 dBi and a "
+        "half-power beamwidth of 71.7°. With the board, the main lobe points to *θ* = 2° with a directivity of "
+        "3.88 dBi and a half-power beamwidth of 76.8°, and the opposite lobe is 1.3 dB lower. The board therefore "
+        "makes the lobe on one side 1.3 dB stronger than the other and raises the directivity by 0.32 dB, but the "
+        "radiation remains two-sided at this frequency.")
     p.figure([FIG / "fig_pattern_without.png", FIG / "fig_pattern_with.png"],
              "Simulated directivity pattern in the *φ* = 90° plane at 5.3 GHz (CST Studio Suite): (a) antenna "
              "alone, (b) with the metasurface board.", width_in=1.66, sublabels=True, side_by_side=True)
     p.subheading("D. Limitations")
     p.body(
-        "Three limits of the present results should be kept in mind. First, only the directivity has been "
-        "evaluated. FR-4 is lossy (tan *δ* = 0.025), and with the board the radiator is embedded in it, so the "
-        "realized gain will be lower than the directivity, increasingly so towards the Ku band. Second, the "
-        "dielectric cover and the patches were added together; a simulation with a bare FR-4 cover is required to "
-        "separate the two effects. Third, band III is marginal and reaches the upper limit of the simulated range. "
-        "In a prototype, the cover board must also leave the end of the CPW line free for the connector.")
+        "Four limits of the present results should be kept in mind. First, only the directivity has been evaluated, "
+        "in one plane. FR-4 is lossy (tan *δ* = 0.025), and with the board the radiator and its feed are embedded "
+        "in it, so the realized gain will be lower than the directivity, increasingly so towards the upper end of "
+        "the range. Second, the dielectric cover and the patches were added together; a simulation with a bare "
+        "FR-4 cover is required to separate the two effects. Third, the feed line was not retuned for the cover, "
+        "and band III is marginal and reaches the upper limit of the simulated range. Fourth, in a prototype the "
+        "cover board must leave the end of the CPW line free for the connector, and any air or adhesive layer "
+        "between the two boards will change the loading.")
     p.subheading("E. Comparison with Reported Works")
     p.body(
         "Table III compares the proposed antenna with reported printed antennas that use a reflector or a "
-        "metamaterial layer. The total profile of the proposed structure is 3.2 mm (0.037 *λ*_{0} at 3.42 GHz), "
+        "metamaterial layer. The total profile of the proposed structure is 3.2 mm (0.037*λ*_{0} at 3.42 GHz), "
         "lower than that of the FSS-backed designs [12]–[14], which place a reflector behind the antenna across a "
         "gap, and its metasurface is no larger than the antenna itself. The metamaterial of [19] is thinner still, "
         "as it is etched on the antenna substrate, but it serves two narrow Wi-Fi bands. This compactness has a "
@@ -298,7 +322,7 @@ def build() -> Path:
         "which does not include the losses, whereas the other works report gain; the last column is therefore not "
         "a like-for-like comparison.")
     p.table("Comparison with Reported Antennas", [
-        ["Ref.", "Antenna; added surface", "Size (mm)", "Gap (mm)", "Band (GHz)", "Peak gain (dBi)"],
+        ["Ref.", "Antenna; added surface", "Size (mm)", "Gap (mm)", "Band (GHz)", "Peak gain or directivity (dBi)"],
         ["[12]", "CPW ring monopole; 19 × 19 FSS", "50 × 50", "10 (total)", "2.2–11.9", "11.3 (meas.)"],
         ["[13]", "CPW hexagon; 5 × 5 FSS", "32 × 25; FSS 50 × 50", "9", "3–18", "10.5"],
         ["[14]", "CPW hexagon; 7 × 7 FSS", "30 × 30", "20", "UWB", "8.4"],
@@ -306,20 +330,21 @@ def build() -> Path:
         ["[19]", "Cross patch; 2 × 2 hexagonal CSRR array", "20 × 25", "0", "2.4, 5", "6, 10 (meas.)"],
         ["This work", "CPW octagon; 4 × 4 patch metasurface", "27 × 30", "0", "3.42–6.13\n7.63–13.23\n13.95–>15",
          "7.0^{†}"],
-    ], [0.43, 0.82, 0.6, 0.45, 0.65, 0.55], note="^{†}Simulated directivity (gain not evaluated).")
+    ], [0.43, 0.82, 0.6, 0.45, 0.65, 0.55], note="^{†}Simulated directivity in the *φ* = 0° plane; gain not evaluated.")
     # -- IV -------------------------------------------------------------------------------------------------------
     p.heading("IV. Conclusion")
     p.body(
         "A compact CPW-fed octagonal monopole antenna loaded with a 4 × 4 square-patch metasurface has been "
-        "presented. The structure has a footprint of 27 mm × 30 mm and a total thickness of 3.2 mm; the radiator "
-        "lies between two FR-4 substrates and the patches are on the outer face, with no air gap and no ground "
-        "plane. In simulation it provides three bands with |*S*_{11}| ≤ −10 dB: 3.42–6.13 GHz, 7.63–13.23 GHz and "
-        "13.95 GHz to beyond 15 GHz, with a lowest reflection coefficient of −27.8 dB at 5.26 GHz, whereas the "
-        "antenna alone is matched from 3.52 GHz upwards except for 5.21–5.79 GHz. The metasurface board acts as a "
-        "dielectric and capacitive loading of the radiator: it improves the match near 5.3 GHz and raises the peak "
-        "directivity from 5.2 to 7.0 dBi, but it lowers the directivity over most of the second band. A control "
-        "simulation with a bare FR-4 cover, the evaluation of the realized gain and efficiency, and the "
-        "fabrication and measurement of a prototype are the next steps of this work.")
+        "studied by simulation. The structure has a footprint of 27 mm × 30 mm and a total thickness of 3.2 mm; the "
+        "radiator lies between two FR-4 substrates and the patches are on the outer face, with no air gap and no "
+        "backing conductor. It provides three bands with |*S*_{11}| ≤ −10 dB, 3.42–6.13 GHz, 7.63–13.23 GHz and a "
+        "marginal band above 13.95 GHz, whereas the antenna alone is matched from 3.52 GHz upwards except for "
+        "5.21–5.79 GHz. The metasurface board acts as a dielectric and capacitive loading of the radiator and not "
+        "as a reflector: it improves the match near 5.3 GHz to −27.8 dB and raises the maximum directivity in the "
+        "*φ* = 0° plane in the first and third bands, to 7.0 dBi at 13.9 GHz, but it introduces two mismatched "
+        "regions and lowers the directivity over most of the second band. A control simulation with a bare FR-4 "
+        "cover, a retuned feed line, the evaluation of the realized gain and efficiency, and the fabrication and "
+        "measurement of a prototype are the next steps of this work.")
     p.references(REFS)
     p.save(OUT)
     return OUT

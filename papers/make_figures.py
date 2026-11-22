@@ -55,12 +55,12 @@ def bands(f: np.ndarray, s: np.ndarray, level: float = -10.0) -> list[tuple[floa
     return out
 
 
-def _axes(ylabel: str, ylim: tuple[float, float], height: float = 2.05):
+def _axes(ylabel: str, ylim: tuple[float, float], height: float = 2.05, xmin: float = 1):
     fig, ax = plt.subplots(figsize=(3.4, height))
-    ax.set_xlim(1, 15)
+    ax.set_xticks(range(int(xmin) | 1, 16, 2))
+    ax.set_xticks(range(int(xmin), 16), minor=True)
+    ax.set_xlim(xmin, 15)                           # after the ticks: set_xticks widens the limits
     ax.set_ylim(*ylim)
-    ax.set_xticks(range(1, 16, 2))
-    ax.set_xticks(range(1, 16), minor=True)
     ax.set_xlabel("Frequency (GHz)")
     ax.set_ylabel(ylabel)
     ax.grid(True, color=GRID, linewidth=0.4)
@@ -92,10 +92,10 @@ def s11_overlay(tag: str, out: Path, label_with: str, label_without: str, ylim: 
 
 
 def directivity_overlay(tag: str, out: Path, label_with: str, label_without: str, ylim: tuple[float, float],
-                        legend_loc: str = "lower right", note: str | None = None) -> None:
+                        legend_loc: str = "lower right", note: str | None = None, xmin: float = 1) -> None:
     f0, d0 = load(f"{tag}_dir_noms")
     f1, d1 = load(f"{tag}_dir_ms")
-    fig, ax = _axes("Directivity (dBi)", ylim)
+    fig, ax = _axes("Directivity (dBi)", ylim, xmin=xmin)
     if f1[0] > 1.5 or f1[-1] < 14.5:               # the with-curve covers only part of the sweep: mark the part
         ax.axvspan(f1[0], f1[-1], color=BAND, alpha=0.45, linewidth=0)
     ax.axhline(0, color=INK, linewidth=0.4)
@@ -162,7 +162,7 @@ def paper1_geometry(shots: Path, out_dir: Path) -> None:
     _dim(ax, (0, -14), (w, -14), r"$W_m$", (0, -18), ink)
     _dim(ax, (w + 14, 0), (w + 14, h), r"$L_m$", (22, 0), ink)
     _dim(ax, (37, 74), (100, 74), r"$W_p$", (0, -12))
-    _dim(ax, (37, 330), (106, 330), r"$P$", (0, 16), ink)
+    _dim(ax, (37, 330), (106, 330), r"$a$", (0, 16), ink)
     ax.annotate(r"$s$", xy=(172, 318), xytext=(172, 352), color=ink, fontsize=7.5, va="center", ha="center",
                 arrowprops=dict(arrowstyle="->", color=ink, linewidth=0.6, shrinkA=1, shrinkB=0, mutation_scale=5))
     fig.savefig(out_dir / "fig_geometry_metasurface.png")
@@ -171,18 +171,18 @@ def paper1_geometry(shots: Path, out_dir: Path) -> None:
 
 def main() -> None:
     p1, p2 = HERE / "paper1", HERE / "paper2"
-    s11_overlay("p1", p1 / "figures" / "fig_s11.png", "with the patch board", "antenna alone", (-40, 0), True)
-    directivity_overlay("p1", p1 / "figures" / "fig_directivity.png", "with the patch board", "antenna alone",
-                        (-5, 8), "lower right")
+    s11_overlay("p1", p1 / "figures" / "fig_s11.png", "with the metasurface board", "antenna alone", (-40, 0), True)
+    directivity_overlay("p1", p1 / "figures" / "fig_directivity.png", "with the metasurface board", "antenna alone",
+                        (-5, 8), "lower right", xmin=3)
     s11_overlay("p2", p2 / "figures" / "fig_s11.png", "with the metasurface", "without the metasurface", (-50, 0),
                 False, "lower left")
     directivity_overlay("p2", p2 / "figures" / "fig_directivity.png", "with the metasurface (6–10 GHz)",
                         "without the metasurface", (-4, 8), "lower right")
     paper1_geometry(p1 / "cst_screenshots", p1 / "figures")
     crop(p1 / "cst_screenshots" / "pattern_5p3GHz_without.png", p1 / "figures" / "fig_pattern_without.png",
-         (0, 40, 340, 383), (286, 30, 480, 62))
+         (0, 40, 340, 383), (286, 28, 480, 66))
     crop(p1 / "cst_screenshots" / "pattern_5p3GHz_with.png", p1 / "figures" / "fig_pattern_with.png",
-         (0, 40, 340, 383), (286, 30, 480, 62))
+         (0, 40, 340, 383), (286, 28, 480, 66))
     shots = p2 / "cst_screenshots"
     polar = (560, 0, 1560, 959)                     # the polar plot without the legend and the lobe read-out
     crop(shots / "7p4GHz_radiation_pattern_port1_without_metasurface.png", p2 / "figures" / "fig_pattern_without.png",
