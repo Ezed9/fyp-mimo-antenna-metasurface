@@ -10,8 +10,8 @@ def review_mimo(c) -> str:
         "Four-port UWB antennas have been obtained on boards of 38–65 mm side, mostly by placing neighbouring "
         "elements at right angles, so that polarisation diversity supplies much of the isolation. Yin *et al.* "
         "placed CPW-fed elements perpendicularly on a 38 mm × 38 mm board and reported more than 17 dB of isolation "
-        f"over 3–20 GHz {c('yin')}. Wu *et al.* reached more than 17 dB over 3.1–13.1 GHz on 45 mm × 45 mm with a "
-        f"connected ground {c('wu')}, Zhang *et al.* added cross-shaped decoupling branches to a flexible CPW-fed "
+        f"over 3–20 GHz {c('yin')}. Wu *et al.* reached more than 17 dB over 3.1–13.1 GHz on a 45 mm × 45 mm board "
+        f"with a connected ground {c('wu')}, Zhang *et al.* added cross-shaped decoupling branches to a flexible CPW-fed "
         f"design and obtained more than 22 dB over 2.9–10.86 GHz {c('zhang')}, and Ahmad *et al.* reported more than "
         f"20 dB over 3–11 GHz with CPW-fed elements {c('ahmad')}. A uniplanar four-port array with a rejection band "
         f"has also been described {c('gomez')}. In all of these the envelope correlation coefficient is below 0.1.")
@@ -24,7 +24,7 @@ def review_metasurface(c) -> str:
         f"a surface with an engineered reflection phase can be closer {c('sievenpiper')}. Sen *et al.* placed a "
         f"split-ring surface behind a UWB monopole and reported a gain rise of about 5.5 dB {c('sen')}. For four-port "
         "antennas, Hasan *et al.* placed a copper-backed array of 10 × 10 split-ring cells 12 mm behind an "
-        "80 mm × 80 mm antenna and raised the simulated realized gain from 5.4 to 8.3 dBi over 3.08–7.75 GHz, with "
+        "80 mm × 80 mm antenna and raised the simulated realised gain from 5.4 to 8.3 dBi over 3.08–7.75 GHz, with "
         f"more than 15.5 dB of isolation {c('hasan')}; Sufian *et al.* combined a metasurface with slots and "
         f"shorting pins and reached more than 32 dB of isolation over 3.3–3.87 GHz {c('sufian')}; and Din *et al.* "
         f"placed a frequency selective surface (FSS) over a four-port antenna for 3.8–6 GHz {c('din')}. Over wider "
@@ -32,7 +32,7 @@ def review_metasurface(c) -> str:
         "artificial magnetic conductor (AMC) under a four-port antenna covering 2–12 GHz with a gain of up to "
         f"9.6 dBi {c('alekya')}, and FSS-backed four-port UWB antennas {c('nirmala', 'kumar')} have been reported. "
         "A wideband MIMO antenna with a reflecting surface is therefore not new. What is less often reported is "
-        "how much a given surface actually contributes, and under which conditions it contributes nothing.")
+        "how much a given surface contributes when it is compared, on the same model, with the antenna alone.")
 
 
 def reflector_note(c) -> str:
@@ -52,7 +52,7 @@ def comparison_text(c, table: str) -> str:
 
 
 # (key, [ports; element | size (mm) | added surface; gap (mm) | band (GHz) | isolation (dB) | ECC | peak gain (dBi)])
-# "–": not stated in the part of the source that was read.
+# "–": not available (not stated in the abstract or full text that was read; see references.py).
 COMPARISON_ROWS = [
     ("yin", ["4; CPW-fed monopoles, orthogonal", "38 × 38", "none", "3–20", "> 17", "< 0.08", "6.2"]),
     ("wu", ["4; microstrip-fed monopoles, orthogonal", "45 × 45", "none", "3.1–13.1", "> 17", "< 0.02",

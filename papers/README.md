@@ -2,7 +2,7 @@
 
 | | File | State |
 |---|---|---|
-| Paper 1 | `paper1/Paper1_TriBand_Octagonal_Monopole_revised.docx` (+ `.pdf`) | Revised. Submittable after the checks in section 3. |
+| Paper 1 | `paper1/Paper1_TriBand_Octagonal_Monopole_revised.docx` (+ `.pdf`) | Revised. Two items are highlighted in yellow (the feed gap *p* and the side of *θ* = 0°); do the checks in section 3 before submitting. |
 | Paper 2 | `paper2/Paper2_FourPort_Decagonal_MIMO_draft.docx` (+ `.pdf`) | **Draft, not submittable.** It has no coupling, ECC, gain or confirmed dimensions; everything missing is highlighted in yellow. |
 
 No number in either paper was invented. Curve-derived numbers come from `data/*.csv`, which were digitised from the CST
@@ -17,6 +17,9 @@ python papers/paper1/build_paper1.py
 python papers/paper2/build_paper2.py          # prints the list of open items
 papers/render.sh papers/paper1/*.docx papers/paper2/*.docx           # PDF copies (LibreOffice + libreoffice-math)
 ```
+
+The `.docx` is the deliverable; the PDFs are previews made with LibreOffice, which draws tall equation delimiters
+badly (Word draws them correctly).
 
 Replace a digitised curve by saving the CST export (Post-Processing → Import/Export → Plot Data (ASCII)) under the same
 name in `data/`. The loader accepts CST's tab-separated format as it is. Then run `check_numbers.py`: Paper 2's text
@@ -122,7 +125,22 @@ a cell with an in-phase band inside the operating range), not the wording.
 4. Re-tune the slot under the cover (0.65 mm restores 50 Ω). It may close the mismatched regions.
 5. Patterns in both planes at 5.3, 9.9 and 13.9 GHz, with cross-polarisation.
 
-### 3.3 The title
+### 3.3 References (audited entry by entry against Crossref)
+
+All 21 original references are real. Corrected in the revision: the page range of [12] (1419–1436), the DOIs and
+months that were missing, and five statements that did not match the sources (the gain units and the two gain values
+of [12]; the size of its FSS; the "air gap" and "9.9" of [15]; the description of [19]; "CPW-fed" for [6]–[9]).
+Equation (3) is not in the Sievenpiper journal paper [10]; it is in his dissertation, now cited as [26]. Five
+references were added ([20]–[22], [25], [26]), so Ray's two are now [23] and [24]. Still to do by hand:
+
+- [2] (3GPP TS 38.104) needs the version and date you used; a reviewer may prefer TS 38.101-1, the terminal spec.
+- [3] and [4] may have been superseded (IEEE Std 802.11-2024; a 2026 edition of IEEE Std 521 is reported). Check.
+- [9] is a self-citation in a journal with no DOI and no indexing that could be found. It is the entry a reviewer is
+  most likely to query; keep it only if you need it.
+- In Table III the spacing of [15] and the board size and spacing of [19] could not be read (shown as "–").
+  Fill them in from the PDFs.
+
+### 3.4 The title
 
 The revised paper keeps your title. The body now says plainly that the antenna alone is matched over more spectrum
 (10.9 GHz of the 3.42–15 GHz range against 9.4 GHz with the board), so a reviewer may read "tri-band" as a loss and

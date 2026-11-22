@@ -193,8 +193,9 @@ class Paper:
     def subheading(self, text: str) -> None:
         self.runs(self._par(before=4, after=2, keep=True), text, italic=True)
 
-    def body(self, text: str) -> None:
-        self.runs(self._par(WD_ALIGN_PARAGRAPH.JUSTIFY, first_indent=True), text)
+    def body(self, text: str, cont: bool = False) -> None:
+        """A body paragraph; cont=True continues a sentence after an equation (no first-line indent)."""
+        self.runs(self._par(WD_ALIGN_PARAGRAPH.JUSTIFY, first_indent=not cont), text)
 
     def equation(self, latex: str) -> int:
         self.eq_no += 1
@@ -236,7 +237,11 @@ class Paper:
                     lab.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
                     lab.paragraphs[0].paragraph_format.keep_with_next = True
                     self.runs(lab.paragraphs[0], f"({chr(97 + c)})", size=8)
-            self._fix_widths(table, [width_in + 0.08] * len(images))
+            # No cell margins: with the default 0.075 in margins the cell would clip the right edge of the image.
+            table._tbl.tblPr.append(parse_xml(
+                f'<w:tblCellMar {nsdecls("w")}><w:left w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/>'
+                '</w:tblCellMar>'))
+            self._fix_widths(table, [width_in + 0.06] * len(images))
         else:
             for k, img in enumerate(images):
                 self._picture(self._par(WD_ALIGN_PARAGRAPH.CENTER, before=4, keep=True), img, width_in)
@@ -299,5 +304,8 @@ class Paper:
             self.runs(par, f"[{k}]\t{ref}", size=8)
 
     def save(self, path: Path) -> None:
+        zoom = self.doc.settings.element.find(qn("w:zoom"))     # python-docx's template omits the required attribute
+        if zoom is not None and zoom.get(qn("w:percent")) is None:
+            zoom.set(qn("w:percent"), "100")
         self.doc.save(str(path))
         # Word (through cloud co-editing) has refused archives that carry directory entries; python-docx writes none.

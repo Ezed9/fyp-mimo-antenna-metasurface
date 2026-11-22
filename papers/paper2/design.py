@@ -32,12 +32,12 @@ DESIGN = {
     "W_g": Unknown("23", "repo value; upper-row grounds measure about 21.0 mm (px)"),
     "p": Unknown("0.73", "repo value; lower row measures about 0.5 mm and the upper row about 1.6 mm (px)"),
     # --- four-port layout ----------------------------------------------------------------------------------------
-    "board": Unknown("100 × 100", "px: bounding box about 105 × 100 mm with a stepped outline (the two halves are "
+    "board": Unknown("100 mm × 100", "px: bounding box about 105 × 100 mm with a stepped outline (the two halves are "
                                   "shifted sideways by about 4.8 mm). Rebuild the substrate as one rectangle"),
     "pitch": Unknown("50", "px: feed-to-feed spacing within a row"),
     "d_face": Unknown("2.4", "px: flat-edge-to-flat-edge spacing of the two patches that face each other"),
     "ground_statement": Unknown(
-        "the coplanar grounds of neighbouring elements are not joined",
+        "the coplanar grounds of the two rows are not connected to each other",
         "px: upper-row grounds are 4 mm apart, lower-row grounds touch or are split by a hairline, and the two rows "
         "are not connected. State what the model really has; a common ground is what reviewers expect"),
     "port_map": Unknown("ports 1 and 2 feed the lower row and ports 3 and 4 the upper row",
@@ -50,7 +50,7 @@ DESIGN = {
                              "If the rings have no split, say 'closed rings' instead of 'split rings'"),
     "pitch_x": Unknown("16.9", "px"),
     "pitch_y": Unknown("18.3", "px"),
-    "ms_board": Unknown("105 × 100", "px: at least as large as the antenna board"),
+    "ms_board": Unknown("105 mm × 100", "px: at least as large as the antenna board"),
     "ms_ground": Unknown(
         "has no copper on its rear face",
         "NOT KNOWN. The single-element metasurface had a full copper ground; the unchanged S11 of the MIMO model "
@@ -65,6 +65,12 @@ DESIGN = {
     "theta0_side": Unknown("the side of the antenna board away from the metasurface",
                            "the pattern with the metasurface peaks at theta = 6 deg; confirm the axes in CST"),
 }
+
+
+def guess(key: str) -> float:
+    """The numeric value of a design fact (confirmed or guessed), for derived quantities."""
+    item = DESIGN[key]
+    return float(item.guess if isinstance(item, Unknown) else item)
 
 
 def value(key: str) -> str:

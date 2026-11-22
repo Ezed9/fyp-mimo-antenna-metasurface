@@ -96,6 +96,10 @@ def paper1() -> None:
         a, b = np.interp(g, f0, d0), np.interp(g, f1, d1)
         print(f"  mean directivity {lo}-{hi} GHz: alone {a.mean():.2f}, with board {b.mean():.2f} dBi; "
               f"with board lower over {100 * (b < a).mean():.0f} % of the band")
+    g = np.arange(3.42, 15.001, 0.02)
+    print(f"  mean directivity 3.42-15 GHz: alone {np.interp(g, f0, d0).mean():.2f}, with board "
+          f"{np.interp(g, f1, d1).mean():.2f} dBi; at 13.9 GHz: alone {np.interp(13.9, f0, d0):.2f}, with board "
+          f"{np.interp(13.9, f1, d1):.2f} dBi; at 13.1 GHz with board {np.interp(13.1, f1, d1):.2f} dBi")
     R, p, k = 9.0, 0.22, 1.15
     l, area = 2 * R, 2 * np.sqrt(2) * R ** 2
     r = area / (2 * np.pi * l)
@@ -124,6 +128,9 @@ def paper2() -> None:
     g = np.arange(1.8, 15.001, 0.02)
     diff = np.interp(g, f1, s1) - np.interp(g, f0, s0)
     print(f"  |S11| with minus without, 1.8-15 GHz: mean {diff.mean():+.2f} dB, rms {np.sqrt((diff ** 2).mean()):.2f} dB")
+    lo = bands(f0, s0)[0][0] + 0.1
+    lin = 10 ** (np.interp(f0, f1, s1)[f0 >= lo] / 20) - 10 ** (s0[f0 >= lo] / 20)
+    print(f"  rms change of the linear |S11| from {lo:.2f} GHz to 15 GHz: {np.sqrt((lin ** 2).mean()):.3f}")
     f0, d0 = load("p2_dir_noms")
     f1, d1 = load("p2_dir_ms")
     g = np.arange(6.0, 10.001, 0.05)

@@ -25,7 +25,8 @@ sys.path.insert(0, str(HERE))
 
 import mimo_results  # noqa: E402
 from check_numbers import bands, load  # noqa: E402
-from design import open_items, value  # noqa: E402
+from scipy.signal import find_peaks  # noqa: E402
+from design import guess, open_items, value  # noqa: E402
 from ieee_docx import Paper  # noqa: E402
 from references import REFS  # noqa: E402
 
@@ -81,10 +82,10 @@ def match(case: str) -> dict:
         k = int(np.argmax(s[m]))
         gaps.append((hi, lo, float(f[m][k]), float(s[m][k])))
     k = int(np.argmin(s))
-    inside = (f >= bs[0][0])
+    humps, _ = find_peaks(s, prominence=1.0)
+    thin = [(float(f[i]), float(s[i])) for i in humps if -11.0 < s[i] <= -10.0 and f[i] > bs[0][0]]
     return {"f": f, "s": s, "bands": bs, "gaps": gaps, "min": (float(f[k]), float(s[k])), "fmax": float(f[-1]),
-            "fmin": float(f[0]), "matched_ghz": sum(hi - lo for lo, hi, _, _ in bs),
-            "thin": float(np.sort(s[inside & (s <= -10)])[-1])}
+            "fmin": float(f[0]), "thin": thin}
 
 
 def band_phrase(m: dict) -> str:
@@ -160,16 +161,16 @@ def build(exports: Path, out: Path) -> tuple[Path, list[str]]:
         f"printed monopoles on a {v('board')} mm FR-4 board is studied by full-wave simulation, alone and with a "
         "6 × 5 array of concentric double-ring cells on a second FR-4 board placed behind it. Without the "
         f"metasurface, the reflection coefficient of port 1 is at or below −10 dB {band_phrase(m0)}; in between it "
-        f"rises to {db(gap0[3])} dB at {gap0[2]:.2f} GHz. The metasurface leaves the match almost unchanged: the "
+        f"rises to {db(gap0[3])} dB at {gap0[2]:.1f} GHz. The metasurface leaves the match almost unchanged: the "
         f"bands become {band_phrase(m1).replace('from ', '', 1)}, and the mismatched region narrows from "
         f"{gap0[1] - gap0[0]:.2f} to {gap1[1] - gap1[0]:.2f} GHz. " + mimo_abstract +
         f"Over {d['lo']:.0f}–{d['hi']:.0f} GHz, the maximum directivity in the *φ* = 0° plane changes by "
         f"{signed(d['mean_diff'])} dB on average with the metasurface (between {signed(d['fall'][1])} and "
         f"{signed(d['rise'][1])} dB), and its peak rises from {d['peak0'][1]:.1f} to {d['peak1'][1]:.1f} dBi. At "
         f"{PATTERN['f']} GHz the main lobe in the *φ* = 90° plane moves from *θ* = {PATTERN['noMS']['dir']}° to "
-        f"*θ* = {PATTERN['MS']['dir']}°. The ring surface therefore redirects the radiation at some frequencies but "
-        "does not raise the directivity across the band.")
-    p.keywords("CPW-fed antenna, decagonal monopole, metasurface, MIMO antenna, split-ring resonator, "
+        f"*θ* = {PATTERN['MS']['dir']}°. In the range and the planes evaluated, the metasurface therefore changes the "
+        "direction of the radiation at individual frequencies but does not raise the level of the directivity.")
+    p.keywords("CPW-fed antenna, decagonal monopole, double-ring cell, metasurface, MIMO antenna, "
                "ultra-wideband antenna")
 
     # ------------------------------------------------------------------------------------------------ I
@@ -186,11 +187,13 @@ def build(exports: Path, out: Path) -> tuple[Path, list[str]]:
     p.body(review_metasurface(c))
     p.body(
         "This paper reports the simulated behaviour of a four-port arrangement of CPW-fed decagonal monopoles, and "
-        "examines with the same model what a 6 × 5 surface of concentric double rings placed behind it changes. "
-        "The reflection coefficient, the coupling between the ports, the diversity metrics, the directivity and "
-        "the radiation pattern are compared with and without the surface, and the comparison is reported as "
-        "obtained, including where the surface brings no benefit. Section II describes the design, Section III "
-        "the results, and Section IV concludes the paper.")
+        "examines with the same model what a 6 × 5 metasurface of concentric double rings placed behind it changes. "
+        + ("The reflection coefficient, the coupling between the ports, the diversity metrics, the directivity and "
+           "the radiation pattern" if mimo else "The reflection coefficient, the directivity and the radiation "
+           "pattern [[and, once exported, the coupling between the ports and the diversity metrics]]") +
+        " are compared with and without the metasurface, and the comparison is reported as obtained, including "
+        "where the metasurface brings no benefit. Section II describes the design, Section III the results, and "
+        "Section IV concludes the paper.")
 
     # ------------------------------------------------------------------------------------------------ II
     p.heading("II. Antenna Design")
@@ -199,15 +202,16 @@ def build(exports: Path, out: Path) -> tuple[Path, list[str]]:
         f"Each element is a regular decagon of circumradius *R* = {v('R')} mm with a flat side towards the feed, "
         f"printed on an FR-4 substrate (*ε*_{{r}} = {v('eps_r')}, tan *δ* = {v('tan_d')}) of thickness "
         f"*h*_{{s}} = {v('h_sub')} mm. It is fed by a CPW line with a strip of width *W*_{{f}} = {v('W_f')} mm and "
-        f"slots of *g* = {v('g')} mm, between two ground planes of width *W*_{{g}} = {v('W_g')} mm and length "
+        f"slots of *g* = {v('g')} mm (a line impedance of about 58 Ω from the conformal-mapping expressions of "
+        f"{c('simons')}), between two ground planes of width *W*_{{g}} = {v('W_g')} mm and length "
         f"*L*_{{g}} = {v('L_g')} mm. The lower side of the decagon lies *p* = {v('p')} mm above the ground edge, and "
         "the back of the substrate carries no copper. The lower edge of the band of such a monopole can be "
         f"estimated by replacing the patch with a cylindrical monopole of the same height and area {c('ray')}:")
-    p.equation(r"f_L = \frac{7.2}{(l + r + p)\,k}\ \text{GHz},\quad r = \frac{A}{2\pi l}")
+    p.equation(r"f_L = \frac{7.2}{(l + r + p)\,k}\ \text{GHz}")
     p.body(
-        "where *l* = 2*R* cos 18° = 28.5 mm is the height of the decagon, *A* = 5*R*^{2} sin 36° = 661 mm^{2} its "
-        "area, *r* = 3.7 mm the radius of the equivalent cylinder, all taken in centimetres, and *k* = 1.15 for "
-        f"FR-4 {c('ray')}. Equation (1) gives *f*_{{L}} ≈ 1.90 GHz.")
+        "where *l* = 2*R* cos 18° = 28.5 mm is the height of the decagon, *r* = *A*/(2π*l*) = 3.7 mm the radius "
+        "of the equivalent cylinder, *A* = 5*R*^{2} sin 36° = 661 mm^{2} the area of the decagon, all lengths taken "
+        f"in centimetres, and *k* = 1.15 for FR-4 {c('ray')}. Equation (1) gives *f*_{{L}} ≈ 1.90 GHz.", cont=True)
     p.subheading("B. Four-Port Arrangement")
     p.body(
         "The four elements are placed in two rows of two on one board, as shown in Fig. 1(a). The two elements of "
@@ -227,14 +231,17 @@ def build(exports: Path, out: Path) -> tuple[Path, list[str]]:
         f"rows and every {v('pitch_y')} mm along the columns. The array is printed on a {v('ms_board')} mm FR-4 "
         f"board of thickness 1.6 mm, which {v('ms_ground')}. The board is placed parallel to the antenna, at an "
         f"air gap of {v('gap')} mm from the back of the antenna substrate, with the rings towards the antenna.")
+    lam = lambda f_ghz: 299.79 / f_ghz                                       # free-space wavelength, mm
+    cell_lo, cell_hi = min(guess("pitch_x"), guess("pitch_y")) / lam(d["lo"]), max(guess("pitch_x"), guess("pitch_y")) / lam(d["hi"])
     p.body(
-        "A ring resonates when its circumference is close to one guided wavelength, and a split halves the "
-        "frequency of the lowest resonance. With an effective permittivity of (*ε*_{r} + 1)/2 = 2.65, the outer "
-        "ring is one wavelength long at about 4.0 GHz and the inner ring at about 5.6 GHz, so the lowest "
-        f"resonances of the split rings lie near 2.0 and 2.8 GHz {c('pendry')}. All of them are below 6 GHz. Above "
-        "that frequency the rings are not resonant, and no in-phase reflection of the kind obtained from a "
-        f"high-impedance surface {c('sievenpiper')} is expected from them. The reflection phase of the cell has not "
-        "been computed.")
+        "A closed ring resonates first when its circumference is about one guided wavelength, and a split lowers "
+        "the first resonance to about half that frequency. With an effective permittivity of (*ε*_{r} + 1)/2 = 2.65, "
+        "the outer ring is one wavelength long at about 4.0 GHz and the inner ring at about 5.6 GHz, so the first "
+        f"resonances of the rings lie between about 2 and 6 GHz. In the {d['lo']:.0f}–{d['hi']:.0f} GHz range, in "
+        "which the directivity is compared in Section III, the rings are at higher-order resonances and the cell "
+        f"period is {cell_lo:.2f}–{cell_hi:.2f} free-space wavelength, so the array is not electrically dense there "
+        f"and cannot be described by a single reflection phase, as a high-impedance surface can {c('sievenpiper')}. "
+        "The reflection phase of the cell has not been computed.")
     p.subheading("D. Simulation Setup")
     p.body(
         f"The model is simulated in CST Studio Suite {v('cst_version')} with the {v('solver')} solver from "
@@ -250,24 +257,28 @@ def build(exports: Path, out: Path) -> tuple[Path, list[str]]:
     p.body(
         "The simulated reflection coefficient of port 1 is shown in Fig. 2. Without the metasurface, "
         f"|*S*_{{11}}| is at or below −10 dB {band_phrase(m0)}, the upper limit of the simulation. Between the two "
-        f"ranges it rises to {db(gap0[3])} dB at {gap0[2]:.2f} GHz. The lowest value is {db(m0['min'][1])} dB at "
-        f"{m0['min'][0]:.2f} GHz. The lower band edge, {m0['bands'][0][0]:.2f} GHz, is below the estimate of (1), "
-        "which was made for an element on its own.")
+        f"ranges it rises to {db(gap0[3])} dB at {gap0[2]:.1f} GHz. The lowest value is {db(m0['min'][1])} dB at "
+        f"{m0['min'][0]:.2f} GHz. " + (
+            "Inside the matched ranges the margin is small at " +
+            " and ".join(f"{fq:.1f} GHz ({db(val)} dB)" for fq, val in m0["thin"][:2]) + ". " if m0["thin"] else "") +
+        f"The lower band edge, {m0['bands'][0][0]:.2f} GHz, is below the estimate of (1), which was made for an "
+        "element on its own.")
     p.figure(FIG / "fig_s11.png",
-             "Simulated reflection coefficient of port 1 without and with the metasurface.", width_in=3.4)
+             "Simulated reflection coefficient of port 1 without and with the metasurface. The dotted line marks "
+             "−10 dB.", width_in=3.4)
     f, s0, s1 = m0["f"], m0["s"], np.interp(m0["f"], m1["f"], m1["s"])
     rng = f >= m0["bands"][0][0] + 0.1
     lin = 10 ** (s1[rng] / 20) - 10 ** (s0[rng] / 20)
     p.body(
         f"With the metasurface, |*S*_{{11}}| is at or below −10 dB {band_phrase(m1)}, and the highest value "
-        f"between the two ranges is {db(gap1[3])} dB at {gap1[2]:.2f} GHz. The mismatched region thus narrows from "
-        f"{gap0[1] - gap0[0]:.2f} to {gap1[1] - gap1[0]:.2f} GHz, but it does not close. Elsewhere the two curves "
-        f"follow each other: the lower band edge moves by {abs(m0['bands'][0][0] - m1['bands'][0][0]) * 1000:.0f} "
-        f"MHz, and the root-mean-square change of the linear |*S*_{{11}}| over the band is "
-        f"{np.sqrt((lin ** 2).mean()):.2f}. The larger differences in decibels are confined to the deep minima, "
-        "which move by 0.1–0.3 GHz. The metasurface therefore neither detunes the antenna nor improves its match "
-        "appreciably. Since an upper band edge is not reached within the simulated range, no fractional bandwidth "
-        "is quoted.")
+        f"between the two ranges is {db(gap1[3])} dB at {gap1[2]:.1f} GHz. The mismatched region thus narrows from "
+        f"{gap0[1] - gap0[0]:.2f} to {gap1[1] - gap1[0]:.2f} GHz, but it does not close. The lower band edge moves "
+        f"from {m0['bands'][0][0]:.2f} to {m1['bands'][0][0]:.2f} GHz. The minima move down by 0.1–0.3 GHz and "
+        f"change in depth, the deepest from {db(m0['min'][1])} to {db(m1['min'][1])} dB, but away from the minima "
+        "the two curves follow each other: from the lower band edge to the end of the range, the "
+        f"root-mean-square change of the linear |*S*_{{11}}| is {np.sqrt((lin ** 2).mean()):.2f}. The metasurface "
+        "therefore leaves the matched ranges almost as they are. Since an upper band edge is not reached within "
+        "the simulated range, no fractional bandwidth is quoted.")
     # --- coupling ---
     p.subheading("B. Mutual Coupling")
     if mimo:
@@ -293,16 +304,17 @@ def build(exports: Path, out: Path) -> tuple[Path, list[str]]:
     else:
         p.body(
             "[[The transmission coefficients between the ports have not been exported from the simulation. This "
-            "subsection, Fig. 3 and Table I are generated by the build script from the four-port S-matrix of the "
-            "two models: all six transmission coefficients against frequency, the highest coupling of each port "
-            "pair inside the matched range, and the difference between the reflection coefficients of the four "
-            "ports.]]")
+            "subsection, with a figure and a table, is generated by the build script from the four-port S-matrix "
+            "of the two models: all six transmission coefficients against frequency, the highest coupling of each "
+            "port pair inside the matched range, and the difference between the reflection coefficients of the "
+            "four ports.]]")
         p.body(
             f"The geometry indicates where the coupling is expected to be strongest. The facing patches are "
             f"{v('d_face')} mm apart, 0.014 free-space wavelength at {m0['bands'][0][0]:.2f} GHz, and their facing "
             "edges are the open ends of the two monopoles; the elements of a row are parallel, have the same "
-            "polarisation and are less than a third of a wavelength apart at the lower band edge. These two kinds "
-            "of pair should be examined first.")
+            "polarisation and are less than a third of a wavelength apart at the lower band edge. The coupling of "
+            "these two kinds of pair is therefore the quantity on which the usefulness of the arrangement "
+            "depends.")
     # --- directivity ---
     p.subheading("C. Directivity")
     part = (f" With the metasurface the result is available from {d['lo']:.0f} to {d['hi']:.0f} GHz only, so the "
@@ -324,43 +336,54 @@ def build(exports: Path, out: Path) -> tuple[Path, list[str]]:
         f"{d['peak1'][0]:.1f} GHz. The directivity with the metasurface is the higher one over "
         f"{100 * d['frac_higher']:.0f}% of the range; the largest rise is {abs(d['rise'][1]):.1f} dB at "
         f"{d['rise'][0]:.1f} GHz, and the largest fall is {abs(d['fall'][1]):.1f} dB at {d['fall'][0]:.1f} GHz, where "
-        f"the directivity drops to {d['min1'][1]:.1f} dBi. The metasurface therefore redistributes the directivity "
-        "over frequency without raising its level: the average change is a fraction of a decibel.")
+        f"the directivity drops to {d['min1'][1]:.1f} dBi. In this range the metasurface therefore redistributes the "
+        "directivity over frequency without raising its level: the average change is a fraction of a decibel.")
     # --- pattern ---
     a, b = PATTERN["noMS"], PATTERN["MS"]
     p.subheading("D. Radiation Pattern")
+    at_f = float(PATTERN["f"])
+    f0d, d0d = load("p2_dir_noms")
+    f1d, d1d = load("p2_dir_ms")
     p.body(
         f"The simulated directivity patterns of port 1 in the *φ* = 90° plane at {PATTERN['f']} GHz are shown in "
-        f"Fig. {fig_no + 1}. Both patterns have several lobes, as expected of an element that is more than one "
-        "wavelength from the far edge of the board at this frequency. Without the metasurface, the largest lobe "
-        f"points to *θ* = {a['dir']}°, in the rear half-space, with a directivity of {a['mag']} dBi and a "
-        f"half-power beamwidth of {a['hpbw']}°; the next lobe is only {a['sll']} dB lower. With the metasurface, "
-        f"the largest lobe points to *θ* = {b['dir']}°, close to the normal to the board, with {b['mag']} dBi and a "
-        f"beamwidth of {b['hpbw']}°, and the next lobe is {b['sll']} dB lower. The surface thus moves the strongest "
-        f"radiation from the rear to the front half-space and raises the directivity of the largest lobe by "
-        f"{float(b['mag']) - float(a['mag']):.2f} dB, but a rear lobe only a few decibels below the main lobe "
-        "remains. This is one plane at one frequency and one port; it does not establish the behaviour over the "
-        "band.")
+        f"Fig. {fig_no + 1}. Both patterns have several lobes, as expected at a frequency at which the board is more "
+        "than two wavelengths across. Without the metasurface, the largest lobe of this cut points to "
+        f"*θ* = {a['dir']}°, in the rear half-space, with a directivity of {a['mag']} dBi and a half-power "
+        f"beamwidth of {a['hpbw']}°; the next lobe is only {a['sll']} dB lower. With the metasurface, the largest "
+        f"lobe points to *θ* = {b['dir']}°, close to the normal to the board, with {b['mag']} dBi and a beamwidth of "
+        f"{b['hpbw']}°, and the next lobe is {b['sll']} dB lower. In this plane the metasurface thus moves the "
+        "largest lobe from the rear to the front half-space and raises its directivity by "
+        f"{float(b['mag']) - float(a['mag']):.2f} dB, but a rear lobe only a few decibels below it remains. The "
+        f"maxima of Fig. {fig_no} at this frequency, {np.interp(at_f, f0d, d0d):.1f} and "
+        f"{np.interp(at_f, f1d, d1d):.1f} dBi, are higher than those of this cut, so the direction of maximum "
+        "radiation lies outside it. One plane at one frequency and one port does not establish the behaviour over "
+        "the band.")
     p.figure([FIG / "fig_pattern_without.png", FIG / "fig_pattern_with.png"],
-             f"Simulated directivity pattern of port 1 in the *φ* = 90° plane at {PATTERN['f']} GHz: (a) without, "
-             "(b) with the metasurface. The radial scales of the two plots differ (CST Studio Suite).",
-             width_in=1.66, sublabels=True, side_by_side=True)
+             f"Simulated directivity pattern of port 1 in the *φ* = 90° plane at {PATTERN['f']} GHz (CST Studio "
+             "Suite): (a) without, (b) with the metasurface. The radial scales of the two plots differ. The circle "
+             "and the straight lines are the markers of the main lobe and its half-power width.",
+             width_in=2.9, sublabels=True, side_by_side=True, wide=True)
     # --- diversity ---
     p.subheading("E. Diversity Performance")
     p.body(
         "The envelope correlation coefficient (ECC) between ports *i* and *j* of an *N*-port antenna is computed "
         f"from the S-parameters as {c('blanch')}")
-    p.equation(r"\rho_{e,ij} = \frac{\left|\sum_{n=1}^{N} S_{ni}^{*} S_{nj}\right|^{2}}"
-               r"{\left(1 - \sum_{n=1}^{N} |S_{ni}|^{2}\right)\left(1 - \sum_{n=1}^{N} |S_{nj}|^{2}\right)}")
+    p.equation(r"\rho_{e,ij} = \frac{|\sum_{n=1}^{N} \overline{S_{ni}}\, S_{nj}|^{2}}"
+               r"{(1 - \sum_{n=1}^{N} |S_{ni}|^{2})(1 - \sum_{n=1}^{N} |S_{nj}|^{2})}")
     p.body(
-        f"and the apparent diversity gain as DG = 10(1 − *ρ*_{{e}})^{{1/2}} dB {c('dg')}. Equation (2) assumes a "
-        "lossless antenna in a uniform multipath environment; on a lossy FR-4 substrate it underestimates the "
-        f"correlation, so the value obtained from the far fields {c('vaughan')} should be reported as well "
-        f"{c('hallbjorner', 'sharawi_misuse')}. "
-        "The total active reflection coefficient (TARC) for an excitation vector **a** and the channel capacity "
-        f"loss (CCL) follow from the S-matrix **S** as {c('manteghi', 'ccl')}")
-    p.equation(r"\Gamma_a^t = \frac{\lVert \mathbf{S}\mathbf{a} \rVert}{\lVert \mathbf{a} \rVert},\qquad "
-               r"C_{loss} = -\log_2 \det\!\left(\mathbf{I} - \mathbf{S}^{H}\mathbf{S}\right)")
+        "where the bar denotes the complex conjugate, and the apparent diversity gain as "
+        f"DG = 10(1 − *ρ*_{{e}})^{{1/2}} dB {c('dg')}. Equation (2) assumes a lossless antenna in a uniform "
+        "multipath environment; on a lossy FR-4 substrate it underestimates the correlation, so the value obtained "
+        f"from the far fields {c('vaughan')} should be reported as well {c('hallbjorner', 'sharawi_misuse')}. The "
+        "total active reflection coefficient (TARC) for incident waves *a*_{i} and reflected waves *b*_{i} at the "
+        f"ports is {c('manteghi')}", cont=True)
+    p.equation(r"\Gamma_a^t = \sqrt{\frac{\sum_{i=1}^{N} |b_i|^{2}}{\sum_{i=1}^{N} |a_i|^{2}}}")
+    p.body(
+        f"and the channel capacity loss (CCL) is {c('ccl')}", cont=True)
+    p.equation(r"C_{\mathrm{loss}} = -\log_2 \operatorname{det}(\mathbf{I} - \mathbf{S}^{\mathrm{H}}\mathbf{S})")
+    p.body(
+        "where **S** is the S-matrix, **I** the identity matrix and the superscript H the conjugate transpose.",
+        cont=True)
     if mimo:
         r0, r1 = mimo["noMS"], mimo["MS"]
         dg0 = min(q["dg"] for q in r0["pairs"].values())
@@ -382,18 +405,19 @@ def build(exports: Path, out: Path) -> tuple[Path, list[str]]:
     # --- discussion ---
     p.subheading("F. Discussion and Limitations")
     p.body(
-        "Taken together, the results show a surface that interacts weakly with the antenna. The match is "
-        f"practically unchanged, the mean directivity over {d['lo']:.0f}–{d['hi']:.0f} GHz changes by "
-        f"{signed(d['mean_diff'])} dB, and the pattern at {PATTERN['f']} GHz is turned towards the front without "
-        "becoming unidirectional. This is consistent with Section II-C: in the range in which the directivity was "
-        "compared, the rings are above their resonances and cannot provide an in-phase reflection. "
-        + reflector_note(c))
+        "Taken together, the results show a metasurface that changes the pattern at individual frequencies but "
+        f"not the overall performance. The matched ranges are almost unchanged, the mean directivity over "
+        f"{d['lo']:.0f}–{d['hi']:.0f} GHz changes by {signed(d['mean_diff'])} dB, and the pattern at {PATTERN['f']} GHz "
+        "is turned towards the front in one plane without becoming unidirectional. No in-phase reflection band "
+        "has been designed or demonstrated for this cell (Section II-C), so a broadband rise of the directivity "
+        "was not to be expected. " + reflector_note(c))
     p.body(
         "The present results have clear limits. Only port 1 has been evaluated, and only its directivity: the "
-        "realized gain and the efficiency, which include the loss of FR-4 and the power coupled into the other "
-        "ports, are not known." + (" The coupling between the ports and the diversity metrics remain to be "
-                                   "computed." if not mimo else "") +
-        " The effect of the rings has not been separated from that of the board that carries them; simulations "
+        "realised gain and the efficiency, which include the loss of FR-4 and the power coupled into the other "
+        "ports, are not known. " + (f"With the metasurface, the directivity is available for "
+                                    f"{d['lo']:.0f}–{d['hi']:.0f} GHz only. " if partial else "") +
+        ("The coupling between the ports and the diversity metrics remain to be computed. " if not mimo else "") +
+        "The effect of the rings has not been separated from that of the board that carries them; simulations "
         "with a bare FR-4 board and with a plain copper plate at the same position are needed for that. Finally, "
         "the model has not been verified against a second solver or a measurement.")
     # --- comparison ---
@@ -405,11 +429,10 @@ def build(exports: Path, out: Path) -> tuple[Path, list[str]]:
              "ECC", "Peak gain (dBi)"]]
     rows += [[c(key), *cells] for key, cells in COMPARISON_ROWS]
     rows.append(["This work", "4; CPW decagonal monopole", v("board"), f"6 × 5 double ring; {v('gap')}",
-                 f"{m1['bands'][0][0]:.2f}–>{m1['fmax']:.0f}^{{‡}}", iso, ecc, f"{d['peak1'][1]:.1f}^{{†}}"])
+                 f"{m1['bands'][0][0]:.2f} to >{m1['fmax']:.0f}^{{‡}}", iso, ecc, f"{d['peak1'][1]:.1f}^{{†}}"])
     p.table("Comparison with Reported Four-Port Antennas", rows, [0.5, 1.2, 0.9, 1.35, 0.85, 0.7, 0.65, 0.85],
-            note=f"–: not stated in the part of the source that was read.  ^{{†}}Simulated directivity in the *φ* = 0° "
-                 f"plane (gain not evaluated).  ^{{‡}}Port 1, except {gap1[0]:.2f}–{gap1[1]:.2f} GHz; simulation "
-                 "only.", wide=True)
+            note=f"–: not available.  ^{{†}}Simulated directivity in the *φ* = 0° plane (gain not evaluated).  "
+                 f"^{{‡}}Port 1, except {gap1[0]:.2f}–{gap1[1]:.2f} GHz; simulation only.", wide=True)
 
     # ------------------------------------------------------------------------------------------------ IV
     p.heading("IV. Conclusion")
@@ -421,11 +444,11 @@ def build(exports: Path, out: Path) -> tuple[Path, list[str]]:
          "[[One sentence on isolation and ECC.]] ") +
         f"Over {d['lo']:.0f}–{d['hi']:.0f} GHz the metasurface changes the mean directivity by "
         f"{signed(d['mean_diff'])} dB and its peak from {d['peak0'][1]:.1f} to {d['peak1'][1]:.1f} dBi, and at "
-        f"{PATTERN['f']} GHz it turns the main lobe towards the front of the board. The double-ring surface in its "
-        "present form therefore does not act as a gain-enhancing reflector over the band. Control simulations with "
-        "a bare board and a copper plate, the evaluation of the realized gain and efficiency of all ports, a cell "
-        "with an in-phase reflection band inside the operating range, and the fabrication and measurement of a "
-        "prototype are the next steps of this work.")
+        f"{PATTERN['f']} GHz it moves the largest lobe of the *φ* = 90° plane towards the front of the board. In "
+        "the range evaluated, the double-ring metasurface in its present form therefore does not act as a "
+        "gain-enhancing reflector. Control simulations with a bare board and a copper plate, the evaluation of "
+        "the realised gain and efficiency of all ports, a cell with an in-phase reflection band inside the "
+        "operating range, and the fabrication and measurement of a prototype are the next steps of this work.")
     p.references(c.listing())
     out.parent.mkdir(parents=True, exist_ok=True)
     p.save(out)

@@ -86,7 +86,7 @@ def _finish(fig, ax, out: Path, legend_loc: str) -> None:
 
 
 def s11_overlay(tag: str, out: Path, label_with: str, label_without: str, ylim: tuple[float, float],
-                shade_with: bool, legend_loc: str = "lower left") -> None:
+                shade_with: bool, legend_loc: str = "lower left", level_label: bool = True) -> None:
     f0, s0 = load(f"{tag}_s11_noms")
     f1, s1 = load(f"{tag}_s11_ms")
     fig, ax = _axes(r"$|S_{11}|$ (dB)", ylim)
@@ -94,7 +94,8 @@ def s11_overlay(tag: str, out: Path, label_with: str, label_without: str, ylim: 
         for lo, hi in bands(f1, s1):
             ax.axvspan(lo, hi, color=BAND, alpha=0.55, linewidth=0)
     ax.axhline(-10, color=INK, linewidth=0.6, linestyle=(0, (1, 1.5)))
-    ax.text(1.15, -9.4, "−10 dB", fontsize=7, color=MUTED, va="bottom")
+    if level_label:
+        ax.text(1.15, -9.4, "−10 dB", fontsize=7, color=MUTED, va="bottom")
     ax.plot(f0, s0, color=WITHOUT, linewidth=1.0, linestyle=(0, (4, 1.6)), label=label_without)
     ax.plot(f1, s1, color=WITH, linewidth=1.15, label=label_with)
     _finish(fig, ax, out, legend_loc)
@@ -135,7 +136,7 @@ def _dim(ax, p0, p1, label, offset=(0, 0), color="white", ha="center", va="cente
             fontsize=fontsize)
 
 
-def _geometry_axes(src: Path, pad: int = 52):
+def _geometry_axes(src: Path, pad: int = 64):
     image = Image.open(src).convert("RGB")
     w, h = image.size
     fig, ax = plt.subplots(figsize=(1.65, 1.65 * (h + 2 * pad) / (w + 2 * pad)))
@@ -180,20 +181,20 @@ def paper1_geometry(shots: Path, out_dir: Path) -> None:
 
 def main() -> None:
     p1, p2 = HERE / "paper1", HERE / "paper2"
-    s11_overlay("p1", p1 / "figures" / "fig_s11.png", "with the metasurface board", "antenna alone", (-40, 0), True)
+    s11_overlay("p1", p1 / "figures" / "fig_s11.png", "with the metasurface board", "antenna alone", (-50, 0), True)
     directivity_overlay("p1", p1 / "figures" / "fig_directivity.png", "with the metasurface board", "antenna alone",
                         (-5, 8), "lower right", xmin=3)
-    s11_overlay("p2", p2 / "figures" / "fig_s11.png", "with the metasurface", "without the metasurface", (-50, 0),
-                False, "lower left")
+    s11_overlay("p2", p2 / "figures" / "fig_s11.png", "with the metasurface", "without the metasurface", (-60, 0),
+                False, "lower left", level_label=False)
     directivity_overlay("p2", p2 / "figures" / "fig_directivity.png", "with the metasurface (6–10 GHz)",
                         "without the metasurface", (-4, 8), "lower right")
     paper1_geometry(p1 / "cst_screenshots", p1 / "figures")
     crop(p1 / "cst_screenshots" / "pattern_5p3GHz_without.png", p1 / "figures" / "fig_pattern_without.png",
-         (0, 40, 340, 383), (286, 28, 480, 66))
+         (0, 40, 362, 383), (286, 28, 480, 66))
     crop(p1 / "cst_screenshots" / "pattern_5p3GHz_with.png", p1 / "figures" / "fig_pattern_with.png",
-         (0, 40, 340, 383), (286, 28, 480, 66))
+         (0, 40, 362, 383), (286, 28, 480, 66))
     shots = p2 / "cst_screenshots"
-    polar = (560, 0, 1560, 959)                     # the polar plot without the legend and the lobe read-out
+    polar = (690, 0, 1600, 959)                     # the polar plot without the legend and the lobe read-out
     crop(shots / "7p4GHz_radiation_pattern_port1_without_metasurface.png", p2 / "figures" / "fig_pattern_without.png",
          polar)
     crop(shots / "7p4GHz_radiation_pattern_port1_with_metasurface.png", p2 / "figures" / "fig_pattern_with.png", polar)
