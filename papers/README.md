@@ -3,7 +3,7 @@
 | | File | State |
 |---|---|---|
 | Paper 1 | `paper1/Paper1_TriBand_Octagonal_Monopole_revised.docx` (+ `.pdf`) | Revised. Two items are highlighted in yellow (the feed gap *p* and the side of *θ* = 0°); do the checks in section 3 before submitting. |
-| Paper 2 | `paper2/Paper2_TwoPort_Decagonal_MIMO_Metasurface.docx` (+ `.pdf`) | Complete, 6 pages, no placeholders. It reports ports 1 and 2 only and claims only what the existing simulations support (section 2). The earlier four-port draft, with the invalid ports 3 and 4, is in `paper2/fourport_draft/`. |
+| Paper 2 | `paper2/Paper2_Decagonal_MIMO_Metasurface.docx` (+ `.pdf`) | Complete, 6 pages, no placeholders. It reports ports 1 and 2 only and claims only what the existing simulations support (section 2). The earlier four-port draft, with the invalid ports 3 and 4, is in `paper2/fourport_draft/`. |
 
 No number in either paper was invented. Curve-derived numbers come from `data/*.csv`, which were digitised from the CST
 screenshots (about ±0.1 dB, ±0.02 GHz). `check_numbers.py` recomputes all of them.
@@ -34,7 +34,9 @@ The authors decided not to simulate again. The paper was therefore cut down to w
 - **Ports 1 and 2 only** (the lower row, two 15 mm decagons sharing one ground). Ports 3 and 4 are left out: their
   simulated reflection coefficients exceed 0 dB between 7.3 and 9.8 GHz, which a passive antenna cannot do. The paper
   says the upper-row elements are present, terminated and not evaluated, and says why in the limitations.
-- **Title and claims are two-port**, not four-port.
+- **The title says "MIMO antenna" without a port count** (authors' choice). The body still states that the results
+  are those of ports 1 and 2 and that ports 3 and 4 are not evaluated; without that, Fig. 1 and the text would imply
+  four evaluated ports, which the data do not support.
 - **ECC, diversity gain and CCL are given as bounds.** The supplied S-parameters are magnitudes only. The phase
   enters the two-port ECC only through |S11*·S12 + S21*·S22|, which cannot exceed (|S11| + |S22|)·|S21|, so the largest
   ECC any phase could give is computed exactly (equation (3) of the paper).

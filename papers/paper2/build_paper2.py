@@ -1,5 +1,5 @@
-"""Build Paper 2 (.docx, IEEE conference format): two-port CPW-fed decagonal-monopole MIMO antenna backed by a
-double-ring metasurface. Simulation study; every result comes from the CST runs the authors supplied.
+"""Build Paper 2 (.docx, IEEE conference format): CPW-fed decagonal-monopole MIMO antenna backed by a double-ring
+metasurface. Simulation study; every result comes from the CST runs the authors supplied.
 
     python papers/make_figures.py && python papers/paper2/build_paper2.py
 
@@ -29,9 +29,9 @@ from references import REFS  # noqa: E402
 
 FIG = HERE / "figures"
 SHOTS = HERE / "cst_screenshots"
-OUT = HERE / "Paper2_TwoPort_Decagonal_MIMO_Metasurface.docx"
+OUT = HERE / "Paper2_Decagonal_MIMO_Metasurface.docx"
 
-TITLE = ("A Wideband Two-Port CPW-Fed Decagonal Monopole MIMO Antenna Backed by a Double-Ring Metasurface: "
+TITLE = ("A Wideband CPW-Fed Decagonal Monopole MIMO Antenna Backed by a Double-Ring Metasurface: "
          "A Simulation Study")
 AFFIL = ("Department of Electronics and Communication Engineering", "National Institute of Technology Silchar",
          "Silchar, Assam 788010, India")
@@ -164,13 +164,13 @@ def build() -> Path:
 
     # ------------------------------------------------------------------------------------------------ abstract
     p.abstract(
-        "A two-port multiple-input multiple-output (MIMO) antenna made of two coplanar-waveguide (CPW)-fed decagonal "
+        "A multiple-input multiple-output (MIMO) antenna made of coplanar-waveguide (CPW)-fed decagonal "
         "printed monopoles on FR-4 is studied by full-wave simulation, alone and with a 6 × 5 array of concentric "
         f"double split rings on a second FR-4 board placed {v('gap')} mm behind it. The ring board has no backing "
         f"conductor. Without the metasurface, port 1 is matched (|*S*_{{11}}| ≤ −10 dB) {band_phrase(m0)}, the "
         f"limit of the simulation; in between, |*S*_{{11}}| rises to {db(gap0[3])} dB. With the metasurface the "
         f"match is almost unchanged, and port 2 is matched from {tp['s22_matched'][0][0]:.2f} GHz to beyond "
-        f"{m1['fmax']:.0f} GHz. The isolation between the two ports with the metasurface is at least 15 dB over "
+        f"{m1['fmax']:.0f} GHz. The isolation between ports 1 and 2 with the metasurface is at least 15 dB over "
         f"{100 * tp['s21_share_15']:.0f}% of the matched range but falls to {db(-s21[1])} dB at {s21[0]:.2f} GHz, "
         "and the upper bound of the envelope correlation coefficient obtained from the S-parameter magnitudes is "
         f"below 0.01 over {100 * tp['ecc_share_001']:.0f}% of the range and nowhere above {at_most(tp['ecc_max'][1])}. "
@@ -196,8 +196,8 @@ def build() -> Path:
     p.body(review_mimo(c))
     p.body(review_metasurface(c))
     p.body(
-        "This paper reports the simulated behaviour of two parallel CPW-fed decagonal monopoles that share one "
-        "ground conductor, and examines with the same model what a 6 × 5 metasurface of concentric double split "
+        "This paper reports the simulated behaviour of a MIMO antenna of parallel CPW-fed decagonal monopoles that "
+        "share one ground conductor, and examines with the same model what a 6 × 5 metasurface of concentric double split "
         "rings without a backing conductor, placed behind the antenna, changes. The reflection coefficient, the "
         "coupling between the ports, the diversity metrics that follow from them, the directivity and the radiation "
         "pattern are reported as obtained, including where the metasurface brings no benefit. Section II describes "
@@ -207,7 +207,7 @@ def build() -> Path:
     p.heading("II. Antenna Design")
     p.subheading("A. Radiating Element")
     p.body(
-        "Each of the two elements is a regular decagon of circumradius *R* with a flat side towards the feed, "
+        "Each radiating element is a regular decagon of circumradius *R* with a flat side towards the feed, "
         f"printed on an FR-4 substrate (*ε*_{{r}} = {v('eps_r')}, tan *δ* = {v('tan_d')}) of thickness *h*_{{s}}. It "
         "is fed by a CPW line with a strip of width *W*_{f} and slots of width *g*, between two ground planes of "
         "width *W*_{g} and length *L*_{g}; the side of the decagon that faces the feed lies at a distance *p* from "
@@ -232,13 +232,13 @@ def build() -> Path:
         note="*D*: spacing of the two feed lines. *r*_{o}, *r*_{i}: outer radii of the outer and inner rings. *w*: ring "
              "strip width. *s*_{o}, *s*_{i}: splits of the outer and inner rings. *a*_{x}, *a*_{y}: cell periods. "
              "*h*: air gap between the two boards.")
-    p.subheading("B. Two-Port Arrangement")
+    p.subheading("B. MIMO Arrangement")
     p.body(
-        "The two elements are placed side by side along the lower edge of the board, as shown in Fig. 1(a), and are "
+        "Elements 1 and 2 are placed side by side along the lower edge of the board, as shown in Fig. 1(a), and are "
         "fed from that edge through ports 1 and 2. They are parallel and have the same polarisation. Their feed "
         f"lines are *D* = {v('pitch')} mm apart, which is {number('pitch') / lam(f_lo):.2f} free-space wavelength at "
-        f"{f_lo:.2f} GHz, and the adjacent ground planes of the two elements meet between them and form one "
-        "conductor, so that the two ports share a common ground.")
+        f"{f_lo:.2f} GHz, and the adjacent ground planes of these elements meet between them and form one "
+        "conductor, so that ports 1 and 2 share a common ground.")
     p.body(
         f"The board, which fits in an outline of {board}, also carries a second row of two elements of the same "
         f"kind with a circumradius of {v('R_upper')} mm, fed from the upper edge through ports 3 and 4. Their "
@@ -321,7 +321,7 @@ def build() -> Path:
     p.subheading("B. Mutual Coupling")
     above_52 = float(mag["s21"][mag["f"] >= tp["s21_above_m15"][2][1]].max())
     p.body(
-        "The transmission coefficient between the two ports with the metasurface is also shown in Fig. 3. The "
+        "The transmission coefficient between ports 1 and 2 with the metasurface is also shown in Fig. 3. The "
         f"coupling is strongest at the lower end of the band: |*S*_{{21}}| reaches {db(s21[1])} dB at "
         f"{s21[0]:.2f} GHz, where {100 * 10 ** (s21[1] / 10):.0f}% of the power incident at port 1 is delivered to "
         f"port 2, and it is above −10 dB {spans(tp['s21_above_m10'])}. Above {tp['s21_above_m15'][2][1]:.1f} GHz the "
@@ -332,7 +332,7 @@ def build() -> Path:
         "share their ground conductor, with no decoupling structure between them.")
     p.subheading("C. Diversity Performance")
     p.body(
-        "The envelope correlation coefficient (ECC) of the two ports is computed from the S-parameters as "
+        "The envelope correlation coefficient (ECC) of ports 1 and 2 is computed from the S-parameters as "
         f"{c('blanch')}")
     p.equation(r"\rho_e = \frac{|\overline{S_{11}}\,S_{12} + \overline{S_{21}}\,S_{22}|^{2}}"
                r"{(1 - |S_{11}|^{2} - |S_{21}|^{2})(1 - |S_{22}|^{2} - |S_{12}|^{2})}")
@@ -348,7 +348,7 @@ def build() -> Path:
         f"edge, {tp['ecc_max'][0]:.2f} GHz, well below the limit of 0.5 commonly required {c('sharawi_apm')}. The "
         f"corresponding apparent diversity gain, 10(1 − *ρ*_{{e}})^{{1/2}} dB {c('dg')}, is at least "
         f"{at_least(tp['dg_min'], 2)} dB. The same bound applied to the channel capacity loss, "
-        f"−log_{{2}} det(**I** − **S**^{{H}}**S**) {c('ccl')}, where **S** is the S-matrix of the two ports, **I** the "
+        f"−log_{{2}} det(**I** − **S**^{{H}}**S**) {c('ccl')}, where **S** is the S-matrix of ports 1 and 2, **I** the "
         "identity matrix and H the conjugate transpose, gives at most "
         f"{at_most(tp['ccl_max'][1], 1)} bit/s/Hz at the lower band edge; it is below 0.4 bit/s/Hz at "
         f"{100 * tp['ccl_share_04']:.0f}% of the frequencies and exceeds that value {spans(tp['ccl_above_04'])}, "
@@ -410,7 +410,7 @@ def build() -> Path:
         "reflection band has been designed or demonstrated for its cell. The surfaces that raise the gain in the "
         f"reported designs are backed by a conductor and spaced from the antenna; in {c('hasan')}, for example, the "
         "surface is copper-backed and 12 mm behind the antenna. What limits the present antenna is not the "
-        f"metasurface but the coupling between its two ports below about {tp['s21_above_m15'][2][1]:.0f} GHz.")
+        f"metasurface but the coupling between ports 1 and 2 below about {tp['s21_above_m15'][2][1]:.0f} GHz.")
     p.body(
         "The results have clear limits. They are simulated and have not been verified against a second solver or a "
         "measurement. The radiation is described by the directivity of port 1 only: the realised gain and the "
@@ -428,36 +428,36 @@ def build() -> Path:
         f"occupy boards of 38–65 mm side and isolate their ports by more than 17 dB {c('yin', 'wu', 'zhang', 'ahmad')}, "
         "mostly through orthogonal placement; those with a conductor-backed surface or an FSS reach gains of about "
         f"8–10 dBi {c('hasan', 'alekya', 'kumar')}. The present antenna is larger, because its element was sized for "
-        "a lower band edge below 2 GHz, its two evaluated elements are parallel and not orthogonal, and its "
+        "a lower band edge below 2 GHz, its evaluated elements are parallel and not orthogonal, and its "
         "isolation at the lower end of the band is correspondingly lower. Its entry gives the simulated "
         "directivity, which is not comparable with the gains of the other works.")
     rows = [["Ref.", "Ports; element", "Size (mm)", "Added surface; gap (mm)", "Band (GHz)", "Isolation (dB)",
              "ECC", "Peak gain (dBi)"]]
     rows += [[c(key), *cells] for key, cells in COMPARISON_ROWS]
-    rows.append(["This work", "2; CPW decagonal monopoles, parallel", f"{v('board_x')} × {v('board_y')}^{{¶}}",
+    rows.append(["This work", "4^{¶}; CPW decagonal monopoles, parallel", f"{v('board_x')} × {v('board_y')}",
                  f"6 × 5 double split rings, no backing; {v('gap')}", f"{tp['lower_edge']:.2f} to >{m1['fmax']:.0f}^{{‡}}",
                  f"> {at_least(-s21[1])}", f"< {at_most(tp['ecc_max'][1])}^{{§}}", f"{d['peak1'][1]:.1f}^{{†}}"])
     p.table("Comparison with Reported Multi-Port Antennas", rows, [0.5, 1.2, 0.9, 1.35, 0.85, 0.7, 0.65, 0.85],
             note=f"–: not available.  ^{{†}}Simulated directivity in the *φ* = 0° plane over "
                  f"{d['lo']:.0f}–{d['hi']:.0f} GHz (gain not evaluated).  ^{{‡}}Both ports, except port 1 between "
-                 f"{gap1[0]:.2f} and {gap1[1]:.2f} GHz; simulation only.  ^{{§}}Upper bound (3).  ^{{¶}}Outline of "
-                 "the board, which also carries the two elements of the upper row.", wide=True)
+                 f"{gap1[0]:.2f} and {gap1[1]:.2f} GHz; simulation only.  ^{{§}}Upper bound (3), ports 1 and 2.  ^{{¶}}Results for "
+                 "ports 1 and 2; ports 3 and 4 are not evaluated.", wide=True)
 
     # ------------------------------------------------------------------------------------------------ IV
     p.heading("IV. Conclusion")
     p.body(
-        "A two-port MIMO antenna of two parallel CPW-fed decagonal monopoles on FR-4, with and without a 6 × 5 "
-        "metasurface of double split rings without a backing conductor, has been studied by simulation. The two "
-        f"ports are matched from {tp['lower_edge']:.2f} GHz to beyond {m1['fmax']:.0f} GHz, except for port 1 between "
+        "A MIMO antenna of parallel CPW-fed decagonal monopoles on FR-4, with and without a 6 × 5 "
+        "metasurface of double split rings without a backing conductor, has been studied by simulation. Ports "
+        f"1 and 2 are matched from {tp['lower_edge']:.2f} GHz to beyond {m1['fmax']:.0f} GHz, except for port 1 between "
         f"{gap1[0]:.2f} and {gap1[1]:.2f} GHz, and the metasurface leaves this match almost unchanged. With the "
-        f"metasurface, the isolation between the ports is at least 15 dB over {100 * tp['s21_share_15']:.0f}% of the "
+        f"metasurface, the isolation between these ports is at least 15 dB over {100 * tp['s21_share_15']:.0f}% of the "
         f"matched range but falls to {db(-s21[1])} dB at {s21[0]:.2f} GHz, and the upper bound of the S-parameter ECC "
         f"stays below {at_most(tp['ecc_max'][1])}. Over {d['lo']:.0f}–{d['hi']:.0f} GHz the metasurface changes the mean "
         f"directivity by {signed(d['mean_diff'])} dB and its peak from {d['peak0'][1]:.1f} to "
         f"{d['peak1'][1]:.1f} dBi, and at {PATTERN['f']} GHz it moves the largest lobe of the *φ* = 90° plane to the "
         "opposite half-space. In its present form the unbacked double-ring metasurface is therefore not a "
-        "gain-enhancing reflector, and the antenna is limited by the coupling of its two ports at the lower end of "
-        "the band. A decoupling structure between the two elements, a conductor-backed cell with an in-phase "
+        "gain-enhancing reflector, and the antenna is limited by the coupling of ports 1 and 2 at the lower end of "
+        "the band. A decoupling structure between the elements, a conductor-backed cell with an in-phase "
         "reflection band inside the operating range, the evaluation of the realised gain, the efficiency and the "
         "far-field ECC, and the fabrication and measurement of a prototype are the next steps of this work.")
     p.references(c.listing())
