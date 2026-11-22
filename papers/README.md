@@ -46,19 +46,24 @@ Cheapest route to a publishable design, by benefit per hour:
    This removes both the facing pair and the parallel pair; expect 15–22 dB without extra structures.
 3. Join the four grounds deliberately (centre cross or strip).
 
-### 2.2 Facts to read off the CST model (no simulation needed)
+### 2.2 Facts of the CST model
 
-Put them in `paper2/design.py`; each one clears a yellow highlight.
+Confirmed by the authors and entered in `paper2/design.py`: patch radii 15 mm (lower row) and 14 mm (upper row),
+ground length 18 mm, CPW slot 0.3 mm, board outline 105.5 mm × 100.5 mm, ring radii 7.0–7.5 mm and 5.0–5.5 mm, splits
+0.4 mm and 0.3 mm, cell pitch 17 mm along the rows, air gap 4.5 mm, **no copper on the back of the metasurface
+board**, frequency-domain solver, ports 1/2 on the lower-left/right elements and 3/4 on the upper-left/right.
 
-- Every dimension of Table/§II: *R*, ground width and length, feed gap *p*, board size, element pitch, spacing of the
-  facing patches; ring radii, strip width, split width and position (or "closed rings"), cell pitch, metasurface board
-  size.
-- **The air gap between the two boards, and whether the metasurface board has copper on its rear face.** These two
-  decide what the surface physically is. The unchanged S11 means either no ground, or a ground about 30 mm away (in
-  which case a plain copper plate does the same job; see `GAP_STUDY.md` §5.3).
-- Port numbers on the layout; which side *θ* = 0° is; solver, mesh type and cell count, boundary distance; whether the
-  S-parameters are normalised to a fixed 50 Ω.
-- The author list for this paper (the Paper 1 list was copied as a starting point).
+Still highlighted in the paper, because they were measured on the screenshots or taken from the single-element stage:
+
+- ground width; the patch-to-ground gap of each row; feed-to-feed spacing; spacing of the facing patches; how the
+  grounds of neighbouring elements are joined; the sideways step of the board outline;
+- cell pitch along the columns (about 18.5 mm); size of the metasurface board;
+- which side *θ* = 0° is; the CST version; mesh cell count; whether S-parameters are normalised to a fixed 50 Ω;
+- the author list for this paper (the Paper 1 list was copied as a starting point).
+
+The two patch radii are kept as they are by the authors' decision, without a stated reason. A reviewer will ask why
+the rows differ, and the S11 of port 1 (a 15 mm element) does not describe ports 3 and 4 (14 mm, 1.7 mm feed gap).
+Section 2.1 is still the recommendation.
 
 ### 2.3 Simulation outputs, minimum for a MIMO paper
 

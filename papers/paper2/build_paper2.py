@@ -24,9 +24,9 @@ sys.path.insert(0, str(HERE.parent))
 sys.path.insert(0, str(HERE))
 
 import mimo_results  # noqa: E402
-from check_numbers import bands, load  # noqa: E402
+from check_numbers import bands, cpw, load  # noqa: E402
 from scipy.signal import find_peaks  # noqa: E402
-from design import guess, open_items, value  # noqa: E402
+from design import MS_GROUNDED, guess, open_items, value  # noqa: E402
 from ieee_docx import Paper  # noqa: E402
 from references import REFS  # noqa: E402
 
@@ -139,6 +139,16 @@ def build(exports: Path, out: Path) -> tuple[Path, list[str]]:
         todo.append(f"Directivity with the metasurface covers only {d['lo']:.0f}-{d['hi']:.0f} GHz: re-run the "
                     f"farfield result over {m0['fmin']:.0f}-{m0['fmax']:.0f} GHz and replace data/p2_dir_ms.csv")
 
+    lam = lambda f_ghz: 299.79 / f_ghz                                       # free-space wavelength, mm
+    f_lo = m0["bands"][0][0]
+    z0 = cpw(guess("W_f"), guess("g"), guess("h_sub"), guess("eps_r"), False)[1]
+
+    def ray(radius: float, gap_p: float) -> float:
+        """Lower band edge (GHz) of a decagonal monopole from the equivalent-cylinder estimate, k = 1.15."""
+        height = 2 * radius * np.cos(np.radians(18))
+        r_eq = 5 * radius ** 2 * np.sin(np.radians(36)) / (2 * np.pi * height)
+        return 7.2 / ((height + r_eq + gap_p) / 10 * 1.15)
+
     p = Paper()
     p.title(TITLE)
     p.authors(AUTHORS)
@@ -159,7 +169,8 @@ def build(exports: Path, out: Path) -> tuple[Path, list[str]]:
     p.abstract(
         "A four-port multiple-input multiple-output (MIMO) antenna made of coplanar-waveguide (CPW)-fed decagonal "
         f"printed monopoles on a {v('board')} mm FR-4 board is studied by full-wave simulation, alone and with a "
-        "6 × 5 array of concentric double-ring cells on a second FR-4 board placed behind it. Without the "
+        f"6 × 5 array of concentric double-ring cells on a second FR-4 board placed {v('gap')} mm behind it. Without "
+        "the "
         f"metasurface, the reflection coefficient of port 1 is at or below −10 dB {band_phrase(m0)}; in between it "
         f"rises to {db(gap0[3])} dB at {gap0[2]:.1f} GHz. The metasurface leaves the match almost unchanged: the "
         f"bands become {band_phrase(m1).replace('from ', '', 1)}, and the mismatched region narrows from "
@@ -199,39 +210,47 @@ def build(exports: Path, out: Path) -> tuple[Path, list[str]]:
     p.heading("II. Antenna Design")
     p.subheading("A. Radiating Element")
     p.body(
-        f"Each element is a regular decagon of circumradius *R* = {v('R')} mm with a flat side towards the feed, "
-        f"printed on an FR-4 substrate (*ε*_{{r}} = {v('eps_r')}, tan *δ* = {v('tan_d')}) of thickness "
-        f"*h*_{{s}} = {v('h_sub')} mm. It is fed by a CPW line with a strip of width *W*_{{f}} = {v('W_f')} mm and "
-        f"slots of *g* = {v('g')} mm (a line impedance of about 58 Ω from the conformal-mapping expressions of "
+        "Each element is a regular decagon with a flat side towards the feed, printed on an FR-4 substrate "
+        f"(*ε*_{{r}} = {v('eps_r')}, tan *δ* = {v('tan_d')}) of thickness *h*_{{s}} = {v('h_sub')} mm. The "
+        f"circumradius is *R* = {v('R_lower')} mm for the two elements of the lower row and {v('R_upper')} mm for the "
+        f"two of the upper row. Each element is fed by a CPW line with a strip of width *W*_{{f}} = {v('W_f')} mm and "
+        f"slots of *g* = {v('g')} mm (a line impedance of about {z0:.0f} Ω from the conformal-mapping expressions of "
         f"{c('simons')}), between two ground planes of width *W*_{{g}} = {v('W_g')} mm and length "
-        f"*L*_{{g}} = {v('L_g')} mm. The lower side of the decagon lies *p* = {v('p')} mm above the ground edge, and "
-        "the back of the substrate carries no copper. The lower edge of the band of such a monopole can be "
-        f"estimated by replacing the patch with a cylindrical monopole of the same height and area {c('ray')}:")
+        f"*L*_{{g}} = {v('L_g')} mm. The side of the decagon that faces the feed lies *p* = {v('p_lower')} mm from the "
+        f"ground edge in the lower row and {v('p_upper')} mm in the upper row, and the back of the substrate carries "
+        "no copper. The lower edge of the band of such a monopole can be estimated by replacing the patch with a "
+        f"cylindrical monopole of the same height and area {c('ray')}:")
     p.equation(r"f_L = \frac{7.2}{(l + r + p)\,k}\ \text{GHz}")
     p.body(
-        "where *l* = 2*R* cos 18° = 28.5 mm is the height of the decagon, *r* = *A*/(2π*l*) = 3.7 mm the radius "
-        "of the equivalent cylinder, *A* = 5*R*^{2} sin 36° = 661 mm^{2} the area of the decagon, all lengths taken "
-        f"in centimetres, and *k* = 1.15 for FR-4 {c('ray')}. Equation (1) gives *f*_{{L}} ≈ 1.90 GHz.", cont=True)
+        "where *l* = 2*R* cos 18° is the height of the decagon, *r* = *A*/(2π*l*) the radius of the equivalent "
+        "cylinder and *A* = 5*R*^{2} sin 36° the area of the decagon, all lengths taken in centimetres, and "
+        f"*k* = 1.15 for FR-4 {c('ray')}. Equation (1) gives *f*_{{L}} ≈ {ray(guess('R_lower'), guess('p_lower')):.2f} GHz "
+        f"for the lower-row elements and {ray(guess('R_upper'), guess('p_upper')):.2f} GHz for the upper-row "
+        "elements.", cont=True)
     p.subheading("B. Four-Port Arrangement")
     p.body(
         "The four elements are placed in two rows of two on one board, as shown in Fig. 1(a). The two elements of "
         "the upper row are fed from the upper edge of the board and the two of the lower row from the lower edge, "
         "so that the patches of the two rows face each other across the centre of the board; all four elements "
-        f"have the same polarisation. The feed lines of a row are {v('pitch')} mm apart, which is 0.29 free-space "
-        f"wavelength at {m0['bands'][0][0]:.2f} GHz, and the facing patches are separated by {v('d_face')} mm. "
-        f"In the present model {v('ground_statement')}, and {v('port_map')}.")
+        f"have the same polarisation. The feed lines of a row are {v('pitch')} mm apart, which is "
+        f"{guess('pitch') / lam(f_lo):.2f} free-space wavelength at {f_lo:.2f} GHz, and the facing patches are "
+        f"separated by {v('d_face')} mm. The board fits in an outline of {v('board')} mm; its upper half is displaced "
+        f"sideways by {v('board_step')} mm with respect to the lower half. In the present model "
+        f"{v('ground_statement')}, and {v('port_map')}.")
     p.figure([SHOTS / "mimo_design_without_metasurface.png", SHOTS / "metasurface_design.png"],
              "Top views of the simulated model (CST Studio Suite): (a) four-port antenna, (b) 6 × 5 double-ring "
              "metasurface.", width_in=1.62, sublabels=True, side_by_side=True)
     p.subheading("C. Metasurface")
     p.body(
         "The metasurface of Fig. 1(b) is a 6 × 5 array of cells, each made of two concentric copper rings of strip "
-        f"width {v('w_ring')} mm: an outer ring of outer radius {v('r_out')} mm and an inner ring of outer radius "
-        f"{v('r_in')} mm, each with a split of {v('split')} mm. The cells repeat every {v('pitch_x')} mm along the "
-        f"rows and every {v('pitch_y')} mm along the columns. The array is printed on a {v('ms_board')} mm FR-4 "
-        f"board of thickness 1.6 mm, which {v('ms_ground')}. The board is placed parallel to the antenna, at an "
-        f"air gap of {v('gap')} mm from the back of the antenna substrate, with the rings towards the antenna.")
-    lam = lambda f_ghz: 299.79 / f_ghz                                       # free-space wavelength, mm
+        f"width {v('w_ring')} mm: an outer ring of outer radius {v('r_out')} mm with a split of {v('split_out')} mm, "
+        f"and an inner ring of outer radius {v('r_in')} mm with a split of {v('split_in')} mm. The cells repeat every "
+        f"{v('pitch_x')} mm along the rows and every {v('pitch_y')} mm along the columns. The array is printed on a "
+        f"{v('ms_board')} mm FR-4 board of thickness 1.6 mm, which {v('ms_ground')}. The board is placed parallel to "
+        f"the antenna, at an air gap of {v('gap')} mm from the back of the antenna substrate, with the rings towards "
+        f"the antenna. The gap is {guess('gap') / lam(f_lo):.3f} free-space wavelength at {f_lo:.2f} GHz and "
+        f"{guess('gap') / lam(d['lo']):.2f}–{guess('gap') / lam(d['hi']):.2f} wavelength over "
+        f"{d['lo']:.0f}–{d['hi']:.0f} GHz.")
     cell_lo, cell_hi = min(guess("pitch_x"), guess("pitch_y")) / lam(d["lo"]), max(guess("pitch_x"), guess("pitch_y")) / lam(d["hi"])
     p.body(
         "A closed ring resonates first when its circumference is about one guided wavelength, and a split lowers "
@@ -239,9 +258,12 @@ def build(exports: Path, out: Path) -> tuple[Path, list[str]]:
         "the outer ring is one wavelength long at about 4.0 GHz and the inner ring at about 5.6 GHz, so the first "
         f"resonances of the rings lie between about 2 and 6 GHz. In the {d['lo']:.0f}–{d['hi']:.0f} GHz range, in "
         "which the directivity is compared in Section III, the rings are at higher-order resonances and the cell "
-        f"period is {cell_lo:.2f}–{cell_hi:.2f} free-space wavelength, so the array is not electrically dense there "
-        f"and cannot be described by a single reflection phase, as a high-impedance surface can {c('sievenpiper')}. "
-        "The reflection phase of the cell has not been computed.")
+        f"period is {cell_lo:.2f}–{cell_hi:.2f} free-space wavelength, so the array is not electrically dense there. "
+        + ("It is backed by a conductor, but its reflection phase, which decides whether it can act as a "
+           f"high-impedance surface {c('sievenpiper')}, has not been computed." if MS_GROUNDED else
+           f"Without a backing conductor it cannot form a high-impedance surface {c('sievenpiper')} either: it is a "
+           "partly transparent sheet of resonant rings, which reflects appreciably only near its resonances. The "
+           "reflection and the transmission of the cell have not been computed."))
     p.subheading("D. Simulation Setup")
     p.body(
         f"The model is simulated in CST Studio Suite {v('cst_version')} with the {v('solver')} solver from "
@@ -310,7 +332,8 @@ def build(exports: Path, out: Path) -> tuple[Path, list[str]]:
             "four ports.]]")
         p.body(
             f"The geometry indicates where the coupling is expected to be strongest. The facing patches are "
-            f"{v('d_face')} mm apart, 0.014 free-space wavelength at {m0['bands'][0][0]:.2f} GHz, and their facing "
+            f"{v('d_face')} mm apart, {guess('d_face') / lam(f_lo):.3f} free-space wavelength at {f_lo:.2f} GHz, and their "
+            "facing "
             "edges are the open ends of the two monopoles; the elements of a row are parallel, have the same "
             "polarisation and are less than a third of a wavelength apart at the lower band edge. The coupling of "
             "these two kinds of pair is therefore the quantity on which the usefulness of the arrangement "
@@ -410,7 +433,9 @@ def build(exports: Path, out: Path) -> tuple[Path, list[str]]:
         f"{d['lo']:.0f}–{d['hi']:.0f} GHz changes by {signed(d['mean_diff'])} dB, and the pattern at {PATTERN['f']} GHz "
         "is turned towards the front in one plane without becoming unidirectional. No in-phase reflection band "
         "has been designed or demonstrated for this cell (Section II-C), so a broadband rise of the directivity "
-        "was not to be expected. " + reflector_note(c))
+        "was not to be expected. " + reflector_note(c) +
+        ("" if MS_GROUNDED else " The present metasurface has no backing conductor, so part of the backward "
+                                "radiation passes through it."))
     p.body(
         "The present results have clear limits. Only port 1 has been evaluated, and only its directivity: the "
         "realised gain and the efficiency, which include the loss of FR-4 and the power coupled into the other "
