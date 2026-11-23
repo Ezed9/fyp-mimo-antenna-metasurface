@@ -2,8 +2,9 @@
 
 | | File | State |
 |---|---|---|
-| Paper 1 | `paper1/Paper1_TriBand_Octagonal_Monopole_revised.docx` (+ `.pdf`) | Revised. Two items are highlighted in yellow (the feed gap *p* and the side of *θ* = 0°); do the checks in section 3 before submitting. |
-| Paper 2 | `paper2/Paper2_Decagonal_MIMO_Metasurface.docx` (+ `.pdf`) | Complete, 6 pages, no placeholders. It reports ports 1 and 2 only and claims only what the existing simulations support (section 2). The earlier four-port draft, with the invalid ports 3 and 4, is in `paper2/fourport_draft/`. |
+| Paper 1, revised | `paper1/Paper1_TriBand_Octagonal_Monopole_revised.docx` (+ `.pdf`) | Revised text, redrawn graphs, radiation pattern redrawn as one polar plot. Two items are highlighted in yellow (the feed gap *p* and the side of *θ* = 0°); do the checks in section 3 before submitting. |
+| Paper 1, authors' version | `paper1/uploaded_version/Paper_1_clear_figures.docx` (+ `.pdf`) | The authors' own `Paper_1.docx` (longer title, Applications section) with its text untouched and its six CST screenshots replaced by redrawn figures with dark, thick lines. The 12.5 GHz pattern is removed (its model is not known). Its yellow "TO BE CONFIRMED" notes are the authors' and are still there. |
+| Paper 2 | `paper2/Paper2_Decagonal_MIMO_Antenna.docx` (+ `.pdf`) | Complete, 5 pages, no placeholders. Antenna alone: the metasurface comparison is removed at the authors' request (section 2). Earlier versions: `paper2/with_metasurface_version/` (full comparison) and `paper2/fourport_draft/`. |
 
 No number in either paper was invented. Curve-derived numbers come from `data/*.csv`, which were digitised from the CST
 screenshots (about ±0.1 dB, ±0.02 GHz). `check_numbers.py` recomputes all of them.
@@ -29,7 +30,18 @@ updates itself; Paper 1's text is typed, so any number that changed must be edit
 
 ### 2.1 What the paper is
 
-The authors decided not to simulate again. The paper was therefore cut down to what the existing CST results support:
+The authors decided not to simulate again, and then to take the metasurface comparison out. The match, the
+directivity (1–15 GHz) and the 7.4 GHz pattern in the paper are those of the antenna **without** the ring board.
+One thing could not be taken out: the coupling between ports 1 and 2, and so the ECC, exists only from the run in
+which the ring board was present. Section III-D of the paper therefore says that those values were computed with the
+board, and describes the board in one paragraph. Presenting them as the antenna alone would be false. To remove the
+board completely, export |S11|, |S22| and |S21| from the run without it and put them in `data/` (the build then needs
+a three-line change in `mimo_results.load_magnitudes`).
+
+The radiation patterns of both papers are redrawn from the CST screenshots (`digitize_polar.py`): each redrawn curve
+reproduces the main-lobe magnitude and direction that CST prints beside the plot, within 0.1 dB.
+
+Otherwise the paper is cut down to what the existing CST results support:
 
 - **Ports 1 and 2 only** (the lower row, two 15 mm decagons sharing one ground). Ports 3 and 4 are left out: their
   simulated reflection coefficients exceed 0 dB between 7.3 and 9.8 GHz, which a passive antenna cannot do. The paper
@@ -40,8 +52,8 @@ The authors decided not to simulate again. The paper was therefore cut down to w
 - **ECC, diversity gain and CCL are given as bounds.** The supplied S-parameters are magnitudes only. The phase
   enters the two-port ECC only through |S11*·S12 + S21*·S22|, which cannot exceed (|S11| + |S22|)·|S21|, so the largest
   ECC any phase could give is computed exactly (equation (3) of the paper).
-- **Nothing is claimed for the metasurface that the data do not show**: it leaves the match unchanged and changes the
-  mean directivity over 6–10 GHz by +0.18 dB.
+- **The metasurface comparison is in the earlier version only** (`with_metasurface_version/`): there the ring board
+  leaves the match unchanged and changes the mean directivity over 6–10 GHz by +0.18 dB.
 
 Headline numbers (all recomputed at build time from `data/p2_*.csv`):
 
@@ -53,7 +65,7 @@ Headline numbers (all recomputed at build time from `data/p2_*.csv`):
 | ECC upper bound | < 0.01 over 89 % of the range; 0.10 at the band edge |
 | Diversity gain | ≥ 9.46 dB |
 | CCL upper bound | 1.0 bit/s/Hz at the band edge; < 0.4 over 93 % of the range |
-| Directivity 6–10 GHz, without → with | mean 4.6 → 4.8 dBi, peak 6.7 → 7.1 dBi |
+| Directivity of port 1 (antenna alone) | 2.5–6.7 dBi over 3.1–10.6 GHz, peak 6.7 dBi at 6.9 GHz |
 
 ### 2.2 What a reviewer can still question
 
@@ -62,9 +74,10 @@ No wording removes these; they are properties of the data.
 1. **Isolation of 7.6 dB** at the low end, where 15 dB is the usual requirement. The paper states it and names the
    cause (parallel, co-polarised elements on a shared ground, no decoupling structure).
 2. **Simulation only**, on FR-4 up to 15 GHz, with directivity instead of gain and no efficiency.
-3. **The metasurface gives no benefit.** The paper is an honest negative result on that point.
-4. **Coupling and ECC exist only with the metasurface**, so nothing can be said about its effect on them.
-5. **Directivity with the metasurface covers 6–10 GHz only.**
+3. **Coupling and ECC were computed with a ring board behind the antenna**, which the paper otherwise does not study.
+   A reviewer will ask why, and for the values without it.
+4. **One radiation pattern, at one frequency, in one plane.**
+5. The match of port 1 is interrupted at 5.49–5.94 GHz (−8.6 dB).
 6. **Four elements are on the board and two are reported.** The limitations paragraph says the upper-row port results
    failed a passivity check and that the effect of correcting them on ports 1 and 2 is not assessed. That sentence is
    uncomfortable, but it is true, and the results of ports 1 and 2 come from the same run. Deleting it would hide a
@@ -153,6 +166,9 @@ claims only what the data show; switching is one line.
 | `check_numbers.py` | Recomputes every curve-derived number of both papers |
 | `data/` | The eight CST curves (digitised) |
 | `paper1/build_paper1.py`, `paper2/build_paper2.py` | The papers' text |
+| `paper1/improve_uploaded_version.py` | Puts the redrawn figures into the authors' own `Paper_1.docx` |
+| `digitize_polar.py` | Reads the polar radiation patterns off the CST screenshots |
+| `paper2/build_paper2_with_metasurface.py` | Paper 2 with the full with/without-metasurface comparison |
 | `paper2/design.py` | Design facts of Paper 2, each with its source |
 | `paper2/build_paper2_fourport_draft.py`, `paper2/design_fourport_draft.py`, `paper2/fourport_draft/` | The earlier four-port draft |
 | `paper2/references.py`, `paper2/literature_text.py` | References (each checked against Crossref) and the review |

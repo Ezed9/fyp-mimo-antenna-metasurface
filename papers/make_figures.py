@@ -96,8 +96,8 @@ def s11_overlay(tag: str, out: Path, label_with: str, label_without: str, ylim: 
     ax.axhline(-10, color=INK, linewidth=0.6, linestyle=(0, (1, 1.5)))
     if level_label:
         ax.text(1.15, -9.4, "−10 dB", fontsize=7, color=MUTED, va="bottom")
-    ax.plot(f0, s0, color=WITHOUT, linewidth=1.0, linestyle=(0, (4, 1.6)), label=label_without)
-    ax.plot(f1, s1, color=WITH, linewidth=1.15, label=label_with)
+    ax.plot(f0, s0, color=WITHOUT, linewidth=1.4, linestyle=(0, (4, 1.6)), label=label_without)
+    ax.plot(f1, s1, color=WITH, linewidth=1.6, label=label_with)
     _finish(fig, ax, out, legend_loc)
 
 
@@ -109,12 +109,36 @@ def directivity_overlay(tag: str, out: Path, label_with: str, label_without: str
     if f1[0] > 1.5 or f1[-1] < 14.5:               # the with-curve covers only part of the sweep: mark the part
         ax.axvspan(f1[0], f1[-1], color=BAND, alpha=0.45, linewidth=0)
     ax.axhline(0, color=INK, linewidth=0.4)
-    ax.plot(f0, d0, color=WITHOUT, linewidth=1.0, linestyle=(0, (4, 1.6)), label=label_without)
-    ax.plot(f1, d1, color=WITH, linewidth=1.15, label=label_with)
+    ax.plot(f0, d0, color=WITHOUT, linewidth=1.4, linestyle=(0, (4, 1.6)), label=label_without)
+    ax.plot(f1, d1, color=WITH, linewidth=1.6, label=label_with)
     if note:
         ax.text(0.5 * (f1[0] + f1[-1]), ylim[0] + 0.04 * (ylim[1] - ylim[0]), note, fontsize=6.8, color=MUTED,
                 ha="center", va="bottom")
     _finish(fig, ax, out, legend_loc)
+
+
+def single_curve(name: str, out: Path, ylabel: str, ylim: tuple[float, float], level: float | None = None,
+                 size: tuple[float, float] = (3.4, 2.05), xmin: float = 1, colour: str = "#0d366b") -> None:
+    """One curve, drawn dark and thick. `level` adds a dotted reference line (e.g. -10 dB)."""
+    f, v = load(name)
+    fig, ax = plt.subplots(figsize=size)
+    ax.set_xticks(range(int(xmin) | 1, 16, 2))
+    ax.set_xticks(range(int(xmin), 16), minor=True)
+    ax.set_xlim(xmin, 15)
+    ax.set_ylim(*ylim)
+    ax.set_xlabel("Frequency (GHz)")
+    ax.set_ylabel(ylabel)
+    ax.grid(True, color=GRID, linewidth=0.4)
+    ax.set_axisbelow(True)
+    if level is not None:
+        ax.axhline(level, color=INK, linewidth=0.7, linestyle=(0, (1, 1.5)))
+    if ylim[0] < 0 < ylim[1]:
+        ax.axhline(0, color=INK, linewidth=0.4)
+    ax.plot(f, v, color=colour, linewidth=1.8, solid_joinstyle="round")
+    fig.tight_layout(pad=0.3)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out)
+    plt.close(fig)
 
 
 def crop(src: Path, out: Path, box: tuple[int, int, int, int], blank: tuple[int, int, int, int] | None = None) -> None:
@@ -203,6 +227,57 @@ def paper2_layout(shots: Path, out_dir: Path) -> None:
         plt.close(fig)
 
 
+def load_pattern(name: str) -> tuple[np.ndarray, np.ndarray]:
+    rows = []
+    for line in (DATA / f"{name}.csv").read_text().splitlines():
+        cells = line.split(",")
+        try:
+            rows.append((float(cells[0]), float(cells[1])))
+        except (ValueError, IndexError):
+            continue
+    arr = np.array(rows)
+    arr = arr[np.argsort(arr[:, 0])]
+    return arr[:, 0], arr[:, 1]
+
+
+def polar_pattern(curves: list[tuple[str, str, str, object, float]], out: Path, rmin: float, rmax: float,
+                  size: float = 3.3, legend: bool = True) -> None:
+    """Redrawn polar cut. curves: (data name, label, colour, line style, line width). Same layout as the CST plot:
+    0 deg at the top, the phi = 90 deg half on the left and the phi = 270 deg half on the right, radial axis in dBi.
+    Values below rmin are drawn at the centre."""
+    fig = plt.figure(figsize=(size, size * (1.06 if legend else 0.98)))
+    ax = fig.add_axes([0.13, 0.15 if legend else 0.07, 0.74, 0.74 / (1.06 if legend else 0.98)], projection="polar")
+    ax.set_theta_zero_location("N")
+    ax.set_theta_direction(-1)
+    for name, label, colour, style, width in curves:
+        angle, value = load_pattern(name)
+        angle, value = np.append(angle, angle[0] + 360), np.append(value, value[0])       # close the curve
+        ax.plot(np.radians(angle), np.clip(value, rmin, None), color=colour, linestyle=style, linewidth=width,
+                label=label, solid_joinstyle="round", zorder=3)
+    ax.set_ylim(rmin, rmax)
+    ticks = np.arange(np.ceil(rmin / 5) * 5 + 5, rmax + 0.1, 5)
+    ax.set_yticks(ticks)
+    ax.set_yticklabels([])
+    for t in ticks:                                    # radial labels on a white patch, clear of the curves
+        ax.text(np.radians(90), t, f"{t:.0f}".replace("-", "−"), fontsize=6.5, color=INK, ha="center", va="center",
+                zorder=2, bbox=dict(boxstyle="round,pad=0.12", facecolor="white", edgecolor="none", alpha=0.9))
+    ax.set_thetagrids(range(0, 360, 30), ["0°", "30°", "60°", "90°", "120°", "150°", "180°", "150°", "120°", "90°",
+                                          "60°", "30°"], fontsize=7.5)
+    ax.tick_params(axis="x", pad=1)
+    ax.grid(True, color="#8a8983", linewidth=0.5, linestyle=(0, (2, 2)))
+    ax.spines["polar"].set_linewidth(0.9)
+    ax.spines["polar"].set_color(INK)
+    top = 0.955
+    fig.text(0.02, top, r"$\phi = 90°$", fontsize=7.5, ha="left", va="top", color=INK)
+    fig.text(0.98, top, r"$\phi = 270°$", fontsize=7.5, ha="right", va="top", color=INK)
+    if legend:
+        fig.legend(loc="lower center", ncol=len(curves), frameon=False, fontsize=7.5, handlelength=2.6,
+                   bbox_to_anchor=(0.5, 0.0), columnspacing=1.4)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out)
+    plt.close(fig)
+
+
 def main() -> None:
     p1, p2 = HERE / "paper1", HERE / "paper2"
     s11_overlay("p1", p1 / "figures" / "fig_s11.png", "with the metasurface board", "antenna alone", (-50, 0), True)
@@ -217,7 +292,27 @@ def main() -> None:
          (0, 40, 362, 383), (286, 28, 480, 66))
     crop(p1 / "cst_screenshots" / "pattern_5p3GHz_with.png", p1 / "figures" / "fig_pattern_with.png",
          (0, 40, 362, 383), (286, 28, 480, 66))
+    polar_pattern([("p1_pattern_5p3_noms", "antenna alone", WITHOUT, (0, (5, 2)), 1.6),
+                   ("p1_pattern_5p3_ms", "with the metasurface board", WITH, "-", 1.9)],
+                  p1 / "figures" / "fig_pattern_polar.png", -20, 5)
+    polar_pattern([("p2_pattern_noms", "", INK, "-", 1.9)], p2 / "figures" / "fig_pattern_polar_antenna.png", -20, 5,
+                  legend=False)
+    polar_pattern([("p2_pattern_noms", "without the metasurface", WITHOUT, (0, (5, 2)), 1.6),
+                   ("p2_pattern_ms", "with the metasurface", WITH, "-", 1.9)],
+                  p2 / "figures" / "fig_pattern_polar.png", -20, 5)
     paper2_layout(p2 / "cst_screenshots", p2 / "figures")
+    # Paper 2, antenna alone (no metasurface): single dark curves
+    single_curve("p2_s11_noms", p2 / "figures" / "fig_s11_antenna.png", r"$|S_{11}|$ (dB)", (-50, 0), level=-10)
+    single_curve("p2_dir_noms", p2 / "figures" / "fig_directivity_antenna.png", "Directivity (dBi)", (-4, 8))
+    # Paper 1, uploaded version: one redrawn graph per CST screenshot, in the shape of the screenshot it replaces
+    up, wide = p1 / "figures_uploaded_version", (6.6, 2.0)
+    single_curve("p1_s11_noms", up / "s11_without.png", r"$|S_{11}|$ (dB)", (-40, 0), level=-10, size=wide)
+    single_curve("p1_s11_ms", up / "s11_with.png", r"$|S_{11}|$ (dB)", (-40, 0), level=-10, size=wide)
+    single_curve("p1_dir_noms", up / "directivity_without.png", "Directivity (dBi)", (-5, 8), size=wide)
+    single_curve("p1_dir_ms", up / "directivity_with.png", "Directivity (dBi)", (-5, 8), size=wide)
+    for case in ("noms", "ms"):                      # large square polar plots; the lobe values are in the text
+        polar_pattern([(f"p1_pattern_5p3_{case}", "", "#0d366b", "-", 2.0)],
+                      up / f"pattern_5p3GHz_{'with' if case == 'ms' else 'without'}.png", -20, 5, legend=False)
     shots = p2 / "cst_screenshots"
     polar = (690, 0, 1600, 959)                     # the polar plot without the legend and the lobe read-out
     crop(shots / "7p4GHz_radiation_pattern_port1_without_metasurface.png", p2 / "figures" / "fig_pattern_without.png",

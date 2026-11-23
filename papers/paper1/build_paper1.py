@@ -320,10 +320,10 @@ def build() -> Path:
         "0.32 dB, but the radiation remains two-sided. The maximum of Fig. 4 at this frequency, 4.3 dBi with the "
         "board, is higher than that of this cut, so the direction of maximum radiation is not in the plane of "
         "Fig. 5.")
-    p.figure([FIG / "fig_pattern_without.png", FIG / "fig_pattern_with.png"],
-             "Simulated directivity pattern in the *φ* = 90° plane at 5.3 GHz: (a) antenna alone, (b) with the "
-             "metasurface board. The circle and the straight lines are the CST Studio Suite markers of the main "
-             "lobe and its half-power width.", width_in=1.58, sublabels=True, side_by_side=True)
+    p.figure(FIG / "fig_pattern_polar.png",
+             "Simulated directivity pattern in the *φ* = 90° plane at 5.3 GHz (CST Studio Suite), antenna alone "
+             "and with the metasurface board. Angles are *θ* in degrees; the radial axis is the directivity in "
+             "dBi.", width_in=3.2)
     p.subheading("D. Limitations")
     p.body(
         "Four limits of the present results should be kept in mind. First, only the directivity has been evaluated, "
